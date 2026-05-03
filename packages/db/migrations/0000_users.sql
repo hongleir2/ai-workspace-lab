@@ -50,16 +50,24 @@ CREATE TRIGGER set_updated_at
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 --> statement-breakpoint
 
--- RLS: users see and update only their own row.
--- The service role bypasses RLS and is used for all server-side writes.
+-- RLS is scoped to the Supabase auth provider explicitly. The schema supports other providers
+-- (clerk, etc.) but only Supabase identities flow through `auth.uid()` in JWT claims;
+-- scoping by provider prevents cross-provider id collisions.
 ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 
 CREATE POLICY "users_select_own"
   ON users FOR SELECT
-  USING (auth_provider_user_id = auth.uid()::text);
+  USING (auth_provider = 'supabase' AND auth_provider_user_id = auth.uid()::text);
 --> statement-breakpoint
 
 CREATE POLICY "users_update_own"
   ON users FOR UPDATE
-  USING (auth_provider_user_id = auth.uid()::text);
+  USING (
+    auth_provider = 'supabase'
+    AND auth_provider_user_id = auth.uid()::text
+  )
+  WITH CHECK (
+    auth_provider = 'supabase'
+    AND auth_provider_user_id = auth.uid()::text
+  );

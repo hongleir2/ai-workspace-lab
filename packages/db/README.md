@@ -128,6 +128,22 @@ create policy "org members can read"
 RLS policies live in the migration SQL alongside the `create table` statement. drizzle-kit does
 not generate RLS policies — add them manually after the generated SQL block.
 
+### Profile updates — safe-field allowlist
+
+Even with RLS, application code must restrict which columns a user can update on their own row. RLS controls *which rows* are reachable, not *which columns* are mutable.
+
+Identity, lifecycle, and audit columns must NEVER be updated through user-facing endpoints:
+
+- `auth_provider`, `auth_provider_user_id` — identity binding, owned by the auth flow
+- `email` — identity, changes go through a verification flow
+- `status` — lifecycle, owned by admin/server actions
+- `deleted_at` — soft-delete state, owned by the deletion server action
+- `created_at`, `updated_at` — audit, managed by the database
+
+User-facing profile updates may only mutate: `display_name`, `avatar_url`, `timezone`.
+
+Enforce this allowlist in the server action (or RPC) that fronts profile updates. Do not pass arbitrary `Partial<User>` objects to `db.update()` from a request handler.
+
 ### Auth foreign system
 
 Supabase owns `auth.users`. This package only references it via foreign key:

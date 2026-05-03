@@ -7,7 +7,7 @@ Shared engineering presets for every workspace package.
 - `@ai-workspace-lab/config/tsconfig.base.json` — strict TS base (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, etc.)
 
 > Lint + format are no longer in this package. They live in the root [`biome.json`](../../biome.json)
-> — Biome runs at the repo root in a single pass. See [learning-journal 0002](../../docs/learning_journal/0002-tooling-switch-to-biome-and-playwright.md).
+> — Biome runs at the repo root in a single pass. See [journal 0002](../../docs/journal/0002-tooling-switch-to-biome-and-playwright.md).
 
 ## Usage in another package
 

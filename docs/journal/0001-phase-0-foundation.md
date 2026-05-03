@@ -79,7 +79,7 @@ The lab is built on the principle in the roadmap: **AI agents amplify clear engi
 | `README.md`                                        | Human-facing quickstart: stack summary, layout, commands, conventions, how to add a new app or package.                                                                                                                                     |
 | `learning-journal.md`                              | Weekly reflection log committed to. Phase 0 entry already in.                                                                                                                                                                               |
 | `docs/adr/0001-stack-choice.md`                    | The ADR that locks the default stack. Superseded only by a new ADR.                                                                                                                                                                         |
-| `docs/learning_journal/0001-phase-0-foundation.md` | This file.                                                                                                                                                                                                                                  |
+| `docs/journal/0001-phase-0-foundation.md`          | This file.                                                                                                                                                                                                                                  |
 
 ### Lockfile and caches (gitignored or generated)
 

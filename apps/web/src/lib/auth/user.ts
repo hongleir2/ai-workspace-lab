@@ -36,9 +36,15 @@ function rowToUser(row: UserRow): User {
 }
 
 /**
- * Returns the current app user from the database, or null if:
+ * Returns the current *active* app user from the database, or null if:
  *  - No active Supabase auth session
  *  - Session exists but the user row hasn't been synced yet (first-login race)
+ *  - Row exists but status !== 'active' (disabled / deleted)
+ *
+ * The status filter is the contract that lets /sign-in and /sign-up call this
+ * for redirect-when-signed-in without bouncing disabled users to /app, where
+ * `requireUser()` would just send them right back here — an infinite loop.
+ * `requireUser()` remains the canonical gatekeeper for protected routes.
  */
 export async function getCurrentUser(): Promise<User | null> {
   const supabase = await createClient();
@@ -50,6 +56,7 @@ export async function getCurrentUser(): Promise<User | null> {
     .select('*')
     .eq('auth_provider', 'supabase')
     .eq('auth_provider_user_id', authData.user.id)
+    .eq('status', 'active')
     .maybeSingle<UserRow>();
 
   return data !== null ? rowToUser(data) : null;

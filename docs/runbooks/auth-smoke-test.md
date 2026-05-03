@@ -157,6 +157,14 @@ phishing vector — keep this test.
 
 **Cleanup**: flip `status` back to `active` if you want to keep using the account.
 
+**Regression note**: this scenario must terminate in a single redirect to `/sign-in`. Earlier
+versions had `getCurrentUser()` returning the row regardless of `status`, so `/sign-in` would
+ferry the disabled user back to `/app`, where `requireUser()` would bounce them right back —
+an infinite redirect loop visible as alternating `GET /sign-in?error=account_disabled` /
+`GET /app` lines in the dev server log. The fix is in
+`apps/web/src/lib/auth/user.ts:getCurrentUser` (status filter is part of the query). If you
+ever see that loop reappear, that filter has regressed.
+
 ## Two-minute confidence smoke test
 
 If you only have a couple of minutes — for example, before merging an unrelated PR that touches

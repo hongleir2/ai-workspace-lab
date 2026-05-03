@@ -15,6 +15,27 @@
       "when": 1777920498318,
       "tag": "0001_users_insert_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778020498318,
+      "tag": "0002_organizations",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778120498318,
+      "tag": "0003_organization_memberships",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778220498318,
+      "tag": "0004_audit_logs",
+      "breakpoints": true
     }
   ]
 }

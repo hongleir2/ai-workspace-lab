@@ -102,6 +102,9 @@ importers:
       '@ai-workspace-lab/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@ai-workspace-lab/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5

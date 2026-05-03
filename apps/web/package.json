@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",
+    "@ai-workspace-lab/db": "workspace:*",
     "@types/node": "22.10.5",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",

@@ -8,6 +8,13 @@
       "when": 1777820498318,
       "tag": "0000_users",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777920498318,
+      "tag": "0001_users_insert_policy",
+      "breakpoints": true
     }
   ]
 }

@@ -1,8 +1,8 @@
 # ai-workspace-lab
 
-Personal monorepo for indie AI products. Apps live in `apps/`, shared code in `packages/`.
+Modular monolith for **AI Workspace SaaS + Desktop Companion**. Apps live in `apps/`, shared code in `packages/`. See [`docs/product/PRD-ai-workspace-saas.md`](./docs/product/PRD-ai-workspace-saas.md) for what we're building.
 
-> **Phase 0 status:** Foundation only. No products yet. The amplifier comes first.
+> **Phase 0 status:** Foundation + scaffolds only. No product features wired up yet.
 
 ## Quickstart
 
@@ -18,18 +18,39 @@ pnpm verify            # format-check + lint + typecheck + test
 
 ```
 ai-workspace-lab/
-├── apps/                      # products (none yet)
+├── apps/
+│   ├── web/                   # @ai-workspace-lab/web — Next.js 15 + Tailwind (scaffold, no features)
+│   ├── desktop/               # @ai-workspace-lab/desktop — companion app placeholder
+│   └── e2e/                   # @ai-workspace-lab/e2e — Playwright suite
 ├── packages/
-│   ├── config/                # @ai-workspace-lab/config — tsconfig.base.json (Biome lives at root)
-│   ├── types/                 # @ai-workspace-lab/types — shared TS types
-│   └── ui/                    # @ai-workspace-lab/ui — shared UI primitives
-├── docs/adr/                  # architecture decision records (0001 = stack lock-in)
-├── learning-journal.md        # weekly engineering journal
+│   ├── config/                # tsconfig.base.json (Biome lives at root)
+│   ├── types/                 # shared TS types
+│   ├── ui/                    # shared UI primitives
+│   ├── db/                    # Postgres / Supabase client + migrations (scaffold)
+│   ├── auth/                  # auth + sessions (scaffold)
+│   ├── billing/               # Stripe billing + webhooks (scaffold)
+│   ├── entitlements/          # plan tiers, quotas, server-side trust (scaffold)
+│   ├── ai/                    # Vercel AI SDK + Anthropic helpers (scaffold)
+│   ├── jobs/                  # background queue + retries (scaffold)
+│   ├── email/                 # Resend transactional email (scaffold)
+│   └── analytics/             # PostHog event taxonomy + flags (scaffold)
+├── docs/
+│   ├── product/               # PRD, ERD — what we're building
+│   ├── adr/                   # architecture decision records (0001 = stack lock-in)
+│   ├── runbooks/              # incident response, ops procedures
+│   ├── performance/           # budgets, capacity, cost ceilings
+│   ├── studies/               # time-boxed investigations
+│   └── learning_journal/      # how we built the foundation
+├── learning-journal.md        # weekly engineering reflection
 ├── CLAUDE.md                  # contract for AI agents working in this repo
+├── biome.json                 # lint + format
 ├── pnpm-workspace.yaml
 ├── turbo.json
-└── tsconfig.json              # extends @ai-workspace-lab/config/tsconfig.base.json
+├── tsconfig.json              # extends @ai-workspace-lab/config/tsconfig.base.json
+└── .env.example               # contract for env vars across all stack layers
 ```
+
+> **Scaffold vs. implementation.** Every package above marked *(scaffold)* has a `package.json`, `tsconfig.json`, and a placeholder `src/index.ts` so workspace tooling sees it — but no logic. Implementation lands per-feature, gated by the rules in [`CLAUDE.md`](./CLAUDE.md) and [ADR 0001](./docs/adr/0001-stack-choice.md).
 
 ## Tooling
 

@@ -24,7 +24,10 @@ export const organizationMemberships = pgTable(
     status: membershipStatusEnum('status').notNull(),
     joinedAt: timestamp('joined_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdateFn(() => new Date()),
   },
   (t) => [
     uniqueIndex('org_memberships_org_user_unique').on(t.organizationId, t.userId),

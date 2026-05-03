@@ -42,7 +42,12 @@ describe.skipIf(!DATABASE_URL)('audit_logs table', () => {
 
     const [org] = await db
       .insert(organizations)
-      .values({ name: 'Audit Test Org', slug: 'audit-test-org', status: 'active' })
+      .values({
+        name: 'Audit Test Org',
+        slug: 'audit-test-org',
+        ownerUserId: actorUserId,
+        status: 'active',
+      })
       .returning();
     // biome-ignore lint/style/noNonNullAssertion: just inserted
     orgId = org!.id;

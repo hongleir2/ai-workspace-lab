@@ -90,6 +90,7 @@ describe.skipIf(!DATABASE_URL)('organizations table', () => {
       db.insert(organizations).values({
         name: 'Duplicate Org',
         slug: 'TEST-ORG-SLUG',
+        ownerUserId,
         status: 'active',
       }),
     ).rejects.toThrow();
@@ -100,6 +101,7 @@ describe.skipIf(!DATABASE_URL)('organizations table', () => {
       db.insert(organizations).values({
         name: 'Another Org',
         slug: 'test-org-slug',
+        ownerUserId,
         status: 'active',
       }),
     ).rejects.toThrow();
@@ -120,19 +122,14 @@ describe.skipIf(!DATABASE_URL)('organizations table', () => {
     expect(after[0]?.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt?.getTime() ?? 0);
   });
 
-  it('allows null owner_user_id', async () => {
-    const [row] = await db
-      .insert(organizations)
-      .values({
-        name: 'Ownerless Org',
-        slug: 'ownerless-org-slug',
+  it('rejects insert with a non-existent owner_user_id (FK constraint)', async () => {
+    await expect(
+      db.insert(organizations).values({
+        name: 'Bad Owner Org',
+        slug: 'bad-owner-org-slug',
+        ownerUserId: '00000000-0000-0000-0000-000000000000',
         status: 'active',
-      })
-      .returning();
-
-    expect(row?.ownerUserId).toBeNull();
-    if (row?.id) {
-      await db.delete(organizations).where(eq(organizations.id, row.id));
-    }
+      }),
+    ).rejects.toThrow();
   });
 });

@@ -5,7 +5,7 @@ CREATE TABLE "organizations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"slug" "citext" NOT NULL,
-	"owner_user_id" uuid REFERENCES users(id),
+	"owner_user_id" uuid NOT NULL REFERENCES users(id),
 	"status" "org_status" DEFAULT 'active' NOT NULL,
 	"metadata" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

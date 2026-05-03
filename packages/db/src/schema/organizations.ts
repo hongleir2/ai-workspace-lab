@@ -19,11 +19,16 @@ export const organizations = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     slug: citext('slug').notNull(),
-    ownerUserId: uuid('owner_user_id').references(() => users.id),
+    ownerUserId: uuid('owner_user_id')
+      .notNull()
+      .references(() => users.id),
     status: orgStatusEnum('status').notNull().default('active'),
     metadata: jsonb('metadata'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdateFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (t) => [

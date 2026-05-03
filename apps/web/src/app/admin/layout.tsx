@@ -1,17 +1,19 @@
+import { AdminSidebar } from '@/components/nav/admin-sidebar';
 import type { ReactNode } from 'react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-red-200 bg-red-50 px-6 py-3">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-red-900">Platform Admin</span>
-          <span className="ml-auto rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-            Placeholder shell · requirePlatformAdmin()
+    <div className="flex min-h-screen bg-background">
+      <AdminSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <span className="font-display text-sm font-semibold tracking-tight">Platform Admin</span>
+          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            requirePlatformAdmin()
           </span>
-        </div>
-      </header>
-      {children}
+        </header>
+        <main className="flex-1">{children}</main>
+      </div>
     </div>
   );
 }

@@ -62,19 +62,20 @@ Web Next.js 15 · DB Supabase Postgres · Auth Supabase Auth · Payments Stripe 
 
 Switching a stack layer requires a new ADR.
 
-## Commands
+## Development
 
-|                                     |                                                        |
-| ----------------------------------- | ------------------------------------------------------ |
-| `pnpm install`                      | install all workspaces                                 |
-| `pnpm lint` / `pnpm lint:fix`       | Biome lint + format check / auto-fix                   |
-| `pnpm format` / `pnpm format:check` | Biome format write / check                             |
-| `pnpm typecheck`                    | TS in every workspace                                  |
-| `pnpm test` / `pnpm test:watch`     | Vitest unit tests                                      |
-| `pnpm e2e` / `pnpm e2e:install`     | Playwright e2e / install browsers                      |
-| `pnpm verify`                       | the full gate — lint → typecheck → test                |
-| `pnpm dev`                          | run every app's dev server                             |
-| `pnpm build`                        | build every app/package                                |
+| Command | Description |
+|---------|-------------|
+| `pnpm install` | Install all workspace dependencies |
+| `pnpm dev` | Start all apps in development mode |
+| `pnpm build` | Build all apps |
+| `pnpm lint` | Lint and format-check (Biome) |
+| `pnpm lint:fix` | Auto-fix lint and format issues |
+| `pnpm typecheck` | TypeScript type-check all packages |
+| `pnpm test` | Run unit tests (Vitest) |
+| `pnpm test:watch` | Run tests in watch mode |
+| `pnpm e2e` | Run end-to-end tests (Playwright) |
+| `pnpm verify` | Full CI gate: lint + typecheck + test |
 
 ## Conventions
 

@@ -38,8 +38,15 @@ export const env = createEnv({
     // ── Required-later: Resend email (Sprint 1–2) ─────────────────────────
     // https://resend.com/api-keys
     RESEND_API_KEY: z.string().startsWith('re_').optional(),
-    // "Display Name <from@yourdomain.com>" — must match a verified Resend domain.
-    EMAIL_FROM: z.string().email().optional(),
+    // "Display Name <from@yourdomain.com>" or bare "from@yourdomain.com".
+    // The local-part of the address must match a verified Resend sender.
+    EMAIL_FROM: z
+      .string()
+      .regex(
+        /^(?:[^<>]*<[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+>|[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+)$/,
+        'Expected "Display Name <addr@domain>" or "addr@domain"',
+      )
+      .optional(),
 
     // ── Required-later: Sentry error tracking (Sprint 1+) ─────────────────
     // https://sentry.io/settings/<org>/projects/<project>/keys/

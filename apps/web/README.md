@@ -2,7 +2,7 @@
 
 The primary web app for AI Workspace SaaS.
 
-> **Status:** Phase 0 scaffold. Next.js 15 (App Router) + React 19 + Tailwind 3.4. No product features — see [PRD](../../docs/product/PRD-ai-workspace-saas.md).
+> **Status:** Phase 0 scaffold. Next.js 15 (App Router) + React 19 + Tailwind 3.4. No product features — see [PRD](../../docs/product/prd.md).
 
 ## Develop
 

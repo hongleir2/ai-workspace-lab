@@ -1,6 +1,6 @@
 # ai-workspace-lab
 
-Modular monolith for **AI Workspace SaaS + Desktop Companion**. Apps live in `apps/`, shared code in `packages/`. See [`docs/product/PRD-ai-workspace-saas.md`](./docs/product/PRD-ai-workspace-saas.md) for what we're building.
+Modular monolith for **AI Workspace SaaS + Desktop Companion**. Apps live in `apps/`, shared code in `packages/`. See [`docs/product/prd.md`](./docs/product/prd.md) for what we're building.
 
 > **Phase 0 status:** Foundation + scaffolds only. No product features wired up yet.
 
@@ -40,7 +40,7 @@ ai-workspace-lab/
 │   ├── runbooks/              # incident response, ops procedures
 │   ├── performance/           # budgets, capacity, cost ceilings
 │   ├── studies/               # time-boxed investigations
-│   └── learning_journal/      # how we built the foundation
+│   └── journal/               # how we built the foundation
 ├── learning-journal.md        # weekly engineering reflection
 ├── CLAUDE.md                  # contract for AI agents working in this repo
 ├── biome.json                 # lint + format
@@ -54,7 +54,7 @@ ai-workspace-lab/
 
 ## Tooling
 
-Lint + format: **Biome** (single binary; replaces ESLint + Prettier — see [learning-journal 0002](./docs/learning_journal/0002-tooling-switch-to-biome-and-playwright.md)). Unit tests: **Vitest**. e2e: **Playwright** at `apps/e2e/`. Workspace orchestration: **pnpm + Turborepo**.
+Lint + format: **Biome** (single binary; replaces ESLint + Prettier — see [journal 0002](./docs/journal/0002-tooling-switch-to-biome-and-playwright.md)). Unit tests: **Vitest**. e2e: **Playwright** at `apps/e2e/`. Workspace orchestration: **pnpm + Turborepo**.
 
 ## Stack (locked — see [ADR 0001](./docs/adr/0001-stack-choice.md))
 

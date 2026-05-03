@@ -2,4 +2,4 @@
 
 Desktop companion app for AI Workspace SaaS.
 
-> **Status:** placeholder. Framework not chosen (Electron / Tauri / Wails) — open an ADR before scaffolding. See [PRD](../../docs/product/PRD-ai-workspace-saas.md).
+> **Status:** placeholder. Framework not chosen (Electron / Tauri / Wails) — open an ADR before scaffolding. See [PRD](../../docs/product/prd.md).

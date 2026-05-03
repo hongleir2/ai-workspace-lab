@@ -1,6 +1,6 @@
 # CLAUDE.md — operating guide for AI agents in `ai-workspace-lab`
 
-This file is the contract between you (the AI agent) and this monorepo. **Read it before changing anything.** It is the source of truth for what to build, how to build it, and what is forbidden. The product spec is [`docs/product/PRD-ai-workspace-saas.md`](./docs/product/PRD-ai-workspace-saas.md); the data spec is [`docs/product/ERD-ai-workspace-saas.md`](./docs/product/ERD-ai-workspace-saas.md); the frontend route spec is [`docs/product/frontend-page-map.md`](./docs/product/frontend-page-map.md).
+This file is the contract between you (the AI agent) and this monorepo. **Read it before changing anything.** It is the source of truth for what to build, how to build it, and what is forbidden. The product spec is [`docs/product/prd.md`](./docs/product/prd.md); the data spec is [`docs/product/erd.md`](./docs/product/erd.md); the frontend route spec is [`docs/product/frontend-page-map.md`](./docs/product/frontend-page-map.md).
 
 ---
 
@@ -100,7 +100,7 @@ Migrations live in `packages/db/migrations/`.
 2. **One migration per logical change.** Don't bundle table changes that can be reasoned about separately.
 3. **Backfills are migrations too.** A `NOT NULL` column on an existing table requires a backfill migration before the constraint is enforced.
 4. **Every migration gets a test.** The test runs the migration against a real Postgres and asserts the post-state.
-5. **No table is added without an ERD entry.** If the table is not in [`docs/product/ERD-ai-workspace-saas.md`](./docs/product/ERD-ai-workspace-saas.md) or a new ADR explaining why, do not create it.
+5. **No table is added without an ERD entry.** If the table is not in [`docs/product/erd.md`](./docs/product/erd.md) or a new ADR explaining why, do not create it.
 6. **RLS policies ship with the table.** Every organization-scoped table must enable RLS in the same migration that creates it.
 
 ---
@@ -208,7 +208,7 @@ Every PR:
 
 - [ ] `pnpm verify` is green locally before push
 - [ ] New routes are listed in `docs/product/frontend-page-map.md`
-- [ ] New tables are listed in `docs/product/ERD-ai-workspace-saas.md` (or covered by a new ADR)
+- [ ] New tables are listed in `docs/product/erd.md` (or covered by a new ADR)
 - [ ] New env vars are added to `.env.example`
 - [ ] Server-side auth/authz checks exist for every protected route added
 - [ ] Org-scoped queries filter by `organization_id`
@@ -226,7 +226,7 @@ Do not push to `main`. Do not push remote without explicit user approval.
 These rules exist because violating them creates real money, data, or trust incidents.
 
 1. **Do not create new frontend routes unless they exist in `docs/product/frontend-page-map.md`.** Update the map first.
-2. **Do not create new database tables unless they exist in `docs/product/PRD-ai-workspace-saas.md` (or its ERD), or a new ADR explains why.**
+2. **Do not create new database tables unless they exist in `docs/product/prd.md` (or its ERD), or a new ADR explains why.**
 3. **Every organization-scoped query must filter by `organization_id`.**
 4. **Every protected route must perform server-side auth checks.** Client-side checks are UX, not security.
 5. **Every expensive AI action must check entitlement, quota, and rate limit before provider calls.**
@@ -298,7 +298,7 @@ ai-workspace-lab/
 │   ├── runbooks/                 # incident response, ops procedures
 │   ├── performance/              # budgets, capacity, cost ceilings
 │   ├── studies/                  # time-boxed investigations
-│   └── learning_journal/         # how we built the foundation
+│   └── journal/                  # how we built the foundation
 ├── learning-journal.md           # weekly reflection — keep this updated
 ├── CLAUDE.md                     # this file
 ├── README.md                     # human-facing quickstart

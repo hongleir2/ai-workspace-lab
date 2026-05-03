@@ -28,7 +28,7 @@ Format:
 
 - `ai-workspace-lab/` monorepo (pnpm workspaces + Turborepo).
 - Strict TS base (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) in `@ai-workspace-lab/config`.
-- Lint + format via **Biome** at root (originally landed as ESLint + Prettier; swapped same-week — see [learning-journal 0002](./docs/learning_journal/0002-tooling-switch-to-biome-and-playwright.md)).
+- Lint + format via **Biome** at root (originally landed as ESLint + Prettier; swapped same-week — see [journal 0002](./docs/journal/0002-tooling-switch-to-biome-and-playwright.md)).
 - Vitest at workspace root, picking up tests from every package's `src`.
 - **Playwright** e2e harness at `apps/e2e/` (smoke spec only; first real flows arrive with `apps/web`).
 - GitHub Actions CI: lint → typecheck → test, plus a parallel Playwright job.

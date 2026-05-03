@@ -1,5 +1,4 @@
 import {
-  customType,
   index,
   jsonb,
   pgEnum,
@@ -9,13 +8,8 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { citext } from './custom-types.js';
 import { users } from './users.js';
-
-const citext = customType<{ data: string; driverData: string }>({
-  dataType() {
-    return 'citext';
-  },
-});
 
 export const orgStatusEnum = pgEnum('org_status', ['active', 'suspended', 'deleted']);
 

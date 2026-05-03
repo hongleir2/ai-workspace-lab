@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { organizationMemberships } from './organization_memberships.js';
 import { organizations } from './organizations.js';
 import { users } from './users.js';
 
@@ -28,6 +29,16 @@ describe.skipIf(!DATABASE_URL)('organizations table', () => {
   let insertedOrgId: string;
 
   beforeAll(async () => {
+    // Clean up memberships first — organization_memberships.organization_id FK has no cascade.
+    const existing = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.slug, 'test-org-slug'));
+    if (existing[0]) {
+      await db
+        .delete(organizationMemberships)
+        .where(eq(organizationMemberships.organizationId, existing[0].id));
+    }
     await db.delete(organizations).where(eq(organizations.slug, 'test-org-slug'));
     await db.delete(users).where(eq(users.email, 'org-owner@example.com'));
 

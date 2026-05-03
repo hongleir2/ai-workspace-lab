@@ -29,6 +29,13 @@ CREATE TRIGGER set_updated_at
 --> statement-breakpoint
 
 ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;
--- No SELECT policy yet: organizations_select_member is added in 0003_organization_memberships.sql
--- after the organization_memberships table exists (the policy body references it).
--- The service role bypasses RLS and retains full access.
+-- RLS policy design for organizations:
+--
+-- SELECT: added in 0003_organization_memberships.sql after the organization_memberships
+--   table exists (the policy body references it — Postgres validates at creation time).
+--
+-- INSERT / UPDATE / DELETE: intentionally no policies for the authenticated role.
+--   All org writes go through the server using the Supabase service role, which
+--   bypasses RLS entirely. Allowing authenticated-role writes would mean any signed-in
+--   user could mutate any org row directly via the REST API without going through
+--   server-side authorization. Absence of a policy = deny for authenticated role.

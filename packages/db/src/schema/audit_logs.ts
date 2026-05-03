@@ -1,12 +1,7 @@
-import { customType, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { inet } from './custom-types.js';
 import { organizations } from './organizations.js';
 import { users } from './users.js';
-
-const inet = customType<{ data: string; driverData: string }>({
-  dataType() {
-    return 'inet';
-  },
-});
 
 export const auditLogs = pgTable(
   'audit_logs',

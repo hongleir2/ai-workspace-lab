@@ -5,7 +5,7 @@
  * Skipped automatically when DATABASE_URL is absent.
  */
 
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -25,16 +25,17 @@ describe.skipIf(!DATABASE_URL)('organization_memberships table', () => {
   let membershipId: string;
 
   beforeAll(async () => {
-    await db
-      .delete(organizationMemberships)
-      .where(
-        and(
-          eq(
-            organizationMemberships.organizationId,
-            orgId ?? '00000000-0000-0000-0000-000000000000',
-          ),
-        ),
-      );
+    // Look up the org by slug first so we can clean up membership rows before
+    // deleting the org (the FK on organization_id has no cascade).
+    const existing = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.slug, 'membership-test-org'));
+    if (existing[0]) {
+      await db
+        .delete(organizationMemberships)
+        .where(eq(organizationMemberships.organizationId, existing[0].id));
+    }
     await db.delete(organizations).where(eq(organizations.slug, 'membership-test-org'));
     await db.delete(users).where(eq(users.email, 'membership-test@example.com'));
 

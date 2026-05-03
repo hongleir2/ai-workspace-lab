@@ -1,3 +1,7 @@
+-- ERD §5.3 specifies CHECK constraints for role and status.  We use Postgres
+-- ENUMs instead: they enforce the same value restriction at the DB level and
+-- give Drizzle a typed pgEnum in the application layer.  Trade-off: adding a
+-- new value requires ALTER TYPE ... ADD VALUE (irreversible once committed).
 CREATE TYPE "public"."member_role" AS ENUM('owner', 'admin', 'member');
 --> statement-breakpoint
 
@@ -35,6 +39,16 @@ CREATE TRIGGER set_updated_at
 
 ALTER TABLE "organization_memberships" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
+
+-- RLS policy design for organization_memberships:
+--
+-- INSERT / UPDATE / DELETE: intentionally no policies for the authenticated role.
+--   Membership writes (inviting, promoting, revoking) must go through the server
+--   using the service role so that server-side authorization is enforced before
+--   any membership state changes. Absence of a policy = deny for authenticated role.
+--
+-- SELECT: users may read their own membership row regardless of status, so they
+--   can discover their role and membership state within the app.
 
 -- Authenticated users can read their own memberships.
 CREATE POLICY "memberships_select_own"

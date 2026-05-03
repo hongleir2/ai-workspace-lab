@@ -53,6 +53,33 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      fontFamily: {
+        display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: [
+          'ui-monospace',
+          'SFMono-Regular',
+          'SF Mono',
+          'Menlo',
+          'Consolas',
+          'Liberation Mono',
+          'monospace',
+        ],
+      },
+      backgroundImage: {
+        'grid-fade': 'radial-gradient(ellipse at top, hsl(var(--accent) / 0.4), transparent 60%)',
+        'mesh-fade':
+          'radial-gradient(circle at 15% 0%, hsl(var(--primary) / 0.10) 0%, transparent 40%), radial-gradient(circle at 85% 30%, hsl(var(--primary) / 0.06) 0%, transparent 50%)',
+      },
+      keyframes: {
+        'pulse-soft': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
+        },
+      },
+      animation: {
+        'pulse-soft': 'pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
     },
   },
   plugins: [tailwindcssAnimate],

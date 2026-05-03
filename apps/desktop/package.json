@@ -1,0 +1,14 @@
+{
+  "name": "@ai-workspace-lab/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo dist"
+  },
+  "devDependencies": {
+    "@ai-workspace-lab/config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

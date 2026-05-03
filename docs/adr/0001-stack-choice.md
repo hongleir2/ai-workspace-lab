@@ -6,7 +6,7 @@ Accepted — 2026-05-02
 
 ## Context
 
-`indie-lab` is a personal monorepo for shipping indie AI products. The first product (an AI Workspace SaaS) and every product after will land here. Stack-shopping is the single biggest indie-momentum killer: every "let me try Y instead of X" wipes a week.
+`ai-workspace-lab` is a personal monorepo for shipping indie AI products. The first product (an AI Workspace SaaS) and every product after will land here. Stack-shopping is the single biggest indie-momentum killer: every "let me try Y instead of X" wipes a week.
 
 This ADR fixes the **default stack** for any new app in this repo. Each layer is chosen on three criteria, in order:
 

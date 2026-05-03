@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright config for the indie-lab e2e suite.
+ * Playwright config for the ai-workspace-lab e2e suite.
  *
  * Phase 0: no app under test yet. The smoke spec runs without a webServer.
  * When the first product app lands, set baseURL + uncomment webServer.
@@ -35,7 +35,7 @@ export default defineConfig({
     // },
   ],
   // webServer: {
-  //   command: 'pnpm --filter @indie-lab/web dev',
+  //   command: 'pnpm --filter @ai-workspace-lab/web dev',
   //   url: 'http://127.0.0.1:3000',
   //   reuseExistingServer: !isCI,
   //   timeout: 120_000,

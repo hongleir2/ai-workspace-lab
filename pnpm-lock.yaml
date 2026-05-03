@@ -8,12 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@ai-workspace-lab/config':
+        specifier: workspace:*
+        version: link:packages/config
       '@biomejs/biome':
         specifier: 1.9.4
         version: 1.9.4
-      '@indie-lab/config':
-        specifier: workspace:*
-        version: link:packages/config
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -29,7 +29,7 @@ importers:
 
   apps/e2e:
     devDependencies:
-      '@indie-lab/config':
+      '@ai-workspace-lab/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@playwright/test':
@@ -50,7 +50,7 @@ importers:
 
   packages/types:
     devDependencies:
-      '@indie-lab/config':
+      '@ai-workspace-lab/config':
         specifier: workspace:*
         version: link:../config
       typescript:
@@ -59,7 +59,7 @@ importers:
 
   packages/ui:
     devDependencies:
-      '@indie-lab/config':
+      '@ai-workspace-lab/config':
         specifier: workspace:*
         version: link:../config
       typescript:

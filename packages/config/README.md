@@ -1,10 +1,10 @@
-# @indie-lab/config
+# @ai-workspace-lab/config
 
 Shared engineering presets for every workspace package.
 
 ## Exports
 
-- `@indie-lab/config/tsconfig.base.json` — strict TS base (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, etc.)
+- `@ai-workspace-lab/config/tsconfig.base.json` — strict TS base (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, etc.)
 
 > Lint + format are no longer in this package. They live in the root [`biome.json`](../../biome.json)
 > — Biome runs at the repo root in a single pass. See [learning-journal 0002](../../docs/learning_journal/0002-tooling-switch-to-biome-and-playwright.md).
@@ -15,7 +15,7 @@ Shared engineering presets for every workspace package.
 
 ```json
 {
-  "extends": "@indie-lab/config/tsconfig.base.json",
+  "extends": "@ai-workspace-lab/config/tsconfig.base.json",
   "compilerOptions": { "outDir": "dist", "rootDir": "src" },
   "include": ["src/**/*"]
 }

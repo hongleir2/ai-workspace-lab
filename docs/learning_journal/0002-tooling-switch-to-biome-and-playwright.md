@@ -114,10 +114,10 @@ Phase 0 is "engineering amplifier only." We have zero apps, so there's nothing m
 
 ### Files added
 
-- `apps/e2e/package.json` — workspace package `@indie-lab/e2e`.
+- `apps/e2e/package.json` — workspace package `@ai-workspace-lab/e2e`.
 - `apps/e2e/playwright.config.ts` — chromium project, traces on first retry, html reporter.
 - `apps/e2e/tests/smoke.spec.ts` — one passing assertion to prove the harness works.
-- `apps/e2e/tsconfig.json` — extends `@indie-lab/config/tsconfig.base.json`.
+- `apps/e2e/tsconfig.json` — extends `@ai-workspace-lab/config/tsconfig.base.json`.
 - `.github/workflows/e2e.yml` — separate CI job with browser cache.
 - Root `package.json` — adds `e2e` and `e2e:install` scripts.
 

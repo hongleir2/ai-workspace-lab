@@ -1,4 +1,4 @@
-# indie-lab
+# ai-workspace-lab
 
 Personal monorepo for indie AI products. Apps live in `apps/`, shared code in `packages/`.
 
@@ -17,18 +17,18 @@ pnpm verify            # format-check + lint + typecheck + test
 ## Layout
 
 ```
-indie-lab/
+ai-workspace-lab/
 ├── apps/                      # products (none yet)
 ├── packages/
-│   ├── config/                # @indie-lab/config — tsconfig.base.json (Biome lives at root)
-│   ├── types/                 # @indie-lab/types — shared TS types
-│   └── ui/                    # @indie-lab/ui — shared UI primitives
+│   ├── config/                # @ai-workspace-lab/config — tsconfig.base.json (Biome lives at root)
+│   ├── types/                 # @ai-workspace-lab/types — shared TS types
+│   └── ui/                    # @ai-workspace-lab/ui — shared UI primitives
 ├── docs/adr/                  # architecture decision records (0001 = stack lock-in)
 ├── learning-journal.md        # weekly engineering journal
 ├── CLAUDE.md                  # contract for AI agents working in this repo
 ├── pnpm-workspace.yaml
 ├── turbo.json
-└── tsconfig.json              # extends @indie-lab/config/tsconfig.base.json
+└── tsconfig.json              # extends @ai-workspace-lab/config/tsconfig.base.json
 ```
 
 ## Tooling
@@ -65,12 +65,12 @@ Switching a stack layer requires a new ADR.
 
 ## Adding a new app
 
-1. `mkdir apps/<name>` and add a `package.json` with `"name": "@indie-lab/<name>"`.
-2. Extend `@indie-lab/config/tsconfig.base.json`.
+1. `mkdir apps/<name>` and add a `package.json` with `"name": "@ai-workspace-lab/<name>"`.
+2. Extend `@ai-workspace-lab/config/tsconfig.base.json`.
 3. Add `lint`, `typecheck`, `build`, `dev` scripts so Turborepo picks them up.
 4. Open an ADR if the app introduces a stack layer not yet covered.
 
 ## Adding a shared package
 
-1. `mkdir packages/<name>`, add `package.json` named `@indie-lab/<name>`.
-2. Other packages depend on it via `"@indie-lab/<name>": "workspace:*"`.
+1. `mkdir packages/<name>`, add `package.json` named `@ai-workspace-lab/<name>`.
+2. Other packages depend on it via `"@ai-workspace-lab/<name>": "workspace:*"`.

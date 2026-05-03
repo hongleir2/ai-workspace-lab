@@ -1,10 +1,10 @@
-# CLAUDE.md — operating guide for AI agents in `indie-lab`
+# CLAUDE.md — operating guide for AI agents in `ai-workspace-lab`
 
 This file is the contract between you (the AI agent) and this monorepo. Read it before changing anything.
 
 ## Repository
 
-`indie-lab` is a personal monorepo for indie AI products. Apps live under `apps/`, shared code under `packages/`. Managed by **pnpm workspaces + Turborepo**.
+`ai-workspace-lab` is a personal monorepo for indie AI products. Apps live under `apps/`, shared code under `packages/`. Managed by **pnpm workspaces + Turborepo**.
 
 ## Stack lock-in
 
@@ -97,7 +97,7 @@ These modules carry production-shaped invariants. **Do not modify them without f
 ## What lives where
 
 ```
-indie-lab/
+ai-workspace-lab/
 ├── apps/                      # one folder per product
 ├── packages/
 │   ├── config/                # shared eslint, prettier, tsconfig presets

@@ -46,11 +46,11 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @indie-lab/e2e exec playwright install --with-deps chromium
+        run: pnpm --filter @ai-workspace-lab/e2e exec playwright install --with-deps chromium
 
       - name: Install Playwright system deps (cache hit)
         if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @indie-lab/e2e exec playwright install-deps chromium
+        run: pnpm --filter @ai-workspace-lab/e2e exec playwright install-deps chromium
 
       - name: Run Playwright tests
         run: pnpm e2e

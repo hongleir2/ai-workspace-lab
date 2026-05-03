@@ -1,5 +1,5 @@
 {
-  "name": "indie-lab",
+  "name": "ai-workspace-lab",
   "version": "0.0.0",
   "private": true,
   "description": "Indie AI product monorepo. Apps live in apps/, shared code in packages/.",
@@ -18,14 +18,14 @@
     "typecheck": "turbo run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "pnpm --filter @indie-lab/e2e test",
-    "e2e:install": "pnpm --filter @indie-lab/e2e exec playwright install --with-deps",
+    "e2e": "pnpm --filter @ai-workspace-lab/e2e test",
+    "e2e:install": "pnpm --filter @ai-workspace-lab/e2e exec playwright install --with-deps",
     "verify": "pnpm lint && pnpm typecheck && pnpm test",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@indie-lab/config": "workspace:*",
+    "@ai-workspace-lab/config": "workspace:*",
     "@types/node": "22.10.5",
     "turbo": "2.3.3",
     "typescript": "5.7.3",

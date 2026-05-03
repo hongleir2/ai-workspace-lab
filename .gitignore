@@ -32,3 +32,7 @@ pnpm-debug.log*
 !.vscode/extensions.json
 !.vscode/settings.json
 *.swp
+
+# claude
+.agents/
+.claude/

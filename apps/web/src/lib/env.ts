@@ -24,8 +24,7 @@ export const env = createEnv({
 
     // ── Required-later: Supabase DB + Auth (Sprint 1) ─────────────────────
     // https://supabase.com/dashboard → Project Settings → API
-    SUPABASE_URL: z.string().url().optional(),
-    SUPABASE_ANON_KEY: z.string().min(1).optional(),
+    // Service role key is server-only — never expose to the client bundle.
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     // Direct Postgres URL for migrations and background jobs.
     DATABASE_URL: z.string().url().optional(),
@@ -39,8 +38,15 @@ export const env = createEnv({
     // ── Required-later: Resend email (Sprint 1–2) ─────────────────────────
     // https://resend.com/api-keys
     RESEND_API_KEY: z.string().startsWith('re_').optional(),
-    // "Display Name <from@yourdomain.com>" — must match a verified Resend domain.
-    EMAIL_FROM: z.string().email().optional(),
+    // "Display Name <from@yourdomain.com>" or bare "from@yourdomain.com".
+    // The local-part of the address must match a verified Resend sender.
+    EMAIL_FROM: z
+      .string()
+      .regex(
+        /^(?:[^<>]*<[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+>|[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+)$/,
+        'Expected "Display Name <addr@domain>" or "addr@domain"',
+      )
+      .optional(),
 
     // ── Required-later: Sentry error tracking (Sprint 1+) ─────────────────
     // https://sentry.io/settings/<org>/projects/<project>/keys/
@@ -97,6 +103,12 @@ export const env = createEnv({
     // ── Required-later: R2 public CDN URL (Sprint 6) ──────────────────────
     // The public bucket hostname served via Cloudflare CDN.
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().url().optional(),
+
+    // ── Required-later: Supabase project URL + publishable key (Sprint 1) ──
+    // Both are safe in browser bundles. The service role key stays server-only.
+    // https://supabase.com/dashboard → Project Settings → API
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   },
 
   // ── Manual process.env mapping (required by @t3-oss/env-nextjs) ──────────
@@ -104,8 +116,6 @@ export const env = createEnv({
   runtimeEnv: {
     // server
     NODE_ENV: process.env['NODE_ENV'],
-    SUPABASE_URL: process.env['SUPABASE_URL'],
-    SUPABASE_ANON_KEY: process.env['SUPABASE_ANON_KEY'],
     SUPABASE_SERVICE_ROLE_KEY: process.env['SUPABASE_SERVICE_ROLE_KEY'],
     DATABASE_URL: process.env['DATABASE_URL'],
     STRIPE_SECRET_KEY: process.env['STRIPE_SECRET_KEY'],
@@ -134,6 +144,8 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: process.env['NEXT_PUBLIC_POSTHOG_HOST'],
     NEXT_PUBLIC_SENTRY_DSN: process.env['NEXT_PUBLIC_SENTRY_DSN'],
     NEXT_PUBLIC_R2_PUBLIC_URL: process.env['NEXT_PUBLIC_R2_PUBLIC_URL'],
+    NEXT_PUBLIC_SUPABASE_URL: process.env['NEXT_PUBLIC_SUPABASE_URL'],
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'],
   },
 
   /**

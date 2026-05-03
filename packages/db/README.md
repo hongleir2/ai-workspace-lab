@@ -49,8 +49,21 @@ with `pnpm <script>`:
 | `pnpm db:studio` | Open Drizzle Studio for visual inspection |
 | `pnpm db:seed` | Run seed script (blocked in `NODE_ENV=production`) |
 
-All scripts require `DATABASE_URL` in the environment. Use a `.env` file at `packages/db/.env`
-for local runs (loaded via `dotenv/config`), or set it in your shell.
+All scripts require `DATABASE_URL` in the environment. The migrate runner uses `dotenv/config`,
+which only reads `.env` from the package's working directory — **the repo-root `.env.local` is
+not loaded automatically**. Pick one of:
+
+```bash
+# 1. Symlink once (recommended — single source of truth with apps/web)
+ln -sf ../../.env.local packages/db/.env
+
+# 2. Source the root file inline for a single run
+set -a && source .env.local && set +a && pnpm --filter @ai-workspace-lab/db db:migrate
+
+# 3. Set DATABASE_URL in your shell directly
+export DATABASE_URL='postgres://...'
+pnpm --filter @ai-workspace-lab/db db:migrate
+```
 
 ## Schema conventions
 
@@ -191,7 +204,17 @@ Fixed dimension per use case. Do not mix embedding models in the same column.
 5. Run `pnpm db:migrate` against the target database:
    - Local: `supabase start`, then set `DATABASE_URL` to the local pooler URL.
    - Production: swap `DATABASE_URL` to the production pooler URL, run once, swap back.
-6. **Forward-only**: never edit a migration that has been merged. Fix forward with a new migration.
+6. **Reload the PostgREST schema cache** (Supabase only — required after schema or RLS changes
+   so `@supabase/supabase-js` calls don't 404 with `Could not find the table 'public.<x>'`):
+
+   ```sql
+   NOTIFY pgrst, 'reload schema';
+   ```
+
+   Run via Supabase SQL Editor, or programmatically over the pooler connection. The dashboard
+   also exposes a "Reload schema" button on the API Docs page.
+
+7. **Forward-only**: never edit a migration that has been merged. Fix forward with a new migration.
 
 ## Known TODOs
 

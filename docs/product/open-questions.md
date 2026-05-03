@@ -136,6 +136,72 @@ Tracking unresolved product and architecture questions for `ai-workspace-lab`. E
 
 ---
 
+### Q-07 — OAuth provider rollout (Google, Apple)
+
+**Status:** Open
+**Owner:** —
+**Resolve by:** before sprint 6 (or earlier if signup friction shows up in alpha telemetry)
+
+**Question.** Which OAuth providers do we add after email/password, in what order, and do any of them require provider-specific UX (Apple's "hide my email" relay, Google Workspace org-restriction, etc.) that the current schema can't model?
+
+**Constraints / what we've ruled out.**
+- The composite-key `users` table from [ADR 0005](../adr/0005-authentication-model.md) (`auth_provider`, `auth_provider_user_id`) supports new providers without schema migration; this question is about UX and account-linking, not data shape.
+- Apple's relay email (`@privaterelay.appleid.com`) interacts with our `email` unique index — same human, two providers, two different emails on file.
+- Account linking (one human, multiple providers, same `users` row) is out of scope for MVP unless the unblocker says otherwise.
+
+**Options on the table.**
+1. **Google first, Apple later.** Lowest friction for the alpha audience; defer Apple's relay-email complexity.
+2. **Google + Apple together.** Required if we ever ship a desktop or iOS surface that uses Sign-in-with-Apple (Apple's review guidelines mandate Apple as an option if any other social provider is offered).
+3. **No OAuth in MVP.** Email/password only until paid customers exist.
+
+**Unblocker.** Alpha signup-funnel data (does email/password drop-off justify the work?) + decision on whether the desktop companion uses Sign-in-with-Apple.
+
+---
+
+### Q-08 — Deleted-user re-signup with the same email
+
+**Status:** Open
+**Owner:** —
+**Resolve by:** when a real customer asks (no internal forcing function)
+
+**Question.** Should a user who has been soft-deleted (`status='deleted'`, tombstone row preserved) be able to sign up again with the same email and start fresh?
+
+**Constraints / what we've ruled out.**
+- [ADR 0005](../adr/0005-authentication-model.md) accepts as MVP behavior that the `users.email` unique index blocks re-signup until a tombstone is purged.
+- We are NOT willing to relax the email unique index; orphaning historical FKs is worse than blocking re-signup.
+- Supabase Auth side: the `auth.users` row is also kept by default — purging it is a separate admin action.
+
+**Options on the table.**
+1. Build an admin "purge tombstone" SQL operation; instruct support to run it on request.
+2. Build a self-serve "request account purge" UI tied to support flow.
+3. Keep MVP behavior; document publicly that account deletion is permanent for the same email.
+
+**Unblocker.** First customer support request that actually asks for it. Until then, option (3) is the documented stance.
+
+---
+
+### Q-09 — Auth-layer ban vs. application-layer disable
+
+**Status:** Open
+**Owner:** —
+**Resolve by:** before the first abuse incident that requires immediate session revocation
+
+**Question.** When we disable a user, should we *also* revoke their Supabase Auth session (via Supabase admin API or `banned_until`), or is the application-layer `users.status='disabled'` redirect sufficient?
+
+**Constraints / what we've ruled out.**
+- [ADR 0005](../adr/0005-authentication-model.md) chose application-layer-only enforcement for MVP, accepting that "a bug in the helper would let a disabled user reach a protected route."
+- The application layer is the only place we can currently distinguish disabled-but-readable from deleted; the auth layer can only emit "you are banned."
+- Hybrid models (banned in Supabase + deleted in app) were rejected as harder to reason about.
+
+**Options on the table.**
+1. Stay application-layer-only. Add a Playwright regression that proves the disabled-account redirect works.
+2. Add an admin "ban" action that calls Supabase's admin API to revoke sessions in addition to setting `users.status='disabled'`.
+3. Move enforcement entirely to Supabase Auth's `banned_until`, accept the loss of "deleted as a separate state."
+
+**Unblocker.** First abuse incident or compliance ask that demands "kill this user's active session in < 1 minute." Until then, the cheap regression test (option 1's prerequisite) is enough.
+
+---
+
 ### Q-06 — Email deliverability and domain reputation
 
 **Status:** Open

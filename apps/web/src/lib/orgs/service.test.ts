@@ -16,7 +16,12 @@ vi.mock('@ai-workspace-lab/db', async (importOriginal) => {
   };
 });
 
-import { auditLogs, organizationMemberships, organizations } from '@ai-workspace-lab/db';
+import {
+  auditLogs,
+  organizationMemberships,
+  organizations,
+  subscriptions,
+} from '@ai-workspace-lab/db';
 import { createOrganization, getOrganizationBySlug, getUserOrganizations } from './service.js';
 import { OrgSlugConflictError, slugify } from './slug.js';
 
@@ -123,17 +128,27 @@ describe('createOrganization', () => {
     vi.clearAllMocks();
   });
 
-  it('runs three inserts inside a transaction in order', async () => {
+  it('runs four inserts inside a transaction in order', async () => {
     const { limit } = makeSlugLookupDb(mockDb);
     limit.mockResolvedValue([]);
 
     const inserts: Array<{
-      target: typeof organizations | typeof organizationMemberships | typeof auditLogs;
+      target:
+        | typeof organizations
+        | typeof organizationMemberships
+        | typeof auditLogs
+        | typeof subscriptions;
       values: unknown;
     }> = [];
 
     const txInsert = vi.fn(
-      (target: typeof organizations | typeof organizationMemberships | typeof auditLogs) => ({
+      (
+        target:
+          | typeof organizations
+          | typeof organizationMemberships
+          | typeof auditLogs
+          | typeof subscriptions,
+      ) => ({
         values: (values: unknown) => {
           inserts.push({ target, values });
 
@@ -141,6 +156,20 @@ describe('createOrganization', () => {
 
           if (target === auditLogs) {
             return {};
+          }
+
+          if (target === subscriptions) {
+            const subRow = {
+              id: 'sub-inserted-id',
+              organizationId: valuesObj['organizationId'],
+              planId: valuesObj['planId'],
+              status: valuesObj['status'],
+              seats: valuesObj['seats'],
+              cancelAtPeriodEnd: valuesObj['cancelAtPeriodEnd'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            return { returning: async () => [subRow] };
           }
 
           const row =
@@ -189,11 +218,17 @@ describe('createOrganization', () => {
     });
 
     expect(result.organization.slug).toBe('acme');
-    expect(inserts).toHaveLength(3);
+    expect(inserts).toHaveLength(4);
 
     expect(inserts[0]?.target).toBe(organizations);
     expect(inserts[1]?.target).toBe(organizationMemberships);
     expect(inserts[2]?.target).toBe(auditLogs);
+    expect(inserts[3]?.target).toBe(subscriptions);
+
+    const subValues = inserts[3]?.values as Record<string, unknown>;
+    expect(subValues['planId']).toBe('free');
+    expect(subValues['status']).toBe('free');
+    expect(subValues['cancelAtPeriodEnd']).toBe(false);
 
     const auditValues = inserts[2]?.values as Record<string, unknown>;
 

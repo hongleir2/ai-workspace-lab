@@ -1,9 +1,30 @@
 import 'dotenv/config';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { seedPlans } from './plans';
 
 if (process.env['NODE_ENV'] === 'production') {
   console.error('refusing to seed in production');
   process.exit(1);
 }
 
-// No product tables yet — seeds will land alongside the first migration.
-console.warn('no seeds yet — first migration not landed');
+const DATABASE_URL = process.env['DATABASE_URL'];
+if (!DATABASE_URL) {
+  console.error('DATABASE_URL not set — run: pnpm db:migrate first, then set DATABASE_URL');
+  process.exit(1);
+}
+
+const client = postgres(DATABASE_URL, { prepare: false });
+const db = drizzle(client, { casing: 'snake_case' });
+
+async function main() {
+  console.log('Seeding...');
+  await seedPlans(db);
+  console.log('Done.');
+  await client.end();
+}
+
+main().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
+});

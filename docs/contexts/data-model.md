@@ -60,6 +60,11 @@ Real-time & collaboration
 | `organizations` | 0002 | `id`, `name`, `slug` (citext), `owner_user_id NOT NULL`, `status`, `metadata` |
 | `organization_memberships` | 0003 | `id`, `organization_id`, `user_id`, `role` (enum), `status` (enum), `joined_at` |
 | `audit_logs` | 0004 | `id`, `organization_id` (nullable), `actor_user_id` (nullable), `action`, `entity_type`, `entity_id`, `before_state`, `after_state`, `ip_address`, `user_agent` |
+| `plans` | 0005 | `id` (text PK), `name`, `billing_interval` (enum), `price_cents`, `currency`, `is_active`, `sort_order` |
+| `plan_limits` | 0005 | `id`, `plan_id` → plans, `feature_key`, `limit_value` (nullable = unlimited), `limit_unit`, `reset_interval`, `hard_limit` |
+| `subscriptions` | 0005 | `id`, `organization_id` → organizations, `plan_id` → plans, `status` (enum), `seats`, period fields, Stripe fields; partial UNIQUE on active org |
+| `usage_events` | 0005 | `id`, `organization_id`, `user_id`, `feature_key`, `event_type`, `quantity`, `unit` (enum), AI fields, `idempotency_key` (UNIQUE nullable) |
+| `usage_counters` | 0005 | `id`, `organization_id`, `feature_key`, `period_start`, `period_end`, `used_quantity`, `limit_quantity`; UNIQUE on (org, feature, period) |
 
 ---
 
@@ -67,16 +72,12 @@ Real-time & collaboration
 
 | Table | Purpose |
 |-------|---------|
-| `plans` | Internal plan definitions (free, pro, team) |
-| `plan_limits` | Per-feature limits per plan |
-| `billing_customers` | Stripe customer ID per org |
-| `subscriptions` | Stripe subscription state per org |
+| `billing_customers` | Stripe customer ID per org (Sprint 4) |
 | `stripe_events` | Webhook idempotency (unique on `stripe_event_id`) |
 | `documents` | Upload metadata + processing status |
 | `document_chunks` | Text chunks + pgvector embeddings |
 | `ai_sessions` | Conversation container |
 | `ai_messages` | User + assistant messages with token tracking |
-| `usage_events` | Immutable append-only usage log |
 | `jobs` | Async job status + retry state |
 
 ---

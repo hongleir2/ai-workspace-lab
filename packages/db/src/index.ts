@@ -8,11 +8,33 @@ export type {
   NewOrganization,
   OrganizationMembership,
   NewOrganizationMembership,
+  Plan,
+  NewPlan,
+  PlanLimit,
+  NewPlanLimit,
+  Subscription,
+  NewSubscription,
+  UsageEvent,
+  NewUsageEvent,
+  UsageCounter,
+  NewUsageCounter,
 } from './schema/index';
 export {
   auditLogs,
   organizations,
   organizationMemberships,
+  planLimits,
+  plans,
+  subscriptions,
+  usageCounters,
+  usageEvents,
   users,
+} from './schema/index';
+export {
+  billingIntervalEnum,
+  limitUnitEnum,
+  resetIntervalEnum,
+  subscriptionStatusEnum,
+  usageUnitEnum,
 } from './schema/index';
 export { sql, eq, and, or, not, inArray, desc, asc, isNull } from 'drizzle-orm';

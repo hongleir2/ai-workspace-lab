@@ -201,3 +201,32 @@ Or trigger it from the Supabase dashboard: Database → Extensions → reload. T
 5. **Open redirect is trivially easy to introduce.** Any redirect that reads a URL from user input (query param, form field) needs the `/` prefix check.
 6. **Auth + authorization are separate.** A valid session doesn't mean the account is enabled. Keep `getCurrentUser()` (product-level "is this person active?") distinct from the raw session check.
 7. **Middleware session refresh is load-bearing.** Skipping it or putting code before `getUser()` causes intermittent auth failures that are very hard to reproduce.
+
+---
+
+## 2026-20 — Phase 1 · billing tables + free plan bootstrap (Days 21–22)
+
+**Shipped**
+
+- `plans`, `plan_limits`, `subscriptions`, `usage_events`, `usage_counters` tables — migration 0005, Drizzle schemas, integration tests.
+- Seed script (`pnpm db:seed`) for Free/Pro plan rows + per-feature limits.
+- `createOrganization` atomically inserts a free subscription inside the same DB transaction as the org row, membership row, and audit log.
+- Migration 0006: backfills the missing `plans_is_active_idx` index (declared in Drizzle schema but omitted from the 0005 SQL) and seeds the `free` plan row so FK constraints never fail in a freshly migrated environment.
+
+**Surprised by**
+
+- **Drizzle's migration tracker is not a diff engine — it's a chronological gate.** The migrator reads `_journal.json`, finds all migrations whose `folderMillis` is greater than the last recorded `created_at` in `drizzle.__drizzle_migrations`, and runs them in one transaction. If *any* SQL statement in that transaction throws, the whole transaction rolls back — including the tracking INSERT. `db:migrate` exits 0 either way; the only observable sign of failure is that the migration count in the table doesn't increase.
+- **`CREATE INDEX` (without `IF NOT EXISTS`) is not idempotent.** After manually applying a migration to unblock development, re-running `db:migrate` caused the `CREATE INDEX` to throw "relation already exists" (Postgres error `42P07`). Because the error fires inside the migration transaction, the tracking INSERT never commits. The table count stays stale and every subsequent `db:migrate` silently re-attempts and re-fails. Fix: always write `CREATE INDEX IF NOT EXISTS` in hand-crafted migration SQL.
+- **Schema declarations and migration SQL drift silently.** The Drizzle schema file had `plans_is_active_idx` declared with `index()`. Drizzle generates correct SQL from schema declarations, but that generated SQL is never *applied* unless you run `drizzle-kit generate`. A hand-written migration that doesn't include every declared index creates invisible schema drift — the ORM *thinks* the index exists, but Postgres doesn't have it. Discovered only via code review.
+- **`pnpm db:seed` is dev-only.** The seed script is not run by CI, Dockerfile, or any deployment step. `createOrganization` has a FK on `subscriptions.plan_id → plans.id`. If `plans` is empty (fresh CI clone, production migration, contributor first-run), the insert throws a FK violation. The correct fix is a migration — not documentation telling people to run the seed. Migration 0006 seeds the `free` row with `ON CONFLICT DO NOTHING` so every deployed environment gets it automatically.
+
+**Need to understand better**
+
+- Drizzle's `drizzle-kit push` vs `drizzle-kit generate` vs the runtime migrator — three distinct paths to schema application with different guarantees.
+- Whether `drizzle.__drizzle_migrations` could be patched directly to record a migration that was manually applied (blocked by permissions in local Supabase; not worth investigating now, but relevant for production incident recovery).
+
+**Next week (Sprint 3 remainder + Sprint 4)**
+
+- `packages/entitlements`: `getEntitlement(orgId)` that reads plan limits and returns a typed entitlement object.
+- Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate.
+- Sprint 4 DB layer: `billing_customers`, `stripe_events` tables; Stripe Checkout session creation.

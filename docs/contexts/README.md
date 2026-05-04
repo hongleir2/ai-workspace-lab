@@ -22,7 +22,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 17 — Organization domain service**: `slugify`/`generateUniqueSlug`, `createOrganization` (single transaction), `getOrganizationBySlug`, `getUserOrganizations`, `createAuditLog`; `requireOrganizationBySlug`, `requireMembership`, `requireRole`; wired `/onboarding` + `/app` redirects, create-org form + server action; `/app/[orgSlug]` membership gate (`requireMembership`)
 - [x] **Day 18 — Onboarding org dashboard**: fixed double-header in `app/layout.tsx` (now `requireUser()` pass-through); `OrgLayout` threads real org name + user's org list to `AppSidebar` → `OrganizationSwitcher` (removed hardcoded mock orgs); `/app/[orgSlug]` dashboard shows "Welcome to {org.name}" + getting-started checklist skeleton; create-org form throttled with `useFormStatus` to prevent duplicate submissions
 - [x] **Day 19 — Settings shell**: `/app/[orgSlug]/settings` multi-page structure with left vertical sub-nav; `/settings/general` displays org name, slug, created date, and current user role (read-only); `/settings/members`, `/settings/billing` placeholder cards; `/settings/danger` owner-only placeholder with destructive styling; `loading.tsx` skeleton + `error.tsx` boundary scoped to settings segment
-- [x] **Day 20 — Tenancy tests + ADR 0006**: `tenancy.integration.test.ts` (creator becomes owner, cross-user isolation, per-user org lists, audit log fields); `requireRole` full 3×3 combinatorial unit tests; `docs/adr/0006-multi-tenant-data-model.md`
+- [x] **Day 20 — Tenancy tests + ADR 0006**: `tenancy.integration.test.ts` (creator becomes owner, cross-user isolation, per-user org lists, audit log fields); `requireRole` full 3×3 combinatorial unit tests; `docs/adr/0006-multi-tenant-data-model.md`; schema tests renamed to `*.integration.test.ts`; `pnpm test:integration` script + CI `test-integration` job (supabase/setup-cli)
 
 ### In progress
 - Sprint 1 remainder: auth refinement, onboarding analytics events
@@ -37,12 +37,13 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 ## Key commands
 
 ```bash
-pnpm verify           # lint + typecheck + test — must be green before push
+pnpm verify           # lint + typecheck + unit tests — must be green before push
 pnpm dev              # start all apps
 pnpx supabase start   # start local Postgres (Docker required)
 pnpm --filter @ai-workspace-lab/db db:migrate   # apply migrations (uses DATABASE_URL)
 pnpm --filter @ai-workspace-lab/db db:generate  # generate migration from schema changes
-pnpm test             # unit + integration tests (DB tests need DATABASE_URL)
+pnpm test             # unit tests only (*.test.ts, no DB required)
+pnpm test:integration # DB integration tests (*.integration.test.ts) — requires supabase start + db:migrate first
 ```
 
 ---

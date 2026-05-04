@@ -172,20 +172,68 @@ describe('requireRole', () => {
     mockGetOrgSlug.mockResolvedValue(baseOrganization('u2'));
   });
 
-  it('redirects with insufficient_role when role is excluded', async () => {
-    wireMembershipSelect([activeMembership('member')]);
-    await expect(requireRole('team', ['owner'])).rejects.toThrow(
-      'REDIRECT:/app/team?error=insufficient_role',
-    );
+  const blocked = 'REDIRECT:/app/team?error=insufficient_role';
+
+  describe('owner-only route — allowedRoles: [owner]', () => {
+    it('owner passes', async () => {
+      wireMembershipSelect([activeMembership('owner')]);
+      await expect(requireRole('team', ['owner'])).resolves.toMatchObject({
+        membership: expect.objectContaining({ role: 'owner' }),
+      });
+    });
+
+    it('admin is blocked', async () => {
+      wireMembershipSelect([activeMembership('admin')]);
+      await expect(requireRole('team', ['owner'])).rejects.toThrow(blocked);
+    });
+
+    it('member is blocked', async () => {
+      wireMembershipSelect([activeMembership('member')]);
+      await expect(requireRole('team', ['owner'])).rejects.toThrow(blocked);
+    });
   });
 
-  it('returns context when role is permitted', async () => {
-    const membership = activeMembership('owner');
+  describe('owner-or-admin route — allowedRoles: [owner, admin]', () => {
+    it('owner passes', async () => {
+      wireMembershipSelect([activeMembership('owner')]);
+      await expect(requireRole('team', ['owner', 'admin'])).resolves.toMatchObject({
+        membership: expect.objectContaining({ role: 'owner' }),
+      });
+    });
 
-    wireMembershipSelect([membership]);
+    it('admin passes', async () => {
+      wireMembershipSelect([activeMembership('admin')]);
+      await expect(requireRole('team', ['owner', 'admin'])).resolves.toMatchObject({
+        membership: expect.objectContaining({ role: 'admin' }),
+      });
+    });
 
-    await expect(requireRole('team', ['owner'])).resolves.toMatchObject({
-      membership,
+    it('member is blocked', async () => {
+      wireMembershipSelect([activeMembership('member')]);
+      await expect(requireRole('team', ['owner', 'admin'])).rejects.toThrow(blocked);
+    });
+  });
+
+  describe('all-member route — allowedRoles: [owner, admin, member]', () => {
+    it('owner passes', async () => {
+      wireMembershipSelect([activeMembership('owner')]);
+      await expect(requireRole('team', ['owner', 'admin', 'member'])).resolves.toMatchObject({
+        membership: expect.objectContaining({ role: 'owner' }),
+      });
+    });
+
+    it('admin passes', async () => {
+      wireMembershipSelect([activeMembership('admin')]);
+      await expect(requireRole('team', ['owner', 'admin', 'member'])).resolves.toMatchObject({
+        membership: expect.objectContaining({ role: 'admin' }),
+      });
+    });
+
+    it('member passes', async () => {
+      wireMembershipSelect([activeMembership('member')]);
+      await expect(requireRole('team', ['owner', 'admin', 'member'])).resolves.toMatchObject({
+        membership: expect.objectContaining({ role: 'member' }),
+      });
     });
   });
 });

@@ -307,7 +307,14 @@ ai-workspace-lab/
 
 ---
 
-## 17. When in doubt
+## 17. GitHub / git rules
+
+- **Before any `gh pr create` or `git push`, unset `GH_TOKEN`** if you need to authenticate as the repo owner (`hongleir2`). The `GH_TOKEN` env var is set to the `hongleir-otter` work account which is not a collaborator on personal repos. Run: `GH_TOKEN="" gh pr create ...` or temporarily `unset GH_TOKEN`.
+- Always open PRs from feature/fix branches — never push directly to `main`.
+
+---
+
+## 18. When in doubt
 
 - **Stop, do not improvise on stack or boundaries.** Open an ADR or ask.
 - **Re-read this file at the start of any non-trivial change.**

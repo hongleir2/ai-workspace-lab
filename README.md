@@ -1,98 +1,190 @@
 # ai-workspace-lab
 
-Modular monolith for **AI Workspace SaaS + Desktop Companion**. Apps live in `apps/`, shared code in `packages/`. See [`docs/product/prd.md`](./docs/product/prd.md) for what we're building.
+Modular monolith for **AI Workspace SaaS + Desktop Companion**. Users upload documents, ask AI questions, get cited answers. Apps in `apps/`, shared code in `packages/`.
 
-> **Phase 0 status:** Foundation + scaffolds only. No product features wired up yet.
+Full spec: [`docs/product/prd.md`](./docs/product/prd.md) · Routes: [`docs/product/frontend-page-map.md`](./docs/product/frontend-page-map.md) · Agent contract: [`CLAUDE.md`](./CLAUDE.md)
 
-## Quickstart
+> **Current status:** Sprint 1 — Auth + tenant boundary done. See [`docs/contexts/README.md`](./docs/contexts/README.md) for the full done/in-progress/upcoming list.
+
+---
+
+## Prerequisites
+
+- **Node ≥ 22.17** (`nvm use` picks it up from `.nvmrc`)
+- **pnpm ≥ 10.4** (`corepack enable` installs the pinned version)
+- **Docker Desktop** — required for local Supabase only
 
 ```bash
-# requires Node ≥22.17 and pnpm ≥10.4
-nvm use                # picks up .nvmrc
-corepack enable        # makes the pinned pnpm available
+nvm use
+corepack enable
 pnpm install
-pnpm verify            # format-check + lint + typecheck + test
 ```
 
-## Layout
+---
+
+## Environment setup
+
+Copy `.env.example` to `.env.local` and fill in the values. Sprint labels in `.env.example` tell you when each var becomes required. The minimum needed to run the app now:
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+DATABASE_URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## Database: local vs cloud
+
+### Local Supabase (recommended for development)
+
+Runs Postgres + Auth + Studio in Docker. No internet required. DB is throwaway — reset freely.
+
+```bash
+pnpx supabase start          # starts Docker stack; prints URLs + keys on first run
+pnpx supabase status         # print URLs + keys any time after start
+```
+
+Copy the printed values into `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon key>
+SUPABASE_SERVICE_ROLE_KEY=<service_role key>
+DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
+```
+
+Then apply migrations and start the app:
+
+```bash
+pnpm --filter @ai-workspace-lab/db db:migrate
+pnpm dev
+```
+
+Studio (table viewer + SQL editor) runs at `http://localhost:54323`.
+
+### Cloud Supabase
+
+Create a project at [supabase.com/dashboard](https://supabase.com/dashboard). Get credentials from **Project Settings → API** and **Project Settings → Database → Connection string**.
+
+> Use **transaction mode** (port 6543) for `DATABASE_URL` with Next.js. Session mode (port 5432) is fine for migration scripts.
+
+Fill `.env.local` with the project URL, anon key, service role key, and database URL, then:
+
+```bash
+pnpm --filter @ai-workspace-lab/db db:migrate
+pnpm dev
+```
+
+---
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start all apps in development mode |
+| `pnpm build` | Build all apps |
+| `pnpm verify` | Full CI gate: lint + typecheck + test — must pass before push |
+| `pnpm lint` | Lint and format-check (Biome) |
+| `pnpm lint:fix` | Auto-fix lint and format issues |
+| `pnpm typecheck` | TypeScript type-check all packages |
+| `pnpm test` | Unit tests (Vitest) — no DB required |
+| `pnpm test:watch` | Tests in watch mode |
+| `pnpm e2e` | Playwright end-to-end tests |
+| `pnpm e2e:install` | Install Playwright browsers (one-time) |
+| `pnpx supabase start` | Start local Supabase (Docker) |
+| `pnpx supabase stop` | Stop local Supabase |
+| `pnpx supabase db reset` | Wipe local DB and re-run all migrations |
+| `pnpm --filter @ai-workspace-lab/db db:migrate` | Apply pending migrations |
+| `pnpm --filter @ai-workspace-lab/db db:generate` | Generate migration from schema changes |
+
+---
+
+## Tests
+
+**Unit tests** run without a database:
+
+```bash
+pnpm test
+```
+
+**Integration tests** (`*.integration.test.ts`) require a live Postgres. They are skipped automatically when `DATABASE_URL` is not set. To run them:
+
+```bash
+# Local
+DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres pnpm test
+
+# Cloud (use session mode / port 5432 for direct connections)
+DATABASE_URL=postgresql://postgres.[ref]:[password]@db.[ref].supabase.co:5432/postgres pnpm test
+```
+
+---
+
+## Repo layout
 
 ```
 ai-workspace-lab/
 ├── apps/
-│   ├── web/                   # @ai-workspace-lab/web — Next.js 15 + Tailwind (scaffold, no features)
-│   ├── desktop/               # @ai-workspace-lab/desktop — companion app placeholder
-│   └── e2e/                   # @ai-workspace-lab/e2e — Playwright suite
+│   ├── web/                   # Next.js 15 + Tailwind — main product
+│   ├── desktop/               # Electron companion (scaffold)
+│   └── e2e/                   # Playwright suite
 ├── packages/
-│   ├── config/                # tsconfig.base.json (Biome lives at root)
-│   ├── types/                 # shared TS types
+│   ├── config/                # shared tsconfig presets
+│   ├── types/                 # shared TS types (no runtime code)
 │   ├── ui/                    # shared UI primitives
-│   ├── db/                    # Postgres / Supabase client + migrations (scaffold)
-│   ├── auth/                  # auth + sessions (scaffold)
+│   ├── db/                    # Drizzle ORM client + migrations
+│   ├── auth/                  # auth helpers (scaffold)
 │   ├── billing/               # Stripe billing + webhooks (scaffold)
-│   ├── entitlements/          # plan tiers, quotas, server-side trust (scaffold)
+│   ├── entitlements/          # plan/quota enforcement (scaffold)
 │   ├── ai/                    # Vercel AI SDK + Anthropic helpers (scaffold)
-│   ├── jobs/                  # background queue + retries (scaffold)
+│   ├── jobs/                  # async queue + retries (scaffold)
 │   ├── email/                 # Resend transactional email (scaffold)
-│   └── analytics/             # PostHog event taxonomy + flags (scaffold)
+│   └── analytics/             # PostHog event taxonomy (scaffold)
 ├── docs/
-│   ├── product/               # PRD, ERD — what we're building
-│   ├── adr/                   # architecture decision records (0001 = stack lock-in)
+│   ├── product/               # PRD, ERD, frontend page map, sprint plan
+│   ├── adr/                   # architecture decision records
+│   ├── contexts/              # living summaries for AI agents
 │   ├── runbooks/              # incident response, ops procedures
-│   ├── performance/           # budgets, capacity, cost ceilings
-│   ├── studies/               # time-boxed investigations
-│   └── journal/               # how we built the foundation
-├── learning-journal.md        # weekly engineering reflection
+│   └── journal/               # how we built each phase
 ├── CLAUDE.md                  # contract for AI agents working in this repo
-├── biome.json                 # lint + format
-├── pnpm-workspace.yaml
-├── turbo.json
-├── tsconfig.json              # extends @ai-workspace-lab/config/tsconfig.base.json
-└── .env.example               # contract for env vars across all stack layers
+├── .env.example               # all env vars with sprint labels
+├── biome.json                 # lint + format config
+└── turbo.json                 # Turborepo pipeline
 ```
 
-> **Scaffold vs. implementation.** Every package above marked *(scaffold)* has a `package.json`, `tsconfig.json`, and a placeholder `src/index.ts` so workspace tooling sees it — but no logic. Implementation lands per-feature, gated by the rules in [`CLAUDE.md`](./CLAUDE.md) and [ADR 0001](./docs/adr/0001-stack-choice.md).
+> Packages marked *(scaffold)* have a `package.json` and placeholder `src/index.ts` but no logic yet. Implementation lands per-sprint per [`CLAUDE.md`](./CLAUDE.md).
 
-## Tooling
+---
 
-Lint + format: **Biome** (single binary; replaces ESLint + Prettier — see [journal 0002](./docs/journal/0002-tooling-switch-to-biome-and-playwright.md)). Unit tests: **Vitest**. e2e: **Playwright** at `apps/e2e/`. Workspace orchestration: **pnpm + Turborepo**.
+## Stack (locked — changing any layer requires a new ADR)
 
-## Stack (locked — see [ADR 0001](./docs/adr/0001-stack-choice.md))
+| Layer | Choice |
+|-------|--------|
+| Web framework | Next.js 15 App Router + React 19 |
+| Database | Supabase Postgres + Drizzle ORM |
+| Auth | Supabase Auth |
+| Payments | Stripe Checkout + Customer Portal |
+| Email | Resend |
+| Errors | Sentry |
+| Analytics + flags | PostHog |
+| Cache + rate limit + jobs | Upstash Redis + QStash |
+| Object storage | Cloudflare R2 |
+| AI | Vercel AI SDK + Anthropic Claude |
+| Vector | pgvector in Supabase |
+| Lint + format | Biome |
+| Tests | Vitest (unit) + Playwright (e2e) |
+| Monorepo | pnpm workspaces + Turborepo |
 
-Web Next.js 15 · DB Supabase Postgres · Auth Supabase Auth · Payments Stripe · Email Resend · Errors Sentry · Analytics + flags PostHog · Cache + ratelimit Upstash Redis · Object store Cloudflare R2 · AI Vercel AI SDK + Anthropic Claude · Vector pgvector
+Full rationale: [`docs/adr/0001-stack-choice.md`](./docs/adr/0001-stack-choice.md)
 
-Switching a stack layer requires a new ADR.
-
-## Development
-
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install all workspace dependencies |
-| `pnpm dev` | Start all apps in development mode |
-| `pnpm build` | Build all apps |
-| `pnpm lint` | Lint and format-check (Biome) |
-| `pnpm lint:fix` | Auto-fix lint and format issues |
-| `pnpm typecheck` | TypeScript type-check all packages |
-| `pnpm test` | Run unit tests (Vitest) |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm e2e` | Run end-to-end tests (Playwright) |
-| `pnpm verify` | Full CI gate: lint + typecheck + test |
+---
 
 ## Conventions
 
 - **Branches:** `feature/*`, `fix/*`, `chore/*`, `docs/*`, `adr/*`. Never commit to `main`.
-- **Commits:** small, single-purpose. Reference the ADR if relevant.
-- **PRs:** `pnpm verify` must be green before merge.
+- **Commits:** conventional prefix: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
+- **PRs:** `pnpm verify` must be green. New routes → update `frontend-page-map.md`. New tables → update ERD.
 - **TS:** `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` — all on. No `any`.
 - **AI agents:** read [`CLAUDE.md`](./CLAUDE.md) before changing anything.
-
-## Adding a new app
-
-1. `mkdir apps/<name>` and add a `package.json` with `"name": "@ai-workspace-lab/<name>"`.
-2. Extend `@ai-workspace-lab/config/tsconfig.base.json`.
-3. Add `lint`, `typecheck`, `build`, `dev` scripts so Turborepo picks them up.
-4. Open an ADR if the app introduces a stack layer not yet covered.
-
-## Adding a shared package
-
-1. `mkdir packages/<name>`, add `package.json` named `@ai-workspace-lab/<name>`.
-2. Other packages depend on it via `"@ai-workspace-lab/<name>": "workspace:*"`.

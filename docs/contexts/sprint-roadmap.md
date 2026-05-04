@@ -42,11 +42,12 @@ Done:
 - Local Supabase dev env
 - **`requireUser()` / `requireMembership()`** server helpers wired to onboarding + `/app/[orgSlug]`
 - **Organization creation**: server action, create-org UI, onboarding + app redirect routers (`getUserOrganizations`)
+- **Day 18**: `OrgLayout` threads real org data to sidebar; `OrganizationSwitcher` uses live orgs (not mock); dashboard shows real org name + getting-started checklist
 - ADR 0005: authentication model (referenced in README)
 
 Remaining:
 - Supabase Auth package polish (`packages/auth` as listed in backlog)
-- Broader protected dashboard UX (sidebar/topbar living data, Sprint 12+ routing as needed)
+- Onboarding analytics events (`onboarding_started`, `organization_created`, `onboarding_completed`)
 
 ---
 

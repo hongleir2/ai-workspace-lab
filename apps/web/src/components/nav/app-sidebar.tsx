@@ -16,8 +16,15 @@ import { OrganizationSwitcher } from '@/components/nav/organization-switcher';
 import { PlanBadge } from '@/components/nav/plan-badge';
 import { cn } from '@/lib/utils';
 
+interface OrgEntry {
+  slug: string;
+  name: string;
+}
+
 interface AppSidebarProps {
   orgSlug: string;
+  orgName: string;
+  allOrgs: OrgEntry[];
   className?: string;
 }
 
@@ -63,7 +70,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppSidebar({ orgSlug, className }: AppSidebarProps) {
+export function AppSidebar({ orgSlug, orgName, allOrgs, className }: AppSidebarProps) {
   const pathname = usePathname() ?? '';
   const sections = buildSections(orgSlug);
 
@@ -74,7 +81,7 @@ export function AppSidebar({ orgSlug, className }: AppSidebarProps) {
         className,
       )}
     >
-      <OrganizationSwitcher orgSlug={orgSlug} />
+      <OrganizationSwitcher orgSlug={orgSlug} orgName={orgName} allOrgs={allOrgs} />
       <nav className="flex flex-col gap-5">
         {sections.map((section) => (
           <div key={section.title} className="flex flex-col gap-1">

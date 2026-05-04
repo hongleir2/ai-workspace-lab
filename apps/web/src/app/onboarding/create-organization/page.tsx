@@ -1,9 +1,9 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { requireUser } from '@/lib/auth/user';
 import { createOrganizationAction } from './actions';
+import { SubmitButton } from './submit-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,9 +96,7 @@ export default async function CreateOrganizationPage({
               </div>
             </details>
 
-            <Button className="w-full" type="submit">
-              Create workspace
-            </Button>
+            <SubmitButton />
           </form>
         </CardContent>
       </Card>

@@ -40,13 +40,13 @@ Done:
 - `users` table (migrations 0000–0001, Drizzle schema, integration test)
 - `organizations`, `organization_memberships`, `audit_logs` (migrations 0002–0004, RLS, integration tests)
 - Local Supabase dev env
+- **`requireUser()` / `requireMembership()`** server helpers wired to onboarding + `/app/[orgSlug]`
+- **Organization creation**: server action, create-org UI, onboarding + app redirect routers (`getUserOrganizations`)
+- ADR 0005: authentication model (referenced in README)
 
 Remaining:
-- Supabase Auth integration in `packages/auth`
-- `requireUser()` / `requireMembership()` server helpers
-- Protected `/app` layout + redirect
-- Organization creation flow (server action + UI)
-- ADR 0005: authentication model
+- Supabase Auth package polish (`packages/auth` as listed in backlog)
+- Broader protected dashboard UX (sidebar/topbar living data, Sprint 12+ routing as needed)
 
 ---
 
@@ -54,10 +54,11 @@ Remaining:
 
 **Outcome:** User can create org, invite members, switch orgs.
 
-- Organization creation server action
 - Member invite flow (token, expiry, server-validated)
 - Org switcher UI
 - `invitations` table
+
+*(Organization creation landed in Sprint 1 / Day 17.)*
 
 ---
 

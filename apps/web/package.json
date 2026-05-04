@@ -11,6 +11,7 @@
     "clean": "rm -rf .next .turbo"
   },
   "dependencies": {
+    "@ai-workspace-lab/db": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.2.4",
@@ -29,11 +30,12 @@
   },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",
-    "@ai-workspace-lab/db": "workspace:*",
     "@types/node": "22.10.5",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
     "autoprefixer": "10.4.20",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9",
     "postcss": "8.5.1",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "^1.0.7",

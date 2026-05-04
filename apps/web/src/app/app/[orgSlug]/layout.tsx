@@ -1,5 +1,6 @@
 import { AppSidebar } from '@/components/nav/app-sidebar';
 import { AppTopbar } from '@/components/nav/app-topbar';
+import { requireMembership } from '@/lib/orgs/guards';
 import type { ReactNode } from 'react';
 
 interface OrgLayoutProps {
@@ -9,6 +10,8 @@ interface OrgLayoutProps {
 
 export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   const { orgSlug } = await params;
+  await requireMembership(orgSlug);
+
   return (
     <div className="flex min-h-screen bg-background">
       <AppSidebar orgSlug={orgSlug} />

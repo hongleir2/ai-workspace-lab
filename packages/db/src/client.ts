@@ -1,16 +1,28 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from './schema/index.js';
+import * as schema from './schema/index';
 
-const connectionString = process.env['DATABASE_URL'];
-if (!connectionString) {
-  throw new Error('DATABASE_URL is not set');
+export type Database = PostgresJsDatabase<typeof schema>;
+
+let cached: Database | undefined;
+
+function resolveDatabase(): Database {
+  if (!cached) {
+    const connectionString = process.env['DATABASE_URL'];
+    if (!connectionString) {
+      throw new Error('DATABASE_URL is not set');
+    }
+    const queryClient = postgres(connectionString, { prepare: false });
+    cached = drizzle(queryClient, { schema, casing: 'snake_case' });
+  }
+  return cached;
 }
 
-// Disable prepared statements for Supabase's transaction-mode pooler (PgBouncer).
-// PgBouncer in transaction mode does not support the extended query protocol that
-// prepared statements require.
-const queryClient = postgres(connectionString, { prepare: false });
-
-export const db = drizzle(queryClient, { schema, casing: 'snake_case' });
-export type Database = typeof db;
+export const db = new Proxy({} as Database, {
+  get(_target, prop, receiver) {
+    const inner = resolveDatabase();
+    const value = Reflect.get(inner as object, prop, receiver);
+    return typeof value === 'function' ? value.bind(inner) : value;
+  },
+}) as Database;

@@ -19,9 +19,10 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] Sprint 1 partial — `users` table + migration + integration test
 - [x] Tenant boundary migrations: `organizations`, `organization_memberships`, `audit_logs` (migrations 0002–0004, Drizzle schema, RLS policies, integration tests)
 - [x] Local Supabase dev environment (`pnpx supabase start`)
+- [x] **Day 17 — Organization domain service**: `slugify`/`generateUniqueSlug`, `createOrganization` (single transaction), `getOrganizationBySlug`, `getUserOrganizations`, `createAuditLog`; `requireOrganizationBySlug`, `requireMembership`, `requireRole`; wired `/onboarding` + `/app` redirects, create-org form + server action; `/app/[orgSlug]` membership gate (`requireMembership`)
 
 ### In progress
-- Sprint 1 remainder: auth integration, protected dashboard, organization creation UI
+- Sprint 1 remainder: auth refinement, protected dashboard UX beyond org bootstrap
 
 ### Up next (Sprint 2)
 - Billing: Stripe Free + Pro plans, Checkout, idempotent webhook handler, billing portal
@@ -53,6 +54,7 @@ pnpm test             # unit + integration tests (DB tests need DATABASE_URL)
 6. **AI calls must check entitlement + quota + rate limit before the provider call.**
 7. **Stripe webhooks must verify signature and be idempotent.**
 8. Server-only secrets never reach the client bundle.
+9. **No `.js` extensions in relative imports inside `packages/db/src/` or `apps/web/src/`.** Next.js (webpack) cannot remap `.js` → `.ts` for workspace package sources. `moduleResolution: "Bundler"` in tsconfig makes the extension optional — omit it everywhere. (Vitest's Vite resolver works either way; webpack in a Next.js app does not.)
 
 Full rules: `CLAUDE.md`
 

@@ -1,7 +1,7 @@
 import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { inet } from './custom-types.js';
-import { organizations } from './organizations.js';
-import { users } from './users.js';
+import { inet } from './custom-types';
+import { organizations } from './organizations';
+import { users } from './users';
 
 export const auditLogs = pgTable(
   'audit_logs',

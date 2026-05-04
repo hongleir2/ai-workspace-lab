@@ -1,5 +1,5 @@
 import { index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { citext } from './custom-types.js';
+import { citext } from './custom-types';
 
 export const userStatusEnum = pgEnum('user_status', ['active', 'disabled', 'deleted']);
 

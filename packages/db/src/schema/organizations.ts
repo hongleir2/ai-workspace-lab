@@ -8,8 +8,8 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { citext } from './custom-types.js';
-import { users } from './users.js';
+import { citext } from './custom-types';
+import { users } from './users';
 
 export const orgStatusEnum = pgEnum('org_status', ['active', 'suspended', 'deleted']);
 

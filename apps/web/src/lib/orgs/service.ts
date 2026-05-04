@@ -13,9 +13,9 @@ import {
   organizations,
   sql,
 } from '@ai-workspace-lab/db';
-import { OrgSlugConflictError, generateUniqueSlug } from './slug.js';
+import { OrgSlugConflictError, generateUniqueSlug } from './slug';
 
-export { OrgSlugConflictError, OrgSlugInvalidError } from './slug.js';
+export { OrgSlugConflictError, OrgSlugInvalidError } from './slug';
 
 function isUniqueViolation(e: unknown): boolean {
   return typeof e === 'object' && e !== null && 'code' in e && e.code === '23505';

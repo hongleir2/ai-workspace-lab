@@ -1,6 +1,6 @@
 import { index, pgEnum, pgTable, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { organizations } from './organizations.js';
-import { users } from './users.js';
+import { organizations } from './organizations';
+import { users } from './users';
 
 export const memberRoleEnum = pgEnum('member_role', ['owner', 'admin', 'member']);
 export const membershipStatusEnum = pgEnum('membership_status', [

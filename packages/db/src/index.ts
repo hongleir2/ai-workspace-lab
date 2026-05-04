@@ -1,18 +1,18 @@
-export { db } from './client.js';
-export type { Database } from './client.js';
-export * as schema from './schema/index.js';
-export type { User, NewUser } from './schema/users.js';
-export type { AuditLog, NewAuditLog } from './schema/audit_logs.js';
+export { db } from './client';
+export type { Database } from './client';
+export * as schema from './schema/index';
+export type { User, NewUser } from './schema/users';
+export type { AuditLog, NewAuditLog } from './schema/audit_logs';
 export type {
   Organization,
   NewOrganization,
   OrganizationMembership,
   NewOrganizationMembership,
-} from './schema/index.js';
+} from './schema/index';
 export {
   auditLogs,
   organizations,
   organizationMemberships,
   users,
-} from './schema/index.js';
+} from './schema/index';
 export { sql, eq, and, or, not, inArray, desc, asc, isNull } from 'drizzle-orm';

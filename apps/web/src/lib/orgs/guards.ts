@@ -2,7 +2,7 @@ import { requireUser } from '@/lib/auth/user';
 import type { Organization, OrganizationMembership, User } from '@ai-workspace-lab/db';
 import { and, db, eq, organizationMemberships } from '@ai-workspace-lab/db';
 import { redirect } from 'next/navigation';
-import { getOrganizationBySlug } from './service.js';
+import { getOrganizationBySlug } from './service';
 
 export type MemberRole = OrganizationMembership['role'];
 

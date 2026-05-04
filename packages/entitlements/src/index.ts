@@ -1,8 +1,11 @@
-/**
- * @ai-workspace-lab/entitlements — scaffold only.
- *
- * Feature flags, plan tiers, and quotas. Server-side trust boundary for paid features.
- *
- * Implementation deferred. See docs/product/PRD-ai-workspace-saas.md for scope.
- */
-export {};
+export { EntitlementError } from './errors.js';
+export type { EntitlementErrorCode } from './errors.js';
+export type { BillingPeriod } from './period.js';
+export { getCurrentBillingPeriod } from './period.js';
+export {
+  assertFeatureAllowed,
+  checkEntitlement,
+  checkQuota,
+  getOrganizationPlan,
+  getPlanLimits,
+} from './service.js';

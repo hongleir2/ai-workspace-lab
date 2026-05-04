@@ -25,12 +25,13 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 20 — Tenancy tests + ADR 0006**: `tenancy.integration.test.ts` (creator becomes owner, cross-user isolation, per-user org lists, audit log fields); `requireRole` full 3×3 combinatorial unit tests; `docs/adr/0006-multi-tenant-data-model.md`; schema tests renamed to `*.integration.test.ts`; `pnpm test:integration` script + CI `test-integration` job (supabase/setup-cli)
 - [x] **Day 21 — Billing tables (DB layer)**: `plans`, `plan_limits`, `subscriptions`, `usage_events`, `usage_counters` — migration 0005, Drizzle schemas, integration tests for UNIQUE constraints (partial index on active subscriptions, idempotency key, org+feature+period)
 - [x] **Day 22 — Free plan bootstrap**: seed script (`pnpm db:seed`) for Free/Pro plan rows + limits; `createOrganization` atomically inserts a free subscription in the same transaction; migration 0006 backfills missing `plans_is_active_idx` + seeds `free` plan for CI/production; subscription insert guarded with `.returning()` null-check; `service.integration.test.ts` asserts subscription row is created atomically
+- [x] **Day 23 — Entitlements service**: `packages/entitlements` — `getOrganizationPlan`, `getPlanLimits`, `getCurrentBillingPeriod`, `checkEntitlement`, `checkQuota`, `assertFeatureAllowed`; `EntitlementError` with typed codes (`FEATURE_NOT_INCLUDED | QUOTA_EXCEEDED | NO_ACTIVE_SUBSCRIPTION`); unit tests (mocked DB) + integration tests (real Postgres); reads from local `subscriptions`/`plans`/`plan_limits`/`usage_counters` tables; no Stripe
 
 ### In progress
 - Sprint 1 remainder: auth refinement, onboarding analytics events
 
-### Up next (Sprint 3 remainder)
-- `packages/entitlements`: `getEntitlement(orgId)` → plan limits, server-side quota enforcement
+### Up next (Sprint 3 → Sprint 4)
+- Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate
 - Sprint 4: Stripe Checkout, idempotent webhook handler, billing portal, `billing_customers` + `stripe_events` tables
 
 ---

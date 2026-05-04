@@ -72,9 +72,9 @@ Remaining:
 Done:
 - **Day 21**: `plans`, `plan_limits`, `subscriptions`, `usage_events`, `usage_counters` tables — migration 0005, Drizzle schemas, integration tests for UNIQUE constraints (partial index on active subscriptions, idempotency key, org+feature+period)
 - **Day 22**: Seed script for Free/Pro plans + limits (`pnpm db:seed`); `createOrganization` auto-inserts a free subscription in the same atomic transaction; migration 0006 adds missing `plans_is_active_idx` + seeds `free` plan row for production/CI deployments; subscription insert guarded with `.returning()` null-check; `service.integration.test.ts` asserts subscription row is created atomically
+- **Day 23**: `packages/entitlements` — `assertFeatureAllowed(orgId, featureKey)` checks plan inclusion + quota in 3 DB queries; `checkEntitlement`, `checkQuota` as lower-level primitives; `EntitlementError` with codes `FEATURE_NOT_INCLUDED | QUOTA_EXCEEDED | NO_ACTIVE_SUBSCRIPTION`; unit tests (mocked DB) + 12 integration tests (real Postgres)
 
 Remaining:
-- `packages/entitlements`: `getEntitlement(orgId)` → plan limits
 - Entitlement checks wired to AI and upload endpoints
 
 ---

@@ -81,30 +81,49 @@ export async function syncAuthUserToDatabase(): Promise<User> {
     throw new Error('Auth user has no email address');
   }
 
-  const { data, error } = await supabase
+  const payload = {
+    auth_provider: 'supabase',
+    auth_provider_user_id: authUser.id,
+    email: authUser.email,
+    display_name:
+      (authUser.user_metadata?.['full_name'] as string | undefined) ??
+      (authUser.user_metadata?.['name'] as string | undefined) ??
+      null,
+    avatar_url:
+      (authUser.user_metadata?.['avatar_url'] as string | undefined) ??
+      (authUser.user_metadata?.['picture'] as string | undefined) ??
+      null,
+    last_seen_at: new Date().toISOString(),
+  };
+
+  let { data, error } = await supabase
     .from('users')
-    .upsert(
-      {
-        auth_provider: 'supabase',
-        auth_provider_user_id: authUser.id,
-        email: authUser.email,
-        display_name:
-          (authUser.user_metadata?.['full_name'] as string | undefined) ??
-          (authUser.user_metadata?.['name'] as string | undefined) ??
-          null,
-        avatar_url:
-          (authUser.user_metadata?.['avatar_url'] as string | undefined) ??
-          (authUser.user_metadata?.['picture'] as string | undefined) ??
-          null,
-        last_seen_at: new Date().toISOString(),
-      },
-      { onConflict: 'auth_provider,auth_provider_user_id' },
-    )
+    .upsert(payload, { onConflict: 'auth_provider,auth_provider_user_id' })
     .select('*')
     .single<UserRow>();
 
+  // The users table has a separate unique constraint on email. This fires when
+  // the same email already exists under a different Supabase auth UUID — the
+  // typical case after a local database wipe followed by a fresh sign-up.
+  // Adopt the existing row by updating its auth identity to the current UUID.
+  if (error?.code === '23505' && error.message.includes('users_email_unique')) {
+    ({ data, error } = await supabase
+      .from('users')
+      .update({
+        auth_provider_user_id: authUser.id,
+        last_seen_at: payload.last_seen_at,
+      })
+      .eq('email', authUser.email)
+      .select('*')
+      .single<UserRow>());
+  }
+
   if (error) {
     throw new Error(`Failed to sync app user: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('Failed to sync app user: no row returned');
   }
 
   if (data.status !== 'active') {

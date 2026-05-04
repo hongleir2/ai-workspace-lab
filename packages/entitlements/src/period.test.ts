@@ -1,6 +1,6 @@
 import type { Subscription } from '@ai-workspace-lab/db';
 import { describe, expect, it } from 'vitest';
-import { getCurrentBillingPeriod } from './period.js';
+import { getCurrentBillingPeriod } from './period';
 
 function makeSub(overrides: Partial<Subscription> = {}): Subscription {
   const base: Subscription = {

@@ -220,6 +220,10 @@ importers:
         version: 5.7.3
 
   packages/entitlements:
+    dependencies:
+      '@ai-workspace-lab/db':
+        specifier: workspace:*
+        version: link:../db
     devDependencies:
       '@ai-workspace-lab/config':
         specifier: workspace:*

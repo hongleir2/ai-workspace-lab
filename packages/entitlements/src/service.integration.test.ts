@@ -10,14 +10,15 @@ import {
   users,
 } from '@ai-workspace-lab/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getCurrentBillingPeriod } from './period.js';
+import { getCurrentBillingPeriod } from './period';
 import {
   assertFeatureAllowed,
   checkEntitlement,
   checkQuota,
   getOrganizationPlan,
   getPlanLimits,
-} from './service.js';
+} from './service';
+import { getOrganizationUsageOverview } from './usage-overview';
 
 const DATABASE_URL = process.env['DATABASE_URL'];
 
@@ -215,6 +216,49 @@ describe.skipIf(!DATABASE_URL)('entitlements service integration', () => {
         name: 'EntitlementError',
         code: 'QUOTA_EXCEEDED',
       });
+
+      await db.delete(usageCounters).where(eq(usageCounters.organizationId, orgId));
+    });
+  });
+
+  describe('getOrganizationUsageOverview', () => {
+    it('returns plan, subscription, and three usage lines with zero used when counters are empty', async () => {
+      const overview = await getOrganizationUsageOverview(orgId);
+      expect(overview.plan.id).toBe(`free-${suffix}`);
+      expect(overview.plan.name).toBe('Free');
+      expect(overview.lines).toHaveLength(3);
+      expect(overview.lines.map((l) => l.featureKey)).toEqual([
+        'ai_messages',
+        'document_uploads',
+        'max_file_size_mb',
+      ]);
+      const ai = overview.lines.find((l) => l.featureKey === 'ai_messages');
+      expect(ai?.used).toBe(0);
+      expect(ai?.limit).toBe(10);
+      expect(ai?.percentUsed).toBe(0);
+      const cap = overview.lines.find((l) => l.featureKey === 'max_file_size_mb');
+      expect(cap?.used).toBeNull();
+      expect(cap?.limit).toBe(10);
+      expect(cap?.limitUnit).toBe('mb');
+    });
+
+    it('reflects usage counter for ai_messages', async () => {
+      const { subscription } = await getOrganizationPlan(orgId);
+      const period = getCurrentBillingPeriod(subscription, 'day');
+      if (!period) throw new Error('expected period');
+
+      await db.insert(usageCounters).values({
+        organizationId: orgId,
+        featureKey: 'ai_messages',
+        periodStart: period.start,
+        periodEnd: period.end,
+        usedQuantity: '4',
+      });
+
+      const overview = await getOrganizationUsageOverview(orgId);
+      const ai = overview.lines.find((l) => l.featureKey === 'ai_messages');
+      expect(ai?.used).toBe(4);
+      expect(ai?.percentUsed).toBe(40);
 
       await db.delete(usageCounters).where(eq(usageCounters.organizationId, orgId));
     });

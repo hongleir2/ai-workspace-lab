@@ -1,7 +1,10 @@
 'use client';
 
 import { ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 
+import { signOutAction } from '@/app/(auth)/sign-out/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +19,15 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ className }: UserMenuProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function handleSignOut() {
+    startTransition(async () => {
+      await signOutAction();
+    });
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -38,11 +50,29 @@ export function UserMenu({ className }: UserMenuProps) {
           <span className="text-xs text-muted-foreground">honglei@otter.ai</span>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">Account</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">Notifications</DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onSelect={() => router.push('/account/profile')}
+        >
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer" onSelect={() => router.push('/account')}>
+          Account
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onSelect={() => router.push('/account/notifications')}
+        >
+          Notifications
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">Sign out</DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer text-destructive focus:text-destructive"
+          disabled={isPending}
+          onSelect={handleSignOut}
+        >
+          {isPending ? 'Signing out…' : 'Sign out'}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

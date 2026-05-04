@@ -18,7 +18,7 @@ import {
   checkQuota,
   getOrganizationPlan,
   getPlanLimits,
-} from './service.js';
+} from './service';
 
 const mockPlan: Plan = {
   id: 'free',

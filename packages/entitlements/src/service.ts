@@ -12,8 +12,8 @@ import {
   subscriptions,
   usageCounters,
 } from '@ai-workspace-lab/db';
-import { EntitlementError } from './errors.js';
-import { type BillingPeriod, getCurrentBillingPeriod } from './period.js';
+import { EntitlementError } from './errors';
+import { type BillingPeriod, getCurrentBillingPeriod } from './period';
 
 export async function getOrganizationPlan(
   organizationId: string,
@@ -58,11 +58,11 @@ export async function checkEntitlement(
   return limits.length > 0;
 }
 
-async function fetchUsedCount(
+export async function getUsedQuantityInPeriod(
   organizationId: string,
   featureKey: string,
   period: BillingPeriod,
-  dbConn: Database,
+  dbConn: Database = db,
 ): Promise<number> {
   const rows = await dbConn
     .select({ usedQuantity: usageCounters.usedQuantity })
@@ -94,7 +94,7 @@ export async function checkQuota(
   const period = getCurrentBillingPeriod(subscription, limit.resetInterval);
   if (!period) return true;
 
-  const used = await fetchUsedCount(organizationId, featureKey, period, dbConn);
+  const used = await getUsedQuantityInPeriod(organizationId, featureKey, period, dbConn);
   return used < limit.limitValue;
 }
 
@@ -113,6 +113,6 @@ export async function assertFeatureAllowed(
   const period = getCurrentBillingPeriod(subscription, limit.resetInterval);
   if (!period) return;
 
-  const used = await fetchUsedCount(organizationId, featureKey, period, dbConn);
+  const used = await getUsedQuantityInPeriod(organizationId, featureKey, period, dbConn);
   if (used >= limit.limitValue) throw new EntitlementError('QUOTA_EXCEEDED');
 }

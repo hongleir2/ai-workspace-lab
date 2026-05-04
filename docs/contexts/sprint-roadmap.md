@@ -74,6 +74,7 @@ Done:
 - **Day 22**: Seed script for Free/Pro plans + limits (`pnpm db:seed`); `createOrganization` auto-inserts a free subscription in the same atomic transaction; migration 0006 adds missing `plans_is_active_idx` + seeds `free` plan row for production/CI deployments; subscription insert guarded with `.returning()` null-check; `service.integration.test.ts` asserts subscription row is created atomically
 - **Day 23**: `packages/entitlements` — `assertFeatureAllowed(orgId, featureKey)` checks plan inclusion + quota in 3 DB queries; `checkEntitlement`, `checkQuota` as lower-level primitives; `EntitlementError` with codes `FEATURE_NOT_INCLUDED | QUOTA_EXCEEDED | NO_ACTIVE_SUBSCRIPTION`; unit tests (mocked DB) + 12 integration tests (real Postgres)
 - **Day 24**: `packages/usage` — records immutable `usage_events` (idempotent via unique `idempotency_key`) and upserts `usage_counters`; `recordUsageWithCounter` composes both in one transaction; integration test for duplicate-key no-op
+- **Day 25**: Usage overview page (`/app/[orgSlug]/usage`) — real plan + per-feature limit/used/period data via `getOrganizationUsageOverview` (parallel counter queries, no N+1); ADR 0007 (entitlements + usage limits contract); `user-menu` sign-out + nav wired; auth user sync fixed for duplicate-email conflict on local DB reset
 
 Remaining:
 - Entitlement checks wired to AI and upload endpoints

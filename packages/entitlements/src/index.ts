@@ -1,11 +1,14 @@
-export { EntitlementError } from './errors.js';
-export type { EntitlementErrorCode } from './errors.js';
-export type { BillingPeriod } from './period.js';
-export { getCurrentBillingPeriod } from './period.js';
+export { EntitlementError } from './errors';
+export type { EntitlementErrorCode } from './errors';
+export type { BillingPeriod } from './period';
+export { getCurrentBillingPeriod } from './period';
 export {
   assertFeatureAllowed,
   checkEntitlement,
   checkQuota,
   getOrganizationPlan,
   getPlanLimits,
-} from './service.js';
+  getUsedQuantityInPeriod,
+} from './service';
+export type { OrganizationUsageOverview, UsageOverviewLine } from './usage-overview';
+export { getOrganizationUsageOverview } from './usage-overview';

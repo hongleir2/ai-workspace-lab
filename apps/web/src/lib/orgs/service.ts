@@ -12,6 +12,7 @@ import {
   organizationMemberships,
   organizations,
   sql,
+  subscriptions,
 } from '@ai-workspace-lab/db';
 import { OrgSlugConflictError, generateUniqueSlug } from './slug';
 
@@ -136,6 +137,14 @@ export async function createOrganization(
       afterState: { name: trimmedName, slug },
       ipAddress: params.ipAddress ?? undefined,
       userAgent: params.userAgent ?? undefined,
+    });
+
+    await tx.insert(subscriptions).values({
+      organizationId: organization.id,
+      planId: 'free',
+      status: 'free',
+      seats: 1,
+      cancelAtPeriodEnd: false,
     });
 
     return { organization, membership };

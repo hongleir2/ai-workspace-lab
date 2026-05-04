@@ -14,6 +14,8 @@ import {
   inArray,
   organizationMemberships,
   organizations,
+  plans,
+  subscriptions,
   users,
 } from '@ai-workspace-lab/db';
 import * as schema from '@ai-workspace-lab/db/schema';
@@ -35,6 +37,19 @@ describe.skipIf(!DATABASE_URL)('tenancy isolation', () => {
   let userBId: string;
 
   beforeAll(async () => {
+    await drizzleDb
+      .insert(plans)
+      .values({
+        id: 'free',
+        name: 'Free',
+        billingInterval: 'none',
+        priceCents: 0,
+        currency: 'usd',
+        isActive: true,
+        sortOrder: 0,
+      })
+      .onConflictDoNothing();
+
     const [userA] = await drizzleDb
       .insert(users)
       .values({
@@ -70,6 +85,9 @@ describe.skipIf(!DATABASE_URL)('tenancy isolation', () => {
 
       const uniqueOrgIds = [...new Set(memberRows.map((r) => r.oid))];
       if (uniqueOrgIds.length > 0) {
+        await drizzleDb
+          .delete(subscriptions)
+          .where(inArray(subscriptions.organizationId, uniqueOrgIds));
         await drizzleDb.delete(auditLogs).where(inArray(auditLogs.organizationId, uniqueOrgIds));
         await drizzleDb
           .delete(organizationMemberships)

@@ -36,6 +36,13 @@
       "when": 1778220498318,
       "tag": "0004_audit_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778320498318,
+      "tag": "0005_billing_and_usage",
+      "breakpoints": true
     }
   ]
 }

@@ -42,7 +42,8 @@ Done:
 - Local Supabase dev env
 - **`requireUser()` / `requireMembership()`** server helpers wired to onboarding + `/app/[orgSlug]`
 - **Organization creation**: server action, create-org UI, onboarding + app redirect routers (`getUserOrganizations`)
-- **Day 18**: `OrgLayout` threads real org data to sidebar; `OrganizationSwitcher` uses live orgs (not mock); dashboard shows real org name + getting-started checklist
+- **Day 18**: `OrgLayout` threads real org data to sidebar; `OrganizationSwitcher` uses live orgs (not mock); dashboard shows real org name + getting-started checklist; create-org form throttled with `useFormStatus`
+- **Day 19**: `/app/[orgSlug]/settings` shell — left vertical sub-nav, `/settings/general` (org name/slug/created/role, read-only), `/settings/members` + `/settings/billing` + `/settings/danger` placeholder cards, `loading.tsx` + `error.tsx` scoped to segment
 - ADR 0005: authentication model (referenced in README)
 
 Remaining:

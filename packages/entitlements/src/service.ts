@@ -13,7 +13,7 @@ import {
   usageCounters,
 } from '@ai-workspace-lab/db';
 import { EntitlementError } from './errors.js';
-import { getCurrentBillingPeriod } from './period.js';
+import { type BillingPeriod, getCurrentBillingPeriod } from './period.js';
 
 export async function getOrganizationPlan(
   organizationId: string,
@@ -58,6 +58,26 @@ export async function checkEntitlement(
   return limits.length > 0;
 }
 
+async function fetchUsedCount(
+  organizationId: string,
+  featureKey: string,
+  period: BillingPeriod,
+  dbConn: Database,
+): Promise<number> {
+  const rows = await dbConn
+    .select({ usedQuantity: usageCounters.usedQuantity })
+    .from(usageCounters)
+    .where(
+      and(
+        eq(usageCounters.organizationId, organizationId),
+        eq(usageCounters.featureKey, featureKey),
+        eq(usageCounters.periodStart, period.start),
+        eq(usageCounters.periodEnd, period.end),
+      ),
+    );
+  return rows[0] ? Number(rows[0].usedQuantity) : 0;
+}
+
 export async function checkQuota(
   organizationId: string,
   featureKey: string,
@@ -74,19 +94,7 @@ export async function checkQuota(
   const period = getCurrentBillingPeriod(subscription, limit.resetInterval);
   if (!period) return true;
 
-  const rows = await dbConn
-    .select({ usedQuantity: usageCounters.usedQuantity })
-    .from(usageCounters)
-    .where(
-      and(
-        eq(usageCounters.organizationId, organizationId),
-        eq(usageCounters.featureKey, featureKey),
-        eq(usageCounters.periodStart, period.start),
-        eq(usageCounters.periodEnd, period.end),
-      ),
-    );
-
-  const used = rows[0] ? Number(rows[0].usedQuantity) : 0;
+  const used = await fetchUsedCount(organizationId, featureKey, period, dbConn);
   return used < limit.limitValue;
 }
 
@@ -105,18 +113,6 @@ export async function assertFeatureAllowed(
   const period = getCurrentBillingPeriod(subscription, limit.resetInterval);
   if (!period) return;
 
-  const [counter] = await dbConn
-    .select({ usedQuantity: usageCounters.usedQuantity })
-    .from(usageCounters)
-    .where(
-      and(
-        eq(usageCounters.organizationId, organizationId),
-        eq(usageCounters.featureKey, featureKey),
-        eq(usageCounters.periodStart, period.start),
-        eq(usageCounters.periodEnd, period.end),
-      ),
-    );
-
-  const used = counter ? Number(counter.usedQuantity) : 0;
+  const used = await fetchUsedCount(organizationId, featureKey, period, dbConn);
   if (used >= limit.limitValue) throw new EntitlementError('QUOTA_EXCEEDED');
 }

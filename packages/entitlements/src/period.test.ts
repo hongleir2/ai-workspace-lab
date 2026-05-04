@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getCurrentBillingPeriod } from './period.js';
 
 function makeSub(overrides: Partial<Subscription> = {}): Subscription {
-  return {
+  const base: Subscription = {
     id: 'sub-1',
     organizationId: 'org-1',
     billingCustomerId: null,
@@ -22,7 +22,8 @@ function makeSub(overrides: Partial<Subscription> = {}): Subscription {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as Subscription;
+  };
+  return base;
 }
 
 describe('getCurrentBillingPeriod', () => {

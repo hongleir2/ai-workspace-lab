@@ -10,6 +10,7 @@ import {
   users,
 } from '@ai-workspace-lab/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { getCurrentBillingPeriod } from './period.js';
 import {
   assertFeatureAllowed,
   checkEntitlement,
@@ -163,19 +164,15 @@ describe.skipIf(!DATABASE_URL)('entitlements service integration', () => {
     });
 
     it('returns false when usage counter equals limitValue (10/10 for ai_messages)', async () => {
-      const now = new Date();
-      const periodStart = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-      );
-      const periodEnd = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999),
-      );
+      const { subscription } = await getOrganizationPlan(orgId);
+      const period = getCurrentBillingPeriod(subscription, 'day');
+      if (!period) throw new Error('expected period');
 
       await db.insert(usageCounters).values({
         organizationId: orgId,
         featureKey: 'ai_messages',
-        periodStart,
-        periodEnd,
+        periodStart: period.start,
+        periodEnd: period.end,
         usedQuantity: '10',
       });
 
@@ -202,17 +199,15 @@ describe.skipIf(!DATABASE_URL)('entitlements service integration', () => {
     });
 
     it('throws QUOTA_EXCEEDED when counter at limit (document_uploads: 3/3)', async () => {
-      const now = new Date();
-      const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-      const periodEnd = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999),
-      );
+      const { subscription } = await getOrganizationPlan(orgId);
+      const period = getCurrentBillingPeriod(subscription, 'month');
+      if (!period) throw new Error('expected period');
 
       await db.insert(usageCounters).values({
         organizationId: orgId,
         featureKey: 'document_uploads',
-        periodStart,
-        periodEnd,
+        periodStart: period.start,
+        periodEnd: period.end,
         usedQuantity: '3',
       });
 

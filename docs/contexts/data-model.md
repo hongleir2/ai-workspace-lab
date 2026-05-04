@@ -66,6 +66,13 @@ Real-time & collaboration
 | `usage_events` | 0005 | `id`, `organization_id`, `user_id`, `feature_key`, `event_type`, `quantity`, `unit` (enum), AI fields, `idempotency_key` (UNIQUE nullable) |
 | `usage_counters` | 0005 | `id`, `organization_id`, `feature_key`, `period_start`, `period_end`, `used_quantity`, `limit_quantity`; UNIQUE on (org, feature, period) |
 
+### Server packages using these tables
+
+| Package | Tables | Role |
+|---------|--------|------|
+| `@ai-workspace-lab/entitlements` | `plans`, `plan_limits`, `subscriptions`, `usage_counters` (read) | Plan limits and quota checks (`fetchUsedCount` matches counter period to billing period) |
+| `@ai-workspace-lab/usage` | `usage_events` (insert), `usage_counters` (upsert) | `recordUsageEvent` + `incrementUsageCounter`; `recordUsageWithCounter` in one transaction — counter periods must align with entitlements’ `getCurrentBillingPeriod` for the same org/feature |
+
 ---
 
 ## Upcoming tables (Sprint 2+)

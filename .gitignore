@@ -25,6 +25,9 @@ pnpm-debug.log*
 .env.*.local
 !.env.example
 
+# cursor
+.cursor/
+
 # editor / os
 .DS_Store
 .idea

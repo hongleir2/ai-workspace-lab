@@ -1,22 +1,5 @@
-import {
-  customType,
-  index,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
-
-// citext is a Postgres extension (enabled in migration 0001).
-// It behaves like TEXT but all comparisons are case-insensitive — used for
-// email so that "Alice@example.com" and "alice@example.com" are the same address.
-const citext = customType<{ data: string; driverData: string }>({
-  dataType() {
-    return 'citext';
-  },
-});
+import { index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { citext } from './custom-types.js';
 
 export const userStatusEnum = pgEnum('user_status', ['active', 'disabled', 'deleted']);
 

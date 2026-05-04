@@ -26,11 +26,13 @@ apps/web/src/lib/supabase/
 
 The reason is cookies. Supabase sessions live in cookies, and the API for reading and writing cookies is different in each context:
 
-| Context | Cookie API | Supabase factory |
-|---|---|---|
-| Browser | `document.cookie` — browser handles it automatically | `createBrowserClient` |
-| Server Component / Route Handler | `await cookies()` from `next/headers` | `createServerClient` with `getAll` / `setAll` |
-| Middleware | `request.cookies` / `response.cookies` — no `next/headers` in Edge runtime | `createServerClient` with `request.cookies` |
+
+| Context                          | Cookie API                                                                 | Supabase factory                              |
+| -------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------- |
+| Browser                          | `document.cookie` — browser handles it automatically                       | `createBrowserClient`                         |
+| Server Component / Route Handler | `await cookies()` from `next/headers`                                      | `createServerClient` with `getAll` / `setAll` |
+| Middleware                       | `request.cookies` / `response.cookies` — no `next/headers` in Edge runtime | `createServerClient` with `request.cookies`   |
+
 
 Using the wrong factory in any context causes silent failures: the server client in the browser has no cookie access, so every user appears anonymous. The browser client in a Server Component doesn't exist — `document` is undefined on the server. The `next/headers` API isn't available in the Edge runtime where middleware runs.
 
@@ -231,13 +233,15 @@ Or via the Supabase dashboard: **Database → API → Reload**. Supabase's hoste
 
 ## Env var structure: server-only vs NEXT_PUBLIC_*
 
-The Supabase project URL and publishable (anon) key were initially declared as server-only vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`). They needed to move to `NEXT_PUBLIC_*` because the browser client factory (`client.ts`) runs in the browser — it can only read `NEXT_PUBLIC_*` variables.
+The Supabase project URL and publishable (anon) key were initially declared as server-only vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`). They needed to move to `NEXT_PUBLIC_`* because the browser client factory (`client.ts`) runs in the browser — it can only read `NEXT_PUBLIC_*` variables.
 
-| Variable | Client | Where it's used |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | public, browser-safe | browser client, server client, middleware |
+
+| Variable                               | Client               | Where it's used                           |
+| -------------------------------------- | -------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | public, browser-safe | browser client, server client, middleware |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public, browser-safe | browser client, server client, middleware |
-| `SUPABASE_SERVICE_ROLE_KEY` | server-only secret | admin operations only (bypasses RLS) |
+| `SUPABASE_SERVICE_ROLE_KEY`            | server-only secret   | admin operations only (bypasses RLS)      |
+
 
 The publishable key is called "anon" in the Supabase dashboard but "publishable" in the SSR library's env variable names. Both refer to the same key — it's safe in the browser because Supabase's security model is built around RLS, not around keeping the key secret. The service role key is different: it bypasses all RLS and must never reach a browser.
 
@@ -253,3 +257,4 @@ The publishable key is called "anon" in the Supabase dashboard but "publishable"
 6. **Open redirect is one validation check.** Any callback that reads a destination URL from user input: must start with `/`, must not start with `//`.
 7. **Auth vs. authorization.** A valid session ≠ an active account. Keep `getCurrentUser()` (product-level active check) distinct from the session check so navigation logic and access control agree.
 8. **PostgREST schema cache.** After any local migration: `NOTIFY pgrst, 'reload schema'`.
+

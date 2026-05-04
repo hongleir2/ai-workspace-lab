@@ -58,14 +58,51 @@ Full rules: `CLAUDE.md`
 
 ---
 
+## Locked technology decisions
+
+These are fixed. Changing any layer requires writing a new ADR — never silently swap.
+
+| Layer | Choice | Do not use instead |
+|-------|--------|--------------------|
+| Web framework | Next.js 15 App Router + React 19 | Remix, SvelteKit |
+| Database | Supabase Postgres + Drizzle ORM | Neon, Prisma, raw SQL client |
+| Auth | Supabase Auth | Clerk, NextAuth |
+| Payments | Stripe Checkout + Customer Portal | Paddle, Lemon Squeezy |
+| Email | Resend | SendGrid, SES directly |
+| AI | Vercel AI SDK + Anthropic Claude | Direct OpenAI SDK, LangChain |
+| Vector | pgvector in Supabase | Pinecone (until pgvector proven insufficient) |
+| Cache / rate limit / jobs | Upstash Redis + QStash | Cloudflare KV, self-hosted Redis |
+| Object storage | Cloudflare R2 (or Supabase Storage) | S3 directly |
+| Styling | Tailwind 3.4 | CSS Modules, Emotion |
+| Lint / format | Biome | ESLint + Prettier |
+| Monorepo | pnpm workspaces + Turborepo | Nx, Lerna |
+
+Full rationale: `docs/adr/0001-stack-choice.md`
+
+---
+
+## Auth model (read before touching any protected route or DB query)
+
+- **Supabase Auth** owns identity. Our `users` table is the app-level profile, synced on first sign-in.
+- **Two Supabase clients exist** — never mix them:
+  - `createBrowserClient` — browser only
+  - `createServerClient` — Server Components, Route Handlers, Middleware (different cookie APIs for each)
+- **Service role key** (`SUPABASE_SERVICE_ROLE_KEY`) bypasses RLS. All app writes to org-scoped tables use the service role. Never expose this key to the client.
+- **Anon key** (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`) is safe in the browser but has no write access to org tables (no INSERT/UPDATE RLS policies for the `authenticated` role).
+- **RLS is the safety net**, not the primary gate. App code always filters by `organization_id` first; RLS catches mistakes.
+- `requireUser()` — call in every Server Component/Action that needs auth. Returns the user or redirects.
+- `requireMembership(orgSlug)` — call in every `/app/[orgSlug]/*` route. Checks active membership.
+
+Full model: `docs/adr/0005-authentication-model.md`
+
+---
+
 ## Deeper context (read when relevant)
 
 | Need | File |
 |------|------|
 | Full feature requirements | `docs/contexts/product-overview.md` |
 | All tables + columns + indexes | `docs/contexts/data-model.md` |
-| Sprint-by-sprint plan | `docs/contexts/sprint-roadmap.md` |
+| Full sprint task lists | `docs/product/sprint-plan.md` |
 | Every frontend route | `docs/product/frontend-page-map.md` |
-| Locked tech decisions | `docs/adr/0001-stack-choice.md` |
-| Auth model + RLS | `docs/adr/0005-authentication-model.md` |
 | How we built each phase | `docs/journal/` |

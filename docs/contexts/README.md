@@ -54,6 +54,7 @@ pnpm test             # unit + integration tests (DB tests need DATABASE_URL)
 6. **AI calls must check entitlement + quota + rate limit before the provider call.**
 7. **Stripe webhooks must verify signature and be idempotent.**
 8. Server-only secrets never reach the client bundle.
+9. **No `.js` extensions in relative imports inside `packages/db/src/` or `apps/web/src/`.** Next.js (webpack) cannot remap `.js` → `.ts` for workspace package sources. `moduleResolution: "Bundler"` in tsconfig makes the extension optional — omit it everywhere. (Vitest's Vite resolver works either way; webpack in a Next.js app does not.)
 
 Full rules: `CLAUDE.md`
 

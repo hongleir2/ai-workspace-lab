@@ -23,14 +23,15 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 18 — Onboarding org dashboard**: fixed double-header in `app/layout.tsx` (now `requireUser()` pass-through); `OrgLayout` threads real org name + user's org list to `AppSidebar` → `OrganizationSwitcher` (removed hardcoded mock orgs); `/app/[orgSlug]` dashboard shows "Welcome to {org.name}" + getting-started checklist skeleton; create-org form throttled with `useFormStatus` to prevent duplicate submissions
 - [x] **Day 19 — Settings shell**: `/app/[orgSlug]/settings` multi-page structure with left vertical sub-nav; `/settings/general` displays org name, slug, created date, and current user role (read-only); `/settings/members`, `/settings/billing` placeholder cards; `/settings/danger` owner-only placeholder with destructive styling; `loading.tsx` skeleton + `error.tsx` boundary scoped to settings segment
 - [x] **Day 20 — Tenancy tests + ADR 0006**: `tenancy.integration.test.ts` (creator becomes owner, cross-user isolation, per-user org lists, audit log fields); `requireRole` full 3×3 combinatorial unit tests; `docs/adr/0006-multi-tenant-data-model.md`; schema tests renamed to `*.integration.test.ts`; `pnpm test:integration` script + CI `test-integration` job (supabase/setup-cli)
+- [x] **Day 21 — Billing tables (DB layer)**: `plans`, `plan_limits`, `subscriptions`, `usage_events`, `usage_counters` — migration 0005, Drizzle schemas, integration tests for UNIQUE constraints (partial index on active subscriptions, idempotency key, org+feature+period)
+- [x] **Day 22 — Free plan bootstrap**: seed script (`pnpm db:seed`) for Free/Pro plan rows + limits; `createOrganization` atomically inserts a free subscription in the same transaction; migration 0006 backfills missing `plans_is_active_idx` + seeds `free` plan for CI/production; subscription insert guarded with `.returning()` null-check; `service.integration.test.ts` asserts subscription row is created atomically
 
 ### In progress
 - Sprint 1 remainder: auth refinement, onboarding analytics events
 
-### Up next (Sprint 2)
-- Billing: Stripe Free + Pro plans, Checkout, idempotent webhook handler, billing portal
-- Entitlements: server-side plan/quota enforcement in `packages/entitlements`
-- `subscriptions`, `stripe_events`, `plans`, `plan_limits` tables
+### Up next (Sprint 3 remainder)
+- `packages/entitlements`: `getEntitlement(orgId)` → plan limits, server-side quota enforcement
+- Sprint 4: Stripe Checkout, idempotent webhook handler, billing portal, `billing_customers` + `stripe_events` tables
 
 ---
 

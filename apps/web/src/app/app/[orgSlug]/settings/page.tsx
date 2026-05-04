@@ -1,13 +1,10 @@
-import { PlaceholderPage } from '@/components/placeholder-page';
+import { redirect } from 'next/navigation';
 
-export default function OrgSettingsPage() {
-  return (
-    <PlaceholderPage
-      title="Organization settings"
-      route="/app/[orgSlug]/settings"
-      priority="P0"
-      sprint="2"
-      backendDeps={['organizations', 'organization_memberships']}
-    />
-  );
+interface SettingsPageProps {
+  params: Promise<{ orgSlug: string }>;
+}
+
+export default async function SettingsPage({ params }: SettingsPageProps) {
+  const { orgSlug } = await params;
+  redirect(`/app/${orgSlug}/settings/general`);
 }

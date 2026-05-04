@@ -556,10 +556,12 @@ subscription_canceled
 | `/app/[orgSlug]/members`           | Members list          |       P1 |     12 | View team            |
 | `/app/[orgSlug]/members/invite`    | Invite member         |       P1 |     12 | Send invite          |
 | `/app/[orgSlug]/members/[userId]`  | Member detail         |       P2 |    12+ | Role and activity    |
-| `/app/[orgSlug]/settings`          | Organization settings |       P0 |      2 | Org profile/settings |
-| `/app/[orgSlug]/settings/general`  | General settings      |       P0 |      2 | Name/slug            |
+| `/app/[orgSlug]/settings`          | Organization settings |       P0 |      2 | Redirects to /general |
+| `/app/[orgSlug]/settings/general`  | General settings      |       P0 |      2 | Name/slug/role (read-only) |
+| `/app/[orgSlug]/settings/members`  | Members settings      |       P1 |      2 | Placeholder — manage team (Sprint 12) |
+| `/app/[orgSlug]/settings/billing`  | Billing settings      |       P1 |      2 | Placeholder — plan/payment (Sprint 4) |
 | `/app/[orgSlug]/settings/security` | Org security          |       P2 |    14+ | Future               |
-| `/app/[orgSlug]/settings/danger`   | Danger zone           |       P2 |    14+ | Delete org later     |
+| `/app/[orgSlug]/settings/danger`   | Danger zone           |       P2 |    14+ | Shell scaffolded Sprint 2; actions Sprint 14+ |
 
 ### Authorization
 

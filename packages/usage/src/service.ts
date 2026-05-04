@@ -107,6 +107,15 @@ export async function getUsageSummaryForOrganization(
     .orderBy(asc(usageCounters.featureKey), asc(usageCounters.periodStart));
 }
 
+/**
+ * Record a usage event and increment the counter in a single transaction.
+ *
+ * Pass the root `db` singleton (default) — do NOT pass a transaction client as
+ * `dbConn`. postgres.js wraps nested `.transaction()` calls in savepoints, which
+ * means a rollback in the outer transaction will not reliably roll back this one.
+ * Callers that need to compose with an outer transaction should call
+ * `recordUsageEvent` + `incrementUsageCounter` directly inside their own tx.
+ */
 export async function recordUsageWithCounter(
   args: RecordUsageWithCounterArgs,
   dbConn: UsageDb = db,

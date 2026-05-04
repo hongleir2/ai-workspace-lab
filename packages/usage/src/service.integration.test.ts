@@ -52,8 +52,8 @@ describe.skipIf(!DATABASE_URL)('usage service integration', () => {
     await db.delete(users).where(eq(users.id, userId));
   });
 
-  it('recordUsageWithCounter is idempotent; counter matches; summary lists org counters', async () => {
-    const first = await recordUsageWithCounter({
+  it('records event and increments counter on first call', async () => {
+    const result = await recordUsageWithCounter({
       event: {
         organizationId: orgId,
         userId,
@@ -68,20 +68,22 @@ describe.skipIf(!DATABASE_URL)('usage service integration', () => {
       period,
     });
 
-    expect(first.inserted).toBe(true);
-    if (first.inserted) {
-      expect(first.event.organizationId).toBe(orgId);
+    expect(result.inserted).toBe(true);
+    if (result.inserted) {
+      expect(result.event.organizationId).toBe(orgId);
     }
 
-    const afterFirst = await getUsageForFeature(orgId, 'ai_messages', period);
-    expect(afterFirst?.usedQuantity).toBe('1');
+    const counter = await getUsageForFeature(orgId, 'ai_messages', period);
+    expect(counter?.usedQuantity).toBe('1');
 
-    const summaryOnce = await getUsageSummaryForOrganization(orgId);
-    expect(summaryOnce.some((r) => r.featureKey === 'ai_messages' && r.usedQuantity === '1')).toBe(
+    const summary = await getUsageSummaryForOrganization(orgId);
+    expect(summary.some((r) => r.featureKey === 'ai_messages' && r.usedQuantity === '1')).toBe(
       true,
     );
+  });
 
-    const second = await recordUsageWithCounter({
+  it('duplicate idempotency key does not increment counter a second time', async () => {
+    const result = await recordUsageWithCounter({
       event: {
         organizationId: orgId,
         userId,
@@ -96,9 +98,9 @@ describe.skipIf(!DATABASE_URL)('usage service integration', () => {
       period,
     });
 
-    expect(second.inserted).toBe(false);
+    expect(result.inserted).toBe(false);
 
-    const afterSecond = await getUsageForFeature(orgId, 'ai_messages', period);
-    expect(afterSecond?.usedQuantity).toBe('1');
+    const counter = await getUsageForFeature(orgId, 'ai_messages', period);
+    expect(counter?.usedQuantity).toBe('1');
   });
 });

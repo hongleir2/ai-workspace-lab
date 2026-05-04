@@ -25,6 +25,9 @@ pnpm-debug.log*
 .env.*.local
 !.env.example
 
+# cursor
+.cursor/hooks/state/continual-learning.json
+
 # editor / os
 .DS_Store
 .idea

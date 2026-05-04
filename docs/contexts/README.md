@@ -103,6 +103,7 @@ Full model: `docs/adr/0005-authentication-model.md`
 |------|------|
 | Full feature requirements | `docs/contexts/product-overview.md` |
 | All tables + columns + indexes | `docs/contexts/data-model.md` |
+| Sprint roadmap + current status | `docs/contexts/sprint-roadmap.md` |
 | Full sprint task lists | `docs/product/sprint-plan.md` |
 | Every frontend route | `docs/product/frontend-page-map.md` |
 | How we built each phase | `docs/journal/` |

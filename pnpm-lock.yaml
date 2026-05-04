@@ -259,6 +259,19 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/usage:
+    dependencies:
+      '@ai-workspace-lab/db':
+        specifier: workspace:*
+        version: link:../db
+    devDependencies:
+      '@ai-workspace-lab/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
 packages:
 
   '@alloc/quick-lru@5.2.0':

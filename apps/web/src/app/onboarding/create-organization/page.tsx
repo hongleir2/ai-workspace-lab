@@ -21,6 +21,8 @@ function resolveError(code: string | undefined): string | null {
       return 'That URL slug is already taken. Customize the slug below or tweak the workspace name.';
     case 'invalid_slug':
       return 'Slug must be 3–40 characters, lowercase letters, numbers, and hyphens — no leading or trailing hyphen.';
+    case 'name_too_short':
+      return 'Organization name is too short or too long to generate a URL slug — try a different name or set a custom slug below.';
     default:
       return 'Something went wrong. Please try again.';
   }

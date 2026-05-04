@@ -34,8 +34,6 @@ vi.mock('@ai-workspace-lab/db', async (importOriginal) => {
   };
 });
 
-await import('next/navigation');
-
 import { requireUser } from '@/lib/auth/user';
 import { requireMembership, requireOrganizationBySlug, requireRole } from '@/lib/orgs/guards';
 import { getOrganizationBySlug } from '@/lib/orgs/service';
@@ -104,6 +102,7 @@ function activeMembership(role: OrganizationMembership['role']): OrganizationMem
 describe('requireOrganizationBySlug', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRequireUser.mockResolvedValue(baseUser());
   });
 
   it('redirects to /app when the organization is unknown', async () => {
@@ -111,16 +110,29 @@ describe('requireOrganizationBySlug', () => {
     await expect(requireOrganizationBySlug('missing')).rejects.toThrow('REDIRECT:/app');
   });
 
-  it('returns the organization row when present', async () => {
-    const organization = { id: 'o1', slug: 'ok' } as Organization;
+  it('redirects to /app when the user is not a member', async () => {
+    mockGetOrgSlug.mockResolvedValue(baseOrganization('other'));
+    wireMembershipSelect([]);
+    await expect(requireOrganizationBySlug('team')).rejects.toThrow('REDIRECT:/app');
+  });
+
+  it('returns the organization row when the user is an active member', async () => {
+    const organization = baseOrganization('u2');
     mockGetOrgSlug.mockResolvedValue(organization);
-    await expect(requireOrganizationBySlug('ok')).resolves.toBe(organization);
+    wireMembershipSelect([activeMembership('member')]);
+    await expect(requireOrganizationBySlug('team')).resolves.toBe(organization);
   });
 });
 
 describe('requireMembership', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('redirects when the organization slug is unknown', async () => {
+    mockRequireUser.mockResolvedValue(baseUser());
+    mockGetOrgSlug.mockResolvedValue(null);
+    await expect(requireMembership('missing')).rejects.toThrow('REDIRECT:/app');
   });
 
   it('redirects when there is no active membership row', async () => {

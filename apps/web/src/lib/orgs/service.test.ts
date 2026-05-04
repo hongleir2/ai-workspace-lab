@@ -201,6 +201,12 @@ describe('createOrganization', () => {
     expect(auditValues['entityType']).toBe('organization');
     expect(auditValues['entityId']).toBe('org-inserted-id');
     expect(auditValues['afterState']).toEqual({ name: 'Acme', slug: 'acme' });
+    expect(auditValues['actorUserId']).toBe('owner-user');
+
+    const memberValues = inserts[1]?.values as Record<string, unknown>;
+    expect(memberValues['role']).toBe('owner');
+    expect(memberValues['status']).toBe('active');
+    expect(memberValues['joinedAt']).toBeInstanceOf(Date);
 
     expect(result.membership.organizationId).toBe('org-inserted-id');
     expect(result.membership.role).toBe('owner');

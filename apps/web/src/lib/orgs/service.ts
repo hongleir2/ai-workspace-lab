@@ -13,9 +13,13 @@ import {
   organizations,
   sql,
 } from '@ai-workspace-lab/db';
-import { generateUniqueSlug } from './slug.js';
+import { OrgSlugConflictError, generateUniqueSlug } from './slug.js';
 
 export { OrgSlugConflictError, OrgSlugInvalidError } from './slug.js';
+
+function isUniqueViolation(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && 'code' in e && e.code === '23505';
+}
 
 export interface CreateOrganizationParams {
   name: string;
@@ -91,17 +95,22 @@ export async function createOrganization(
   );
 
   return dbConn.transaction(async (tx) => {
-    const [organization] = await tx
-      .insert(organizations)
-      .values({
-        name: trimmedName,
-        slug,
-        ownerUserId: params.ownerUserId,
-        status: 'active',
-      })
-      .returning();
-    if (!organization) {
-      throw new Error('Failed to insert organization');
+    let organization: Organization;
+    try {
+      const [row] = await tx
+        .insert(organizations)
+        .values({
+          name: trimmedName,
+          slug,
+          ownerUserId: params.ownerUserId,
+          status: 'active',
+        })
+        .returning();
+      if (!row) throw new Error('Failed to insert organization');
+      organization = row;
+    } catch (e) {
+      if (isUniqueViolation(e)) throw new OrgSlugConflictError();
+      throw e;
     }
 
     const [membership] = await tx

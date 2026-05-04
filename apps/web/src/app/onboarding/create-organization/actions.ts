@@ -20,6 +20,7 @@ export async function createOrganizationAction(formData: FormData): Promise<void
     forwarded !== null && forwarded.length > 0 ? (forwarded.split(',')[0]?.trim() ?? null) : null;
   const userAgent = headerList.get('user-agent');
 
+  let createdSlug: string;
   try {
     const { organization } = await createOrganization({
       name: normalizedName,
@@ -28,14 +29,16 @@ export async function createOrganizationAction(formData: FormData): Promise<void
       ...(ipAddress !== null ? { ipAddress } : {}),
       ...(userAgent !== null ? { userAgent } : {}),
     });
-    redirect(`/app/${organization.slug}`);
+    createdSlug = organization.slug;
   } catch (e: unknown) {
     if (e instanceof OrgSlugConflictError) {
       redirect('/onboarding/create-organization?error=slug_taken');
     }
     if (e instanceof OrgSlugInvalidError) {
-      redirect('/onboarding/create-organization?error=invalid_slug');
+      const errorCode = slugRaw.length > 0 ? 'invalid_slug' : 'name_too_short';
+      redirect(`/onboarding/create-organization?error=${errorCode}`);
     }
     throw e;
   }
+  redirect(`/app/${createdSlug}`);
 }

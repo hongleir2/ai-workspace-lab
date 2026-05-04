@@ -34,11 +34,15 @@ function assertValidSlug(candidate: string): void {
 
 function candidateSlug(base: string, attemptIndex: number): string {
   if (attemptIndex === 0) {
-    return base.slice(0, 40);
+    return base;
   }
   const suffix = `-${attemptIndex + 1}`;
-  const trimmed = `${base}${suffix}`;
-  return trimmed.slice(0, 40);
+  if (base.length + suffix.length > 40) {
+    throw new OrgSlugInvalidError(
+      'Organization name is too long to generate a unique slug — please choose a shorter name',
+    );
+  }
+  return `${base}${suffix}`;
 }
 
 export async function generateUniqueSlug(

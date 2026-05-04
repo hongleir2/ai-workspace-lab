@@ -7,10 +7,7 @@ import { getOrganizationBySlug } from './service.js';
 export type MemberRole = OrganizationMembership['role'];
 
 export async function requireOrganizationBySlug(slug: string): Promise<Organization> {
-  const organization = await getOrganizationBySlug(slug);
-  if (!organization) {
-    redirect('/app');
-  }
+  const { organization } = await requireMembership(slug);
   return organization;
 }
 

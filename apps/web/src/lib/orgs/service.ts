@@ -139,13 +139,19 @@ export async function createOrganization(
       userAgent: params.userAgent ?? undefined,
     });
 
-    await tx.insert(subscriptions).values({
-      organizationId: organization.id,
-      planId: 'free',
-      status: 'free',
-      seats: 1,
-      cancelAtPeriodEnd: false,
-    });
+    const [subscription] = await tx
+      .insert(subscriptions)
+      .values({
+        organizationId: organization.id,
+        planId: 'free',
+        status: 'free',
+        seats: 1,
+        cancelAtPeriodEnd: false,
+      })
+      .returning();
+    if (!subscription) {
+      throw new Error('Failed to insert subscription');
+    }
 
     return { organization, membership };
   });

@@ -154,8 +154,22 @@ describe('createOrganization', () => {
 
           const valuesObj = values as Record<string, unknown>;
 
-          if (target === auditLogs || target === subscriptions) {
+          if (target === auditLogs) {
             return {};
+          }
+
+          if (target === subscriptions) {
+            const subRow = {
+              id: 'sub-inserted-id',
+              organizationId: valuesObj['organizationId'],
+              planId: valuesObj['planId'],
+              status: valuesObj['status'],
+              seats: valuesObj['seats'],
+              cancelAtPeriodEnd: valuesObj['cancelAtPeriodEnd'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            return { returning: async () => [subRow] };
           }
 
           const row =

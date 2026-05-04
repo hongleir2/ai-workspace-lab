@@ -110,6 +110,15 @@ describe.skipIf(!DATABASE_URL)('orgs service integration', () => {
     expect(created?.entityType).toBe('organization');
     expect(created?.entityId).toBe(organization.id);
     expect(created?.afterState).toEqual({ name: `Day17 Org ${suffix}`, slug: organization.slug });
+
+    const [sub] = await drizzleDb
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.organizationId, organization.id));
+
+    expect(sub?.planId).toBe('free');
+    expect(sub?.status).toBe('free');
+    expect(sub?.cancelAtPeriodEnd).toBe(false);
   });
 
   it('rolls back all rows when audit insert violates FK', async () => {

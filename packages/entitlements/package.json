@@ -12,6 +12,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .turbo"
   },
+  "dependencies": {
+    "@ai-workspace-lab/db": "workspace:*"
+  },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",
     "typescript": "5.7.3"

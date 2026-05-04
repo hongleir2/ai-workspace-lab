@@ -53,14 +53,19 @@ All commands run from the repo root.
 | Format only (check)            | `pnpm format:check` |
 | Typecheck (all workspaces)     | `pnpm typecheck`    |
 | Tests (one-shot, vitest)       | `pnpm test`         |
-| Tests (watch)                  | `pnpm test:watch`   |
-| e2e (Playwright)               | `pnpm e2e`          |
-| Install Playwright browsers    | `pnpm e2e:install`  |
-| Build (all)                    | `pnpm build`        |
-| Dev (all apps)                 | `pnpm dev`          |
-| Full CI gate (run before push) | `pnpm verify`       |
+| Tests (watch)                  | `pnpm test:watch`         |
+| Integration tests (DB)         | `pnpm test:integration`   |
+| e2e (Playwright)               | `pnpm e2e`                |
+| Install Playwright browsers    | `pnpm e2e:install`        |
+| Build (all)                    | `pnpm build`              |
+| Dev (all apps)                 | `pnpm dev`                |
+| Full CI gate (run before push) | `pnpm verify`             |
 
-The CI gate (`pnpm verify`) runs lint → typecheck → test. **A change is not done until `pnpm verify` is green.** e2e tests are not part of `verify` — they run in their own CI job; trigger locally with `pnpm e2e`.
+The CI gate (`pnpm verify`) runs lint → typecheck → test (unit only). **A change is not done until `pnpm verify` is green.**
+
+`pnpm test:integration` runs `*.integration.test.*` files against the local Supabase Postgres (`localhost:54322`). **Requires `pnpx supabase start` and `pnpm --filter @ai-workspace-lab/db db:migrate` first.** e2e tests run in their own CI job; trigger locally with `pnpm e2e`.
+
+CI runs integration tests in a separate `test-integration` job using `supabase/setup-cli` to spin up Supabase automatically.
 
 ---
 
@@ -307,7 +312,14 @@ ai-workspace-lab/
 
 ---
 
-## 17. When in doubt
+## 17. GitHub / git rules
+
+- **Before any `gh pr create`, unset both `GH_TOKEN` and `GITHUB_TOKEN`** to authenticate as the repo owner (`hongleir2`). Both env vars are set to work-account tokens that lack collaborator access or `public_repo` scope on personal repos. Use: `env -u GH_TOKEN -u GITHUB_TOKEN gh pr create ...`
+- Always open PRs from feature/fix branches — never push directly to `main`.
+
+---
+
+## 18. When in doubt
 
 - **Stop, do not improvise on stack or boundaries.** Open an ADR or ask.
 - **Re-read this file at the start of any non-trivial change.**

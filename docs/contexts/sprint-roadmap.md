@@ -44,6 +44,7 @@ Done:
 - **Organization creation**: server action, create-org UI, onboarding + app redirect routers (`getUserOrganizations`)
 - **Day 18**: `OrgLayout` threads real org data to sidebar; `OrganizationSwitcher` uses live orgs (not mock); dashboard shows real org name + getting-started checklist; create-org form throttled with `useFormStatus`
 - **Day 19**: `/app/[orgSlug]/settings` shell — left vertical sub-nav, `/settings/general` (org name/slug/created/role, read-only), `/settings/members` + `/settings/billing` + `/settings/danger` placeholder cards, `loading.tsx` + `error.tsx` scoped to segment
+- **Day 20**: Tenancy isolation integration tests (`tenancy.integration.test.ts` — org creator becomes owner, cross-user data isolation, per-user org lists, audit log field verification); `requireRole` full 3×3 combinatorial unit tests (owner/admin/member × owner-only/owner+admin/all-member routes); ADR 0006: multi-tenant data model; schema tests renamed to `*.integration.test.ts`; `pnpm test:integration` script + CI `test-integration` job
 - ADR 0005: authentication model (referenced in README)
 
 Remaining:

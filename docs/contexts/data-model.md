@@ -6,7 +6,9 @@
 
 ## Design principles
 
-- Every business resource is **organization-scoped** (`organization_id NOT NULL`).
+- Every business resource is **organization-scoped** (`organization_id NOT NULL`). See [ADR 0006](../adr/0006-multi-tenant-data-model.md) for the full tenancy model.
+- Isolation is two-layer: app code filters by `organization_id` first; RLS is the safety net.
+- Roles: `owner > admin > member`. Enforced via `requireRole()` server-side only.
 - `users` is the app-level profile; Supabase Auth is the identity provider.
 - **Billing is org-level**, not user-level. Subscription → org.
 - Entitlements are **computed server-side** — never trust the client.

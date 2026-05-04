@@ -119,9 +119,42 @@ jobs:
 
       - run: pnpm test
 
+  test-integration:
+    name: Test (integration)
+    needs: install
+    runs-on: ubuntu-latest
+    env:
+      SKIP_ENV_VALIDATION: '1'
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start Supabase
+        run: supabase start
+      - name: Apply migrations
+        run: pnpm --filter @ai-workspace-lab/db db:migrate
+      - name: Run integration tests
+        run: pnpm test:integration
+
   build:
     name: Build (web)
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, test-integration]
     runs-on: ubuntu-latest
     env:
       SKIP_ENV_VALIDATION: '1'

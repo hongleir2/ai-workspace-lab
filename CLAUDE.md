@@ -314,7 +314,7 @@ ai-workspace-lab/
 
 ## 17. GitHub / git rules
 
-- **Before any `gh pr create` or `git push`, unset `GH_TOKEN`** if you need to authenticate as the repo owner (`hongleir2`). The `GH_TOKEN` env var is set to the `hongleir-otter` work account which is not a collaborator on personal repos. Run: `GH_TOKEN="" gh pr create ...` or temporarily `unset GH_TOKEN`.
+- **Before any `gh pr create`, unset both `GH_TOKEN` and `GITHUB_TOKEN`** to authenticate as the repo owner (`hongleir2`). Both env vars are set to work-account tokens that lack collaborator access or `public_repo` scope on personal repos. Use: `env -u GH_TOKEN -u GITHUB_TOKEN gh pr create ...`
 - Always open PRs from feature/fix branches — never push directly to `main`.
 
 ---

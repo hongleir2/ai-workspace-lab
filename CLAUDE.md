@@ -53,14 +53,19 @@ All commands run from the repo root.
 | Format only (check)            | `pnpm format:check` |
 | Typecheck (all workspaces)     | `pnpm typecheck`    |
 | Tests (one-shot, vitest)       | `pnpm test`         |
-| Tests (watch)                  | `pnpm test:watch`   |
-| e2e (Playwright)               | `pnpm e2e`          |
-| Install Playwright browsers    | `pnpm e2e:install`  |
-| Build (all)                    | `pnpm build`        |
-| Dev (all apps)                 | `pnpm dev`          |
-| Full CI gate (run before push) | `pnpm verify`       |
+| Tests (watch)                  | `pnpm test:watch`         |
+| Integration tests (DB)         | `pnpm test:integration`   |
+| e2e (Playwright)               | `pnpm e2e`                |
+| Install Playwright browsers    | `pnpm e2e:install`        |
+| Build (all)                    | `pnpm build`              |
+| Dev (all apps)                 | `pnpm dev`                |
+| Full CI gate (run before push) | `pnpm verify`             |
 
-The CI gate (`pnpm verify`) runs lint → typecheck → test. **A change is not done until `pnpm verify` is green.** e2e tests are not part of `verify` — they run in their own CI job; trigger locally with `pnpm e2e`.
+The CI gate (`pnpm verify`) runs lint → typecheck → test (unit only). **A change is not done until `pnpm verify` is green.**
+
+`pnpm test:integration` runs `*.integration.test.*` files against the local Supabase Postgres (`localhost:54322`). **Requires `pnpx supabase start` and `pnpm --filter @ai-workspace-lab/db db:migrate` first.** e2e tests run in their own CI job; trigger locally with `pnpm e2e`.
+
+CI runs integration tests in a separate `test-integration` job using `supabase/setup-cli` to spin up Supabase automatically.
 
 ---
 

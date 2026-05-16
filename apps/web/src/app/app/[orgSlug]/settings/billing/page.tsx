@@ -43,8 +43,18 @@ export default async function BillingSettingsPage({ params }: Props) {
   const { subscription, plan } = await getOrganizationPlan(organization.id);
 
   const [monthlyPlan, yearlyPlan] = await Promise.all([
-    db.select().from(plans).where(eq(plans.id, 'pro_monthly')).limit(1).then((r) => r[0]),
-    db.select().from(plans).where(eq(plans.id, 'pro_yearly')).limit(1).then((r) => r[0]),
+    db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, 'pro_monthly'))
+      .limit(1)
+      .then((r) => r[0]),
+    db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, 'pro_yearly'))
+      .limit(1)
+      .then((r) => r[0]),
   ]);
 
   const isPaidPlan = plan.id !== 'free';

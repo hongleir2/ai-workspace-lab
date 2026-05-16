@@ -18,6 +18,10 @@ interface AppSidebarProps {
   orgSlug: string;
   orgName: string;
   allOrgs: OrgEntry[];
+  planId: string;
+  planName: string;
+  subscriptionStatus: string;
+  daysLeft?: number;
   className?: string;
 }
 
@@ -56,7 +60,16 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppSidebar({ orgSlug, orgName, allOrgs, className }: AppSidebarProps) {
+export function AppSidebar({
+  orgSlug,
+  orgName,
+  allOrgs,
+  planId,
+  planName,
+  subscriptionStatus,
+  daysLeft,
+  className,
+}: AppSidebarProps) {
   const pathname = usePathname() ?? '';
   const sections = buildSections(orgSlug);
 
@@ -97,7 +110,13 @@ export function AppSidebar({ orgSlug, orgName, allOrgs, className }: AppSidebarP
         ))}
       </nav>
       <div className="mt-auto">
-        <PlanBadge orgSlug={orgSlug} />
+        <PlanBadge
+          orgSlug={orgSlug}
+          planId={planId}
+          planName={planName}
+          subscriptionStatus={subscriptionStatus}
+          {...(daysLeft !== undefined ? { daysLeft } : {})}
+        />
       </div>
     </aside>
   );

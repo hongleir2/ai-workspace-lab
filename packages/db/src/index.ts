@@ -19,12 +19,16 @@ export type {
   UsageCounter,
   NewUsageCounter,
 } from './schema/index';
+export type { BillingCustomer, NewBillingCustomer } from './schema/billing_customers';
+export type { StripeEvent, NewStripeEvent } from './schema/stripe_events';
 export {
   auditLogs,
+  billingCustomers,
   organizations,
   organizationMemberships,
   planLimits,
   plans,
+  stripeEvents,
   subscriptions,
   usageCounters,
   usageEvents,

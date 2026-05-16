@@ -81,7 +81,7 @@ export default async function UsagePage({ params }: UsagePageProps) {
             </CardHeader>
             <CardContent>
               <Button asChild variant="secondary" className="cursor-pointer">
-                <Link href={`/app/${orgSlug}/billing`}>{'Open billing'}</Link>
+                <Link href={`/app/${orgSlug}/settings/billing`}>{'Open billing'}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -97,10 +97,9 @@ export default async function UsagePage({ params }: UsagePageProps) {
   );
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 p-6">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">{'Usage'}</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             {
               'Plan limits and consumption for this workspace. Detailed AI and document breakdowns will ship in later sprints.'
@@ -108,7 +107,7 @@ export default async function UsagePage({ params }: UsagePageProps) {
           </p>
         </div>
         <Button asChild variant="outline" className="w-fit shrink-0 cursor-pointer">
-          <Link href={`/app/${orgSlug}/billing`}>
+          <Link href={`/app/${orgSlug}/settings/billing`}>
             {'Upgrade plan'}
             <ArrowUpRight className="size-4" />
           </Link>
@@ -190,15 +189,11 @@ export default async function UsagePage({ params }: UsagePageProps) {
       <Card className="border-dashed">
         <CardHeader>
           <CardTitle className="text-base">{'Need higher limits?'}</CardTitle>
-          <CardDescription>
-            {
-              'Upgrade flows will connect to Stripe Checkout in the billing sprint. This button goes to the billing hub placeholder.'
-            }
-          </CardDescription>
+          <CardDescription>{'Upgrade to a Pro plan to increase your limits.'}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild className="cursor-pointer">
-            <Link href={`/app/${orgSlug}/billing`}>
+            <Link href={`/app/${orgSlug}/settings/billing`}>
               {'View billing & upgrades'}
               <ArrowUpRight className="size-4" />
             </Link>

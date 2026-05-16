@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  BarChart3,
-  CreditCard,
-  FileText,
-  LayoutDashboard,
-  MessageSquare,
-  Settings,
-} from 'lucide-react';
+import { FileText, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType, SVGProps } from 'react';
@@ -49,13 +42,6 @@ function buildSections(orgSlug: string): NavSection[] {
         { label: 'Dashboard', href: base, icon: LayoutDashboard, exact: true },
         { label: 'Documents', href: `${base}/documents`, icon: FileText },
         { label: 'AI Chat', href: `${base}/ai`, icon: MessageSquare },
-      ],
-    },
-    {
-      title: 'Insights',
-      items: [
-        { label: 'Usage', href: `${base}/usage`, icon: BarChart3 },
-        { label: 'Billing', href: `${base}/billing`, icon: CreditCard },
       ],
     },
     {

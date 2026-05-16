@@ -1,4 +1,5 @@
 import { SettingsNav } from '@/components/nav/settings-nav';
+import { requireMembership } from '@/lib/orgs/guards';
 import type { ReactNode } from 'react';
 
 interface SettingsLayoutProps {
@@ -8,6 +9,7 @@ interface SettingsLayoutProps {
 
 export default async function SettingsLayout({ children, params }: SettingsLayoutProps) {
   const { orgSlug } = await params;
+  await requireMembership(orgSlug);
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-4xl">

@@ -1,3 +1,4 @@
+import { and } from '@ai-workspace-lab/db';
 import type Stripe from 'stripe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -92,7 +93,6 @@ describe('handleStripeEvent', () => {
   it('marks event failed and rethrows when dispatch throws', async () => {
     const db = makeDb([fakeEventRow]);
 
-    // Override select AFTER makeDb so the rejection applies during dispatch
     const selectLimit = vi.fn().mockRejectedValue(new Error('DB boom'));
     const selectWhere = vi.fn().mockReturnValue({ limit: selectLimit });
     const selectFrom = vi.fn().mockReturnValue({ where: selectWhere, limit: selectLimit });
@@ -183,8 +183,7 @@ describe('handleStripeEvent', () => {
 
       await expect(handleStripeEvent(event, db)).resolves.toBeUndefined();
 
-      // insert called more than once: once for stripeEvents, once for subscriptions upsert
-      expect(mockDbInsert.mock.calls.length).toBeGreaterThan(1);
+      expect(mockDbInsert).toHaveBeenCalledTimes(2);
     });
 
     it('Scenario C: customer.subscription.deleted marks subscription as canceled', async () => {
@@ -205,7 +204,6 @@ describe('handleStripeEvent', () => {
 
       const updateSetArgs = mockDbUpdate.mock.results.map((r) => r.value.set.mock.calls[0]?.[0]);
       const canceledUpdate = updateSetArgs.find((arg) => arg?.status === 'canceled');
-      expect(canceledUpdate).toBeDefined();
       expect(canceledUpdate?.status).toBe('canceled');
     });
 
@@ -227,7 +225,6 @@ describe('handleStripeEvent', () => {
 
       const updateSetArgs = mockDbUpdate.mock.results.map((r) => r.value.set.mock.calls[0]?.[0]);
       const pastDueUpdate = updateSetArgs.find((arg) => arg?.status === 'past_due');
-      expect(pastDueUpdate).toBeDefined();
       expect(pastDueUpdate?.status).toBe('past_due');
     });
 
@@ -249,8 +246,8 @@ describe('handleStripeEvent', () => {
 
       const updateSetArgs = mockDbUpdate.mock.results.map((r) => r.value.set.mock.calls[0]?.[0]);
       const activeUpdate = updateSetArgs.find((arg) => arg?.status === 'active');
-      expect(activeUpdate).toBeDefined();
       expect(activeUpdate?.status).toBe('active');
+      expect(and).toHaveBeenCalled();
     });
 
     it('Scenario F: customer.subscription.updated with unrecognized status throws and marks failed', async () => {

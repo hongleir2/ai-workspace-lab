@@ -35,7 +35,12 @@ function makeDb(insertReturns: unknown[]) {
   mockDbInsert.mockReturnValue({ values: stripeEventValues });
 
   mockDbUpdate.mockImplementation(() => {
-    const updateWhere = vi.fn().mockResolvedValue({});
+    const returning = vi.fn().mockResolvedValue([]);
+    const updateWhere = vi.fn().mockImplementation(() => {
+      const p = Promise.resolve({}) as Promise<unknown> & { returning: typeof returning };
+      p.returning = returning;
+      return p;
+    });
     const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
     return { set: updateSet };
   });
@@ -183,7 +188,11 @@ describe('handleStripeEvent', () => {
 
       await expect(handleStripeEvent(event, db)).resolves.toBeUndefined();
 
-      expect(mockDbInsert).toHaveBeenCalledTimes(2);
+      // One insert for the stripe_events dedup row; subscription is upgraded via UPDATE.
+      expect(mockDbInsert).toHaveBeenCalledTimes(1);
+      const updateSetArgs = mockDbUpdate.mock.results.map((r) => r.value.set.mock.calls[0]?.[0]);
+      const subUpdate = updateSetArgs.find((arg) => arg?.planId === 'plan-pro');
+      expect(subUpdate?.status).toBe('active');
     });
 
     it('Scenario C: customer.subscription.deleted marks subscription as canceled', async () => {

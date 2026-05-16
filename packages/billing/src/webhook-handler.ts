@@ -138,19 +138,45 @@ async function upsertSubscription(sub: Stripe.Subscription, dbConn: Database): P
     ...(sub.trial_end !== null ? { trialEnd: new Date(sub.trial_end * 1000) } : {}),
   };
 
-  await dbConn
-    .insert(subscriptions)
-    .values({
+  // Try to update an existing row that already has this Stripe subscription ID.
+  // This handles customer.subscription.updated and duplicate checkout events.
+  const updated = await dbConn
+    .update(subscriptions)
+    .set({ ...shared, updatedAt: new Date() })
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+    .returning({ id: subscriptions.id });
+
+  if (updated.length > 0) return;
+
+  // No row has this Stripe subscription ID yet — this is a new paid subscription.
+  // Upgrade the org's existing free subscription row in place to avoid violating
+  // the subscriptions_active_org_unique partial index.
+  const [existing] = await dbConn
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(eq(subscriptions.organizationId, billingCustomer.organizationId))
+    .limit(1);
+
+  if (existing) {
+    await dbConn
+      .update(subscriptions)
+      .set({
+        billingCustomerId: billingCustomer.id,
+        stripeSubscriptionId: sub.id,
+        seats: 1,
+        ...shared,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.id, existing.id));
+  } else {
+    await dbConn.insert(subscriptions).values({
       organizationId: billingCustomer.organizationId,
       billingCustomerId: billingCustomer.id,
       stripeSubscriptionId: sub.id,
       seats: 1,
       ...shared,
-    })
-    .onConflictDoUpdate({
-      target: subscriptions.stripeSubscriptionId,
-      set: { ...shared, updatedAt: new Date() },
     });
+  }
 }
 
 async function handleSubscriptionDeleted(

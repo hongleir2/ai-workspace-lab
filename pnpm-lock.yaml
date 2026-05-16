@@ -56,6 +56,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@ai-workspace-lab/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@ai-workspace-lab/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -175,6 +178,9 @@ importers:
 
   packages/billing:
     dependencies:
+      '@ai-workspace-lab/db':
+        specifier: workspace:*
+        version: link:../db
       stripe:
         specifier: ^22.1.1
         version: 22.1.1(@types/node@22.10.5)

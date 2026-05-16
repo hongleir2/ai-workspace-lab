@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-workspace-lab/db": "workspace:*",
+    "@ai-workspace-lab/billing": "workspace:*",
     "@ai-workspace-lab/entitlements": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, CreditCard, Settings, Users } from 'lucide-react';
+import { AlertTriangle, BarChart3, CreditCard, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -21,6 +21,7 @@ export function SettingsNav({ orgSlug }: SettingsNavProps) {
   const mainItems = [
     { label: 'General', href: `${base}/general`, icon: Settings },
     { label: 'Members', href: `${base}/members`, icon: Users },
+    { label: 'Usage', href: `${base}/usage`, icon: BarChart3 },
     { label: 'Billing', href: `${base}/billing`, icon: CreditCard },
   ];
 

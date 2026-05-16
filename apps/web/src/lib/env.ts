@@ -34,6 +34,9 @@ export const env = createEnv({
     STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
     // https://dashboard.stripe.com/webhooks — per-endpoint secret.
     STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
+    // https://dashboard.stripe.com → Products → Prices (environment-specific)
+    STRIPE_PRO_MONTHLY_PRICE_ID: z.string().min(1).optional(),
+    STRIPE_PRO_YEARLY_PRICE_ID: z.string().min(1).optional(),
 
     // ── Required-later: Resend email (Sprint 1–2) ─────────────────────────
     // https://resend.com/api-keys
@@ -120,6 +123,8 @@ export const env = createEnv({
     DATABASE_URL: process.env['DATABASE_URL'],
     STRIPE_SECRET_KEY: process.env['STRIPE_SECRET_KEY'],
     STRIPE_WEBHOOK_SECRET: process.env['STRIPE_WEBHOOK_SECRET'],
+    STRIPE_PRO_MONTHLY_PRICE_ID: process.env['STRIPE_PRO_MONTHLY_PRICE_ID'],
+    STRIPE_PRO_YEARLY_PRICE_ID: process.env['STRIPE_PRO_YEARLY_PRICE_ID'],
     RESEND_API_KEY: process.env['RESEND_API_KEY'],
     EMAIL_FROM: process.env['EMAIL_FROM'],
     SENTRY_DSN: process.env['SENTRY_DSN'],

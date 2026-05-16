@@ -9,7 +9,7 @@
 ```
 Sprint 0         — Project setup                    ✅ Done
 Sprint 1–2       — Auth + tenant boundary           🔄 In progress
-Sprint 3–4       — Plans, entitlements, billing     Upcoming
+Sprint 3–4       — Plans, entitlements, billing     ✅ Done
 Sprint 5–6       — Observability + file storage     Upcoming
 Sprint 7–8       — Async jobs + AI chat MVP         Upcoming
 Sprint 9–10      — Embeddings + RAG                 Future
@@ -81,14 +81,16 @@ Remaining:
 
 ---
 
-## Sprint 4 — Stripe Checkout, subscriptions, webhook idempotency
+## Sprint 4 — Stripe Checkout, subscriptions, webhook idempotency ✅
 
 **Outcome:** User can upgrade to Pro; webhook updates app state idempotently.
 
-- `billing_customers`, `subscriptions`, `stripe_events` tables
-- Stripe Checkout session creation
-- Webhook handler (verify signature, idempotent on `stripe_event_id`)
-- Billing portal link for paid orgs
+Done:
+- **Day 26**: `billing_customers` + `stripe_events` tables (migration 0007); Drizzle schemas + integration tests; `.env.example` Stripe section updated
+- **Day 27**: `packages/billing` service layer (`getOrCreateStripeCustomer`, `createCheckoutSession`, `createBillingPortalSession`, `mapStripePriceToPlan`) with 7 unit tests; `/settings/billing` page with Upgrade/Manage buttons; billing portal link for paid orgs; nav consolidation
+- **Day 28**: Stripe webhook endpoint at `/api/webhooks/stripe` — signature verification, idempotent event processing via `stripe_events` table; handles `checkout.session.completed`, `customer.subscription.{created,updated,deleted}`, `invoice.payment_{succeeded,failed}`; 9 unit tests
+- **Day 29**: Billing success (`/settings/billing/success`) and canceled (`/settings/billing/canceled`) pages with analytics event stubs (`trackCheckoutSuccessViewed`, `trackCheckoutCanceled`, `trackBillingPortalOpened`)
+- **Day 30**: ADR 0008 (webhook idempotency design), ops runbook for webhook failures, page map corrections, docs/contexts sync
 
 ---
 

@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-16 Day 27)
+## Current status (last updated: 2026-05-16 Day 30)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -29,6 +29,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 24 — Usage service**: `packages/usage` — `recordUsageEvent`, `incrementUsageCounter`, `getUsageForFeature`, `getUsageSummaryForOrganization`, `recordUsageWithCounter` (transaction: event insert with `ON CONFLICT DO NOTHING` on `idempotency_key`, then counter upsert when inserted); integration test proves duplicate idempotency key does not double-count
 - [x] **Day 26 — Stripe tables + env**: migration 0007 creates `billing_customers` (org ↔ Stripe customer bridge, ON DELETE CASCADE) and `stripe_events` (webhook idempotency log, `processing_status` CHECK constraint); wires FK `subscriptions.billing_customer_id → billing_customers.id` (ON DELETE SET NULL); Drizzle schemas + integration tests for both tables; `.env.example` Stripe section updated to Day 26+
 - [x] **Day 27 — Stripe checkout + billing page + nav consolidation**: `packages/billing` service layer (`getOrCreateStripeCustomer`, `createCheckoutSession`, `createBillingPortalSession`, `mapStripePriceToPlan`) with 7 unit tests; `/settings/billing` page shows current plan (read-only for members, Upgrade buttons + Manage Billing for owner); `/settings/billing/success` post-checkout landing; `/settings/usage` page (moved from `/usage`); Usage + Billing removed from main sidebar, added to Settings sub-nav; standalone `/app/[orgSlug]/billing` and `/app/[orgSlug]/usage` routes deleted
+- [2026-05-16] Day 28–30: Stripe webhook handler (idempotent, 9 unit tests), billing success/canceled pages with analytics stubs, ADR 0008, runbook
 
 ### In progress
 - Sprint 1 remainder: auth refinement, onboarding analytics events

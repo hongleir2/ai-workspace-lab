@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { env } from '@/lib/env';
 import { requireMembership } from '@/lib/orgs/guards';
+import { db, eq, plans } from '@ai-workspace-lab/db';
 import { getOrganizationPlan } from '@ai-workspace-lab/entitlements';
 import { CreditCard } from 'lucide-react';
 import { ManageBillingButton } from './manage-billing-button';
@@ -42,8 +42,21 @@ export default async function BillingSettingsPage({ params }: Props) {
 
   const { subscription, plan } = await getOrganizationPlan(organization.id);
 
-  const monthlyPriceId = env.STRIPE_PRO_MONTHLY_PRICE_ID ?? '';
-  const yearlyPriceId = env.STRIPE_PRO_YEARLY_PRICE_ID ?? '';
+  const [monthlyPlan, yearlyPlan] = await Promise.all([
+    db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, 'pro_monthly'))
+      .limit(1)
+      .then((r) => r[0]),
+    db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, 'pro_yearly'))
+      .limit(1)
+      .then((r) => r[0]),
+  ]);
+
   const isPaidPlan = plan.id !== 'free';
 
   return (
@@ -90,16 +103,20 @@ export default async function BillingSettingsPage({ params }: Props) {
             <ManageBillingButton orgSlug={orgSlug} />
           ) : (
             <>
-              <UpgradeButton
-                priceId={monthlyPriceId}
-                orgSlug={orgSlug}
-                label="Upgrade Monthly — $19/mo"
-              />
-              <UpgradeButton
-                priceId={yearlyPriceId}
-                orgSlug={orgSlug}
-                label="Upgrade Yearly — $190/yr"
-              />
+              {monthlyPlan?.stripePriceId && (
+                <UpgradeButton
+                  priceId={monthlyPlan.stripePriceId}
+                  orgSlug={orgSlug}
+                  label={`Upgrade Monthly — $${((monthlyPlan.priceCents ?? 0) / 100).toFixed(0)}/mo`}
+                />
+              )}
+              {yearlyPlan?.stripePriceId && (
+                <UpgradeButton
+                  priceId={yearlyPlan.stripePriceId}
+                  orgSlug={orgSlug}
+                  label={`Upgrade Yearly — $${((yearlyPlan.priceCents ?? 0) / 100).toFixed(0)}/yr`}
+                />
+              )}
             </>
           )}
         </CardFooter>

@@ -65,6 +65,8 @@ Real-time & collaboration
 | `subscriptions` | 0005 | `id`, `organization_id` → organizations, `plan_id` → plans, `status` (enum), `seats`, period fields, Stripe fields; partial UNIQUE on active org |
 | `usage_events` | 0005 | `id`, `organization_id`, `user_id`, `feature_key`, `event_type`, `quantity`, `unit` (enum), AI fields, `idempotency_key` (UNIQUE nullable) |
 | `usage_counters` | 0005 | `id`, `organization_id`, `feature_key`, `period_start`, `period_end`, `used_quantity`, `limit_quantity`; UNIQUE on (org, feature, period) |
+| `billing_customers` | 0007 | `id`, `organization_id` → organizations (ON DELETE CASCADE), `stripe_customer_id` (UNIQUE), `created_at` |
+| `stripe_events` | 0007 | `id`, `stripe_event_id` (UNIQUE), `event_type`, `processing_status` CHECK (`received\|processing\|processed\|failed`), `error_message`, `received_at`, `processed_at`; idempotency gate for webhook handler (see ADR 0008) |
 
 ### Server packages using these tables
 
@@ -75,12 +77,10 @@ Real-time & collaboration
 
 ---
 
-## Upcoming tables (Sprint 2+)
+## Upcoming tables (Sprint 5+)
 
 | Table | Purpose |
 |-------|---------|
-| `billing_customers` | Stripe customer ID per org (Sprint 4) |
-| `stripe_events` | Webhook idempotency (unique on `stripe_event_id`) |
 | `documents` | Upload metadata + processing status |
 | `document_chunks` | Text chunks + pgvector embeddings |
 | `ai_sessions` | Conversation container |

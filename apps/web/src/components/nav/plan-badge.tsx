@@ -1,50 +1,78 @@
 import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type Plan = 'free' | 'pro' | 'enterprise';
-
 interface PlanBadgeProps {
-  plan?: Plan;
+  orgSlug: string;
+  planId: string;
+  planName: string;
+  subscriptionStatus: string;
   daysLeft?: number;
   className?: string;
 }
 
-interface PlanCopy {
+type BadgeVariant = 'default' | 'outline';
+interface BadgeCopy {
   pill: string;
   title: string;
-  description: (daysLeft: number) => string;
-  button: string;
-  variant: 'default' | 'outline';
+  description: string;
+  button: string | null;
+  variant: BadgeVariant;
 }
 
-const planCopy: Record<Plan, PlanCopy> = {
-  free: {
-    pill: 'Free',
-    title: 'Free plan',
-    description: () => 'Upgrade to Pro for unlimited',
-    button: 'Compare plans',
-    variant: 'default',
-  },
-  pro: {
-    pill: 'Trial',
-    title: 'Pro plan',
-    description: (daysLeft) => `${daysLeft} days left in trial`,
-    button: 'Upgrade',
-    variant: 'default',
-  },
-  enterprise: {
-    pill: 'Enterprise',
-    title: 'Enterprise plan',
-    description: () => 'Custom plan',
+function deriveBadge(
+  planId: string,
+  planName: string,
+  subscriptionStatus: string,
+  daysLeft: number | undefined,
+): BadgeCopy {
+  if (planId === 'free' || subscriptionStatus === 'free') {
+    return {
+      pill: 'Free',
+      title: planName,
+      description: 'Upgrade to Pro for unlimited',
+      button: 'Compare plans',
+      variant: 'default',
+    };
+  }
+  if (subscriptionStatus === 'trialing') {
+    return {
+      pill: 'Trial',
+      title: planName,
+      description: daysLeft !== undefined ? `${daysLeft} days left in trial` : 'Trial active',
+      button: 'Upgrade',
+      variant: 'default',
+    };
+  }
+  if (planId.startsWith('pro')) {
+    return {
+      pill: 'Pro',
+      title: planName,
+      description: 'Active subscription',
+      button: null,
+      variant: 'outline',
+    };
+  }
+  return {
+    pill: 'Business',
+    title: planName,
+    description: 'Custom plan',
     button: 'Contact sales',
     variant: 'outline',
-  },
-};
+  };
+}
 
-export function PlanBadge({ plan = 'pro', daysLeft = 14, className }: PlanBadgeProps) {
-  const copy = planCopy[plan];
+export function PlanBadge({
+  orgSlug,
+  planId,
+  planName,
+  subscriptionStatus,
+  daysLeft,
+  className,
+}: PlanBadgeProps) {
+  const copy = deriveBadge(planId, planName, subscriptionStatus, daysLeft);
   return (
     <div
       className={cn('rounded-md border border-border bg-card p-3 flex flex-col gap-2', className)}
@@ -56,10 +84,12 @@ export function PlanBadge({ plan = 'pro', daysLeft = 14, className }: PlanBadgeP
           {copy.pill}
         </span>
       </div>
-      <p className="text-xs text-muted-foreground">{copy.description(daysLeft)}</p>
-      <Button size="sm" variant={copy.variant} className="w-full cursor-pointer">
-        {copy.button}
-      </Button>
+      <p className="text-xs text-muted-foreground">{copy.description}</p>
+      {copy.button !== null && (
+        <Button size="sm" variant={copy.variant} className="w-full cursor-pointer" asChild>
+          <Link href={`/app/${orgSlug}/settings/billing`}>{copy.button}</Link>
+        </Button>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { trackBillingPortalOpened } from '@ai-workspace-lab/analytics';
 import { useTransition } from 'react';
 import { openBillingPortalAction } from './actions';
 
@@ -14,7 +15,10 @@ export function ManageBillingButton({ orgSlug }: ManageBillingButtonProps) {
   return (
     <Button
       variant="outline"
-      onClick={() => startTransition(() => openBillingPortalAction(orgSlug))}
+      onClick={() => {
+        trackBillingPortalOpened(orgSlug);
+        startTransition(() => openBillingPortalAction(orgSlug));
+      }}
       disabled={isPending}
     >
       {isPending ? 'Opening portal...' : 'Manage Billing'}

@@ -5,3 +5,4 @@ export {
   getOrCreateStripeCustomer,
   mapStripePriceToPlan,
 } from './service';
+export { handleStripeEvent } from './webhook-handler';

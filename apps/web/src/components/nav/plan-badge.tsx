@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -6,6 +7,7 @@ import { cn } from '@/lib/utils';
 type Plan = 'free' | 'pro' | 'enterprise';
 
 interface PlanBadgeProps {
+  orgSlug: string;
   plan?: Plan;
   daysLeft?: number;
   className?: string;
@@ -43,7 +45,7 @@ const planCopy: Record<Plan, PlanCopy> = {
   },
 };
 
-export function PlanBadge({ plan = 'pro', daysLeft = 14, className }: PlanBadgeProps) {
+export function PlanBadge({ orgSlug, plan = 'pro', daysLeft = 14, className }: PlanBadgeProps) {
   const copy = planCopy[plan];
   return (
     <div
@@ -57,8 +59,8 @@ export function PlanBadge({ plan = 'pro', daysLeft = 14, className }: PlanBadgeP
         </span>
       </div>
       <p className="text-xs text-muted-foreground">{copy.description(daysLeft)}</p>
-      <Button size="sm" variant={copy.variant} className="w-full cursor-pointer">
-        {copy.button}
+      <Button size="sm" variant={copy.variant} className="w-full cursor-pointer" asChild>
+        <Link href={`/app/${orgSlug}/settings/billing`}>{copy.button}</Link>
       </Button>
     </div>
   );

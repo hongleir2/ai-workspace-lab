@@ -97,7 +97,7 @@ export function AppSidebar({ orgSlug, orgName, allOrgs, className }: AppSidebarP
         ))}
       </nav>
       <div className="mt-auto">
-        <PlanBadge />
+        <PlanBadge orgSlug={orgSlug} />
       </div>
     </aside>
   );

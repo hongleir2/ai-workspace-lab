@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-03)
+## Current status (last updated: 2026-05-16)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -27,6 +27,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 22 — Free plan bootstrap**: seed script (`pnpm db:seed`) for Free/Pro plan rows + limits; `createOrganization` atomically inserts a free subscription in the same transaction; migration 0006 backfills missing `plans_is_active_idx` + seeds `free` plan for CI/production; subscription insert guarded with `.returning()` null-check; `service.integration.test.ts` asserts subscription row is created atomically
 - [x] **Day 23 — Entitlements service**: `packages/entitlements` — `getOrganizationPlan`, `getPlanLimits`, `getCurrentBillingPeriod`, `checkEntitlement`, `checkQuota`, `assertFeatureAllowed`; `EntitlementError` with typed codes (`FEATURE_NOT_INCLUDED | QUOTA_EXCEEDED | NO_ACTIVE_SUBSCRIPTION`); unit tests (mocked DB) + integration tests (real Postgres); reads from local `subscriptions`/`plans`/`plan_limits`/`usage_counters` tables; no Stripe
 - [x] **Day 24 — Usage service**: `packages/usage` — `recordUsageEvent`, `incrementUsageCounter`, `getUsageForFeature`, `getUsageSummaryForOrganization`, `recordUsageWithCounter` (transaction: event insert with `ON CONFLICT DO NOTHING` on `idempotency_key`, then counter upsert when inserted); integration test proves duplicate idempotency key does not double-count
+- [x] **Day 26 — Stripe tables + env**: migration 0007 creates `billing_customers` (org ↔ Stripe customer bridge, ON DELETE CASCADE) and `stripe_events` (webhook idempotency log, `processing_status` CHECK constraint); wires FK `subscriptions.billing_customer_id → billing_customers.id` (ON DELETE SET NULL); Drizzle schemas + integration tests for both tables; `.env.example` Stripe section updated to Day 26+
 
 ### In progress
 - Sprint 1 remainder: auth refinement, onboarding analytics events

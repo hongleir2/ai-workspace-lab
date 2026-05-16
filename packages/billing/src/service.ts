@@ -88,7 +88,7 @@ export async function createCheckoutSession(
     customer: customer.stripeCustomerId,
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${baseUrl}/app/${orgSlug}/settings/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/app/${orgSlug}/settings/billing`,
+    cancel_url: `${baseUrl}/app/${orgSlug}/settings/billing/canceled`,
   });
 
   if (!session.url) throw new Error('Stripe did not return a checkout URL');

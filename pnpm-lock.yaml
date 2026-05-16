@@ -56,6 +56,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@ai-workspace-lab/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
       '@ai-workspace-lab/billing':
         specifier: workspace:*
         version: link:../../packages/billing

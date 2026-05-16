@@ -499,8 +499,8 @@ Owner/admin can view detailed cost breakdown.
 | --------------------------------- | ------------------------ | -------: | -----: | ----------------------------- |
 | `/app/[orgSlug]/billing`          | Billing overview         |       P0 |      4 | Current plan and subscription |
 | `/app/[orgSlug]/billing/checkout` | Checkout redirect helper |       P0 |      4 | Start Stripe Checkout         |
-| `/app/[orgSlug]/billing/success`  | Checkout success         |       P0 |      4 | Explain webhook provisioning  |
-| `/app/[orgSlug]/billing/canceled` | Checkout canceled        |       P1 |      4 | Return to billing             |
+| `/app/[orgSlug]/settings/billing/success`  | Checkout success         |       P0 |      4 | Explain webhook provisioning  |
+| `/app/[orgSlug]/settings/billing/canceled` | Checkout canceled        |       P1 |      4 | Return to billing             |
 | `/app/[orgSlug]/billing/portal`   | Portal redirect helper   |       P0 |      4 | Open Stripe customer portal   |
 | `/app/[orgSlug]/billing/history`  | Billing history          |       P2 |     4+ | Optional invoice display      |
 

@@ -102,6 +102,62 @@ pnpm dev
 
 ---
 
+## Local verification checklist
+
+Run this sequence after pulling a branch or completing a feature to confirm everything works end-to-end.
+
+**Prerequisites:** Docker Desktop must be running before step 1.
+
+```bash
+# 1. Start local Supabase (first run pulls Docker images — takes ~60s)
+pnpx supabase start
+
+# If it was already running but stuck:
+pnpx supabase stop && pnpx supabase start
+
+# 2. Copy env (first time only) and fill in values from `pnpx supabase status`
+cp .env.example .env.local
+#   Required minimum:
+#   NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon key>
+#   SUPABASE_SERVICE_ROLE_KEY=<service_role key>
+#   DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
+#   NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# 3. Apply all pending DB migrations
+pnpm --filter @ai-workspace-lab/db db:migrate
+
+# 4. (Optional) Seed plan data + Stripe price IDs
+#   Set STRIPE_PRO_MONTHLY_PRICE_ID and STRIPE_PRO_YEARLY_PRICE_ID in .env.local first
+pnpm --filter @ai-workspace-lab/db db:seed
+
+# 5. Run unit tests (no DB needed)
+pnpm test
+
+# 6. Run integration tests (requires steps 1–3)
+pnpm test:integration
+
+# 7. Start the web app
+pnpm dev
+#   Web app → http://localhost:3000
+#   Supabase Studio (table viewer) → http://localhost:54323
+
+# 8. Full CI gate — must be green before push
+pnpm verify
+```
+
+**Verify a specific feature's DB changes:**
+
+```bash
+# Inspect a table's columns and constraints
+pnpx supabase db psql -c "\d <table_name>"
+
+# Wipe local DB and re-apply all migrations from scratch
+pnpx supabase db reset
+```
+
+---
+
 ## Tests
 
 **Unit tests** run without a database:

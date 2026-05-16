@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { billingCustomers } from './billing_customers';
 import { organizations } from './organizations';
 import { plans } from './plans';
 
@@ -32,8 +33,9 @@ export const subscriptions = pgTable(
     organizationId: uuid('organization_id')
       .notNull()
       .references(() => organizations.id),
-    // FK to billing_customers added in Sprint 4 migration
-    billingCustomerId: uuid('billing_customer_id'),
+    billingCustomerId: uuid('billing_customer_id').references(() => billingCustomers.id, {
+      onDelete: 'set null',
+    }),
     planId: text('plan_id')
       .notNull()
       .references(() => plans.id),

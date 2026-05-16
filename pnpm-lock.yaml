@@ -174,6 +174,10 @@ importers:
         version: 5.7.3
 
   packages/billing:
+    dependencies:
+      stripe:
+        specifier: ^22.1.1
+        version: 22.1.1(@types/node@22.10.5)
     devDependencies:
       '@ai-workspace-lab/config':
         specifier: workspace:*
@@ -2387,6 +2391,15 @@ packages:
     resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
     engines: {node: '>=10.0.0'}
 
+  stripe@22.1.1:
+    resolution: {integrity: sha512-cmodIYP27tBkJ8G7DuGgWw0PFuemlFZbuF3Wwr1TrjFjUa3T7NIgCe6TVwX8BO2ynu+xtTuDGfHafNDCPt9lXA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
   styled-jsx@5.1.6:
     resolution: {integrity: sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==}
     engines: {node: '>= 12.0.0'}
@@ -4294,6 +4307,10 @@ snapshots:
   std-env@3.10.0: {}
 
   streamsearch@1.1.0: {}
+
+  stripe@22.1.1(@types/node@22.10.5):
+    optionalDependencies:
+      '@types/node': 22.10.5
 
   styled-jsx@5.1.6(react@19.0.0):
     dependencies:

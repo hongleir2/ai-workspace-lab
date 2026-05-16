@@ -50,6 +50,20 @@
       "when": 1778420498318,
       "tag": "0006_plans_index_and_free_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778961079126,
+      "tag": "0007_stripe_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779061079126,
+      "tag": "0008_pro_plans_seed",
+      "breakpoints": true
     }
   ]
 }

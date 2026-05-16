@@ -983,7 +983,7 @@ Webhook idempotency table.
 | `id`                | UUID PK     | Internal event row                           |
 | `stripe_event_id`   | TEXT UQ     | Stripe event ID                              |
 | `event_type`        | TEXT        | `checkout.session.completed`, etc.           |
-| `processing_status` | TEXT        | `received`, `processed`, `failed`, `ignored` |
+| `processing_status` | TEXT        | `received`, `processing`, `processed`, `failed` |
 | `payload`           | JSONB       | Raw webhook payload                          |
 | `error_message`     | TEXT        | Failure reason                               |
 | `received_at`       | TIMESTAMPTZ | When app received it                         |

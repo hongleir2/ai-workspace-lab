@@ -40,16 +40,71 @@ Set up alerts for:
 
 ## Testing Webhooks Locally
 
+### One-time setup
+
 ```bash
-# Install Stripe CLI
+# 1. Install Stripe CLI (macOS)
 brew install stripe/stripe-cli/stripe
 
-# Log in
+# 2. Log in (opens browser)
 stripe login
 
-# Forward to local dev server
+# 3. Start webhook forwarding — prints a whsec_... signing secret
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
 
-# In another terminal, trigger a test event
-stripe trigger customer.subscription.created
+Copy the `whsec_...` secret into `.env.local`:
+
+```bash
+STRIPE_WEBHOOK_SECRET=whsec_...          # from stripe listen output
+STRIPE_SECRET_KEY=sk_test_...            # Stripe dashboard → Developers → API keys
+STRIPE_PRO_MONTHLY_PRICE_ID=price_...   # Stripe dashboard → Products
+STRIPE_PRO_YEARLY_PRICE_ID=price_...
+```
+
+### Test a checkout flow (frontend)
+
+1. Start the app: `pnpm dev`
+2. Go to `http://localhost:3000/app/<your-org>/settings/billing`
+3. Click **Upgrade** → Stripe Checkout opens in test mode
+4. Use test card `4242 4242 4242 4242`, any future expiry, any CVC
+5. Complete checkout → you land on `/settings/billing/success`
+6. Watch the `stripe listen` terminal — `checkout.session.completed` and `customer.subscription.created` events appear as `[processed]`
+7. Return to the billing page — plan should now show Pro
+
+### Test the canceled flow
+
+On the Stripe Checkout page, click **Back** → you land on `/settings/billing/canceled` (no charge made).
+
+### Test webhook idempotency
+
+```bash
+# Get an event ID from the stripe listen output (e.g. evt_xxx), then resend it
+stripe events resend evt_xxx
+```
+
+The second delivery returns `{"received":true}` but no new row is written to `stripe_events` — confirm via Supabase Studio at `http://localhost:54323`.
+
+### Trigger individual event types
+
+```bash
+stripe trigger customer.subscription.updated
+stripe trigger customer.subscription.deleted
+stripe trigger invoice.payment_failed
+stripe trigger invoice.payment_succeeded
+```
+
+### Verify processing in the database
+
+```sql
+-- Check recent webhook events
+SELECT stripe_event_id, event_type, processing_status, error_message, received_at
+FROM stripe_events
+ORDER BY received_at DESC
+LIMIT 20;
+
+-- Check subscription state
+SELECT status, plan_id, current_period_end, cancel_at_period_end
+FROM subscriptions
+WHERE organization_id = '<your-org-uuid>';
 ```

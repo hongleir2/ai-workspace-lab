@@ -158,6 +158,60 @@ pnpx supabase db reset
 
 ---
 
+## Stripe / Billing (local setup)
+
+Billing features require the Stripe CLI running alongside the dev server.
+
+**One-time setup:**
+
+```bash
+# Install Stripe CLI (macOS)
+brew install stripe/stripe-cli/stripe
+
+# Log in (opens browser)
+stripe login
+
+# Forward webhooks to local dev server — prints a whsec_... signing secret
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+Add to `.env.local`:
+
+```bash
+STRIPE_SECRET_KEY=sk_test_...           # Stripe dashboard → Developers → API keys
+STRIPE_WEBHOOK_SECRET=whsec_...         # from stripe listen output above
+STRIPE_PRO_MONTHLY_PRICE_ID=price_...  # Stripe dashboard → Products
+STRIPE_PRO_YEARLY_PRICE_ID=price_...
+```
+
+**Test a checkout (frontend):**
+
+1. `pnpm dev` in a separate terminal (keep `stripe listen` running)
+2. Go to `/app/<org>/settings/billing` → click **Upgrade**
+3. Use test card `4242 4242 4242 4242`, any future expiry, any CVC
+4. Complete → lands on `/settings/billing/success`; cancel → `/settings/billing/canceled`
+5. Watch `stripe listen` output — events appear as `[processed]`
+
+**Test other events:**
+
+```bash
+stripe trigger customer.subscription.updated
+stripe trigger invoice.payment_failed
+stripe trigger customer.subscription.deleted
+```
+
+**Test idempotency** — resend an event ID from the `stripe listen` output:
+
+```bash
+stripe events resend evt_xxx
+```
+
+Second delivery returns `{"received":true}` with no duplicate DB row.
+
+Full details and SQL queries: [`docs/runbooks/stripe-webhook-runbook.md`](./docs/runbooks/stripe-webhook-runbook.md)
+
+---
+
 ## Tests
 
 **Unit tests** run without a database:
@@ -192,12 +246,12 @@ ai-workspace-lab/
 │   ├── ui/                    # shared UI primitives
 │   ├── db/                    # Drizzle ORM client + migrations
 │   ├── auth/                  # auth helpers (scaffold)
-│   ├── billing/               # Stripe billing + webhooks (scaffold)
+│   ├── billing/               # Stripe billing: checkout, portal, webhook handler
 │   ├── entitlements/          # plan/quota enforcement (scaffold)
 │   ├── ai/                    # Vercel AI SDK + Anthropic helpers (scaffold)
 │   ├── jobs/                  # async queue + retries (scaffold)
 │   ├── email/                 # Resend transactional email (scaffold)
-│   └── analytics/             # PostHog event taxonomy (scaffold)
+│   └── analytics/             # billing analytics stubs (PostHog wiring deferred)
 ├── docs/
 │   ├── product/               # PRD, ERD, frontend page map, sprint plan
 │   ├── adr/                   # architecture decision records

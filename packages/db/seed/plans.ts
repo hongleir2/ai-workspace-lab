@@ -8,6 +8,7 @@ const PLAN_DATA = [
     billingInterval: 'none' as const,
     priceCents: 0,
     currency: 'usd',
+    stripePriceId: null,
     isActive: true,
     sortOrder: 0,
   },
@@ -17,6 +18,7 @@ const PLAN_DATA = [
     billingInterval: 'month' as const,
     priceCents: 1900,
     currency: 'usd',
+    stripePriceId: process.env['STRIPE_PRO_MONTHLY_PRICE_ID'] ?? null,
     isActive: true,
     sortOrder: 1,
   },
@@ -26,10 +28,11 @@ const PLAN_DATA = [
     billingInterval: 'year' as const,
     priceCents: 19000,
     currency: 'usd',
+    stripePriceId: process.env['STRIPE_PRO_YEARLY_PRICE_ID'] ?? null,
     isActive: true,
     sortOrder: 2,
   },
-] as const;
+];
 
 const LIMIT_DATA = [
   // free
@@ -121,6 +124,7 @@ export async function seedPlans(db: PostgresJsDatabase<any>): Promise<void> {
           name: plan.name,
           billingInterval: plan.billingInterval,
           priceCents: plan.priceCents,
+          stripePriceId: plan.stripePriceId,
           isActive: plan.isActive,
           sortOrder: plan.sortOrder,
         },

@@ -86,6 +86,13 @@ export async function deleteObject(
   return provider.deleteObject(objectKey);
 }
 
+export async function downloadObject(
+  objectKey: string,
+  provider: StorageProvider = getStorageProvider(),
+): Promise<Buffer> {
+  return provider.downloadObject(objectKey);
+}
+
 export interface CreateStorageObjectRowParams {
   organizationId: string;
   uploadedByUserId: string;

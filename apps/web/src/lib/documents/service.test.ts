@@ -42,6 +42,10 @@ vi.mock('@ai-workspace-lab/usage', () => ({
   recordUsageWithCounter: vi.fn(),
 }));
 
+vi.mock('@ai-workspace-lab/jobs', () => ({
+  createProcessDocumentJob: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@ai-workspace-lab/db', () => {
   const insert = vi.fn();
   const values = vi.fn();
@@ -62,6 +66,7 @@ import {
   getOrganizationPlan,
   getPlanLimits,
 } from '@ai-workspace-lab/entitlements';
+import { createProcessDocumentJob } from '@ai-workspace-lab/jobs';
 import {
   createStorageObjectRow,
   createUploadTarget,
@@ -165,7 +170,6 @@ describe('createDocumentUploadTarget', () => {
 
     expect(result.uploadUrl).toBe(MOCK_UPLOAD_TARGET.uploadUrl);
     expect(result.document.id).toBe(DOC_ID);
-    expect(result.document.status).toBe('uploaded');
     expect(result.document.sourceType).toBe('web_upload');
   });
 
@@ -333,5 +337,32 @@ describe('createDocumentUploadTarget', () => {
     const valuesMock = insertMock.mock.results[0]?.value as { values: ReturnType<typeof vi.fn> };
     const docArg = valuesMock.values.mock.calls[0]?.[0] as { organizationId: string };
     expect(docArg?.organizationId).toBe(ORG_ID);
+  });
+
+  it('inserts document with queued status', async () => {
+    setupHappyPath();
+    await createDocumentUploadTarget({
+      organizationId: ORG_ID,
+      userId: USER_ID,
+      filename: 'report.pdf',
+      contentType: 'application/pdf',
+      byteSize: 1024,
+    });
+    const insertMock = vi.mocked(db.insert);
+    const valuesMock = insertMock.mock.results[0]?.value as { values: ReturnType<typeof vi.fn> };
+    const docArg = valuesMock.values.mock.calls[0]?.[0] as { status: string };
+    expect(docArg?.status).toBe('queued');
+  });
+
+  it('creates a process_document job after upload', async () => {
+    setupHappyPath();
+    await createDocumentUploadTarget({
+      organizationId: ORG_ID,
+      userId: USER_ID,
+      filename: 'report.pdf',
+      contentType: 'application/pdf',
+      byteSize: 1024,
+    });
+    expect(createProcessDocumentJob).toHaveBeenCalledWith(DOC_ID, ORG_ID);
   });
 });

@@ -5,8 +5,17 @@ const PROMPT_VERSION_DATA = [
   {
     name: 'document_qa',
     version: 1,
-    promptTemplate:
-      'Answer the user using the provided document context when available. If the answer is not supported by the documents, say that clearly.',
+    promptTemplate: `You are an assistant answering questions about a document.
+
+Use only the supplied context to answer.
+If the answer is not in the context, say you could not find it in the document.
+Be concise and cite supporting passages when available.
+
+Question:
+{{question}}
+
+Context:
+{{context}}`,
     defaultModelProvider: null,
     defaultModelName: null,
     isActive: true,
@@ -15,8 +24,11 @@ const PROMPT_VERSION_DATA = [
   {
     name: 'general_chat',
     version: 1,
-    promptTemplate:
-      'You are a helpful AI workspace assistant. Give concise, accurate answers and ask for clarification when the request is ambiguous.',
+    promptTemplate: `You are a helpful assistant.
+
+Answer clearly and directly.
+Ask a clarifying question when the request is ambiguous.
+If you are uncertain, say so instead of inventing facts.`,
     defaultModelProvider: null,
     defaultModelName: null,
     isActive: true,

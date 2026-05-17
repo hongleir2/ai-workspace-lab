@@ -28,4 +28,5 @@ export interface StorageProvider {
   uploadObject(params: UploadObjectParams): Promise<void>;
   getObjectMetadata(objectKey: string): Promise<ObjectMetadata>;
   deleteObject(objectKey: string): Promise<void>;
+  downloadObject(objectKey: string): Promise<Buffer>;
 }

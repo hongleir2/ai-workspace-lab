@@ -69,10 +69,10 @@ Real-time & collaboration
 | `stripe_events` | 0007 | `id`, `stripe_event_id` (UNIQUE), `event_type`, `processing_status` CHECK (`received\|processing\|processed\|failed`), `error_message`, `received_at`, `processed_at`; idempotency gate for webhook handler (see ADR 0008) |
 | `storage_objects` | 0009 | `id`, `organization_id`, `bucket`, `object_key`; UNIQUE(bucket, object_key); `original_filename`, `content_type`, `byte_size` (bigint, CHECK ≥ 0), `checksum_sha256`, `uploaded_by_user_id`, `status` enum (uploaded/deleted/quarantined), `created_at`, `deleted_at` |
 | `documents` | 0010 | `id`, `organization_id`, `storage_object_id` → storage_objects, `created_by_user_id`, `title`, `source_type` enum (web_upload/desktop_upload/api/url), `file_type` (text), `status` enum (uploaded→queued→processing→chunking→embedding→indexed→ready/failed/deleted), `processing_error_code`, `processing_error_message`, `page_count`, `language`, `checksum_sha256`, `ready_at`, `created_at`, `updated_at` (trigger), `deleted_at` |
-| `prompt_versions` | 0014 | `id`, `name`, `version`, `prompt_template`, optional model defaults, `is_active`, `created_by_user_id`, `created_at`; UNIQUE(`name`, `version`) |
-| `ai_sessions` | 0014 | `id`, `organization_id`, `created_by_user_id`, `prompt_version_id`, `title`, `visibility` enum, `status` enum, `created_at`, `updated_at` (trigger), `deleted_at` |
-| `ai_messages` | 0014 | `id`, `organization_id`, `session_id`, `parent_message_id` (self-FK), `created_by_user_id`, `role` enum, `content`, `status` enum, provider/model fields, token counts, `cost_micro_usd`, error fields, `created_at`, `completed_at` |
-| `rate_limit_events` | 0014 | `id`, optional `organization_id`, optional `user_id`, `endpoint`, `limit_key`, `action` enum, `tokens_consumed`, `metadata`, `created_at` |
+| `prompt_versions` | 0014 | `id`, `name`, `version`, `prompt_template`, `default_model_provider` (nullable), `default_model_name` (nullable), `is_active`, `created_by_user_id` (nullable), `created_at`; UNIQUE(name, version); seeded with `document_qa` v1 and `general_chat` v1 |
+| `ai_sessions` | 0014 + 0015 | `id`, `organization_id`, `created_by_user_id`, `prompt_version_id` (nullable), `title`, `visibility` enum (`private`/`organization`/`shared`), `status` enum (`active`/`archived`/`deleted`), `created_at`, `updated_at` (trigger), `deleted_at`; UNIQUE(`id`, `organization_id`) supports tenant-safe message FKs |
+| `ai_messages` | 0014 + 0015 | `id`, `organization_id`, `session_id`, `parent_message_id` (nullable), `created_by_user_id` (nullable), `role` enum (`user`/`assistant`/`system`/`tool`), `content`, `status` enum (`streaming`/`completed`/`failed`/`canceled`), `model_provider`, `model_name`, `input_tokens`, `output_tokens`, `total_tokens`, `cost_micro_usd`, `error_code`, `error_message`, `created_at`, `completed_at`; composite FKs enforce session/org match and same-session parent messages; indexes on org/session/created_at and model lookup |
+| `rate_limit_events` | 0014 optional + 0015 | `id`, `organization_id` (nullable), `user_id` (nullable), `endpoint`, `limit_key`, `action` enum (`allowed`/`blocked`), `tokens_consumed`, `metadata`, `created_at`; debugging log for rate-limit decisions |
 
 ### Server packages using these tables
 
@@ -89,6 +89,8 @@ Real-time & collaboration
 |-------|---------|
 | `document_chunks` | Text chunks + pgvector embeddings |
 | `jobs` | Async job status + retry state |
+| `ai_message_sources` | Citation links from AI answers to document chunks |
+| `ai_feedback` | User feedback on AI messages |
 
 ---
 
@@ -118,10 +120,15 @@ documents(checksum_sha256)
 document_chunks(organization_id, document_id)
 ai_sessions(organization_id, created_at)
 ai_sessions(created_by_user_id, created_at)
+ai_sessions(organization_id, status)
 ai_messages(organization_id, session_id, created_at)
 ai_messages(session_id, created_at)
+ai_messages(organization_id, created_at)
+ai_messages(model_provider, model_name)
 rate_limit_events(organization_id, created_at)
 rate_limit_events(user_id, created_at)
+rate_limit_events(endpoint, created_at)
+rate_limit_events(action, created_at)
 usage_events(organization_id, created_at)
 usage_events(organization_id, event_type, created_at)
 jobs(status, run_after)
@@ -138,6 +145,7 @@ subscriptions(organization_id)  -- UNIQUE
 - All tables enable RLS.
 - **SELECT**: members can read their org's rows; `organization_memberships` is the gate.
 - **INSERT/UPDATE**: service role only (no authenticated-role write policies). App writes go through the Supabase service role key.
+- `prompt_versions` is global reference data and is readable by authenticated users.
 - `audit_logs`: SELECT for org members; no UPDATE policy (append-only).
 - `organizations_select_member` policy is defined in migration 0003 (after `organization_memberships` exists) to avoid FK circular dependency at policy-creation time.
 

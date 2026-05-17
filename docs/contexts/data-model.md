@@ -69,6 +69,10 @@ Real-time & collaboration
 | `stripe_events` | 0007 | `id`, `stripe_event_id` (UNIQUE), `event_type`, `processing_status` CHECK (`received\|processing\|processed\|failed`), `error_message`, `received_at`, `processed_at`; idempotency gate for webhook handler (see ADR 0008) |
 | `storage_objects` | 0009 | `id`, `organization_id`, `bucket`, `object_key`; UNIQUE(bucket, object_key); `original_filename`, `content_type`, `byte_size` (bigint, CHECK ≥ 0), `checksum_sha256`, `uploaded_by_user_id`, `status` enum (uploaded/deleted/quarantined), `created_at`, `deleted_at` |
 | `documents` | 0010 | `id`, `organization_id`, `storage_object_id` → storage_objects, `created_by_user_id`, `title`, `source_type` enum (web_upload/desktop_upload/api/url), `file_type` (text), `status` enum (uploaded→queued→processing→chunking→embedding→indexed→ready/failed/deleted), `processing_error_code`, `processing_error_message`, `page_count`, `language`, `checksum_sha256`, `ready_at`, `created_at`, `updated_at` (trigger), `deleted_at` |
+| `prompt_versions` | 0014 | `id`, `name`, `version`, `prompt_template`, optional model defaults, `is_active`, `created_by_user_id`, `created_at`; UNIQUE(`name`, `version`) |
+| `ai_sessions` | 0014 | `id`, `organization_id`, `created_by_user_id`, `prompt_version_id`, `title`, `visibility` enum, `status` enum, `created_at`, `updated_at` (trigger), `deleted_at` |
+| `ai_messages` | 0014 | `id`, `organization_id`, `session_id`, `parent_message_id` (self-FK), `created_by_user_id`, `role` enum, `content`, `status` enum, provider/model fields, token counts, `cost_micro_usd`, error fields, `created_at`, `completed_at` |
+| `rate_limit_events` | 0014 | `id`, optional `organization_id`, optional `user_id`, `endpoint`, `limit_key`, `action` enum, `tokens_consumed`, `metadata`, `created_at` |
 
 ### Server packages using these tables
 
@@ -84,8 +88,6 @@ Real-time & collaboration
 | Table | Purpose |
 |-------|---------|
 | `document_chunks` | Text chunks + pgvector embeddings |
-| `ai_sessions` | Conversation container |
-| `ai_messages` | User + assistant messages with token tracking |
 | `jobs` | Async job status + retry state |
 
 ---
@@ -115,6 +117,11 @@ documents(created_by_user_id, created_at)
 documents(checksum_sha256)
 document_chunks(organization_id, document_id)
 ai_sessions(organization_id, created_at)
+ai_sessions(created_by_user_id, created_at)
+ai_messages(organization_id, session_id, created_at)
+ai_messages(session_id, created_at)
+rate_limit_events(organization_id, created_at)
+rate_limit_events(user_id, created_at)
 usage_events(organization_id, created_at)
 usage_events(organization_id, event_type, created_at)
 jobs(status, run_after)

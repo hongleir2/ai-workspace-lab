@@ -26,7 +26,13 @@ export type { Document, NewDocument } from './schema/documents';
 export type { DocumentChunk, NewDocumentChunk } from './schema/document_chunks';
 export type { Job, NewJob } from './schema/jobs';
 export type { JobAttempt, NewJobAttempt } from './schema/job_attempts';
+export type { PromptVersion, NewPromptVersion } from './schema/prompt_versions';
+export type { AiSession, NewAiSession } from './schema/ai_sessions';
+export type { AiMessage, NewAiMessage } from './schema/ai_messages';
+export type { RateLimitEvent, NewRateLimitEvent } from './schema/rate_limit_events';
 export {
+  aiMessages,
+  aiSessions,
   auditLogs,
   billingCustomers,
   documentChunks,
@@ -37,6 +43,8 @@ export {
   organizationMemberships,
   planLimits,
   plans,
+  promptVersions,
+  rateLimitEvents,
   storageObjects,
   stripeEvents,
   subscriptions,
@@ -45,12 +53,17 @@ export {
   users,
 } from './schema/index';
 export {
+  aiMessageRoleEnum,
+  aiMessageStatusEnum,
+  aiSessionStatusEnum,
+  aiSessionVisibilityEnum,
   billingIntervalEnum,
   documentSourceTypeEnum,
   documentStatusEnum,
   jobAttemptStatusEnum,
   jobStatusEnum,
   limitUnitEnum,
+  rateLimitActionEnum,
   resetIntervalEnum,
   storageObjectStatusEnum,
   subscriptionStatusEnum,

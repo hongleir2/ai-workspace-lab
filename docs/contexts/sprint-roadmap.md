@@ -129,6 +129,7 @@ Remaining:
 
 Done:
 - **Day 41**: `jobs` (migration 0011), `job_attempts` (migration 0012), `document_chunks` (migration 0013) — enums, constraints (unique idempotency_key, unique job_id+attempt_number, unique document_id+chunk_index), indexes, RLS; Drizzle schemas + types; pgvector custom type added to `custom-types.ts`; 2 integration test files (jobs/attempts + chunks)
+- **Day 46**: AI chat schema — migration 0014 adds `prompt_versions`, `ai_sessions`, `ai_messages`, `rate_limit_events`; prompt version seed entries for `document_qa` v1 and `general_chat` v1; indexes for org/session/message access paths; Drizzle schemas + AI chat integration tests
 
 Remaining:
 
@@ -144,7 +145,10 @@ Remaining:
 
 **Outcome:** User can ask a question and get a streaming answer; quota enforced.
 
-- `ai_sessions`, `ai_messages`, `usage_events`, `usage_counters` tables
+Done:
+- `prompt_versions`, `ai_sessions`, `ai_messages`, optional `rate_limit_events`, `usage_events`, `usage_counters` tables
+
+Remaining:
 - `/api/ai/chat`: auth → membership → entitlement → quota → rate limit → model call
 - Streaming via Vercel AI SDK; token usage recorded
 - Rate limit via Upstash Redis

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { seedPlans } from './plans';
+import { seedPromptVersions } from './prompt_versions';
 
 if (process.env['NODE_ENV'] === 'production') {
   console.error('refusing to seed in production');
@@ -21,6 +22,7 @@ async function main() {
   // biome-ignore lint/suspicious/noConsole: seed CLI script
   console.log('Seeding...');
   await seedPlans(db);
+  await seedPromptVersions(db);
   // biome-ignore lint/suspicious/noConsole: seed CLI script
   console.log('Done.');
   await client.end();

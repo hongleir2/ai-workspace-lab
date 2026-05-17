@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-17 Day 38)
+## Current status (last updated: 2026-05-17 Day 46)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -40,13 +40,16 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-17] **Day 38 — Document upload API endpoint** (`POST /api/orgs/[orgSlug]/documents`): creates document row + presigned R2 URL, returns 429 on quota exceeded (document_count limit), 402 on no subscription, 403 on feature disabled, 200 on success; 2-phase client flow (POST for metadata, PUT file to presigned URL); analytics event `document_upload_started`; 17 unit tests covering all error paths
 - [2026-05-17] **Day 39 — Document list, upload, and detail pages**: `/documents` page lists org docs (status badges, org filter by id+deletedAt), empty state with upload CTA, `PageAnalytics` for `documents_viewed`; `/documents/new` upload form (client component, two-phase flow, quota/billing/feature error messages, `document_upload_failed` / `document_uploaded` events); `/documents/[documentId]` detail page (status badge, file metadata, formatted size/date, `notFound()` on org/soft-delete mismatch, `document_detail_viewed` event); all pages use `requireMembership` + `force-dynamic`; analytics: 4 events total
 - [2026-05-17] **Day 40 — Document ownership tests + ADR 0010 + dashboard entitlement fix**: 4 unit tests (service: FILE_TOO_LARGE, NOT_AUTHORIZED cross-org, organizationId correctness; route: NOT_AUTHORIZED → 402); 3 integration tests (document belongs to org, cross-org isolation, soft-delete exclusion); `docs/adr/0010-file-storage-and-document-ownership.md`; dashboard now checks `checkEntitlement(orgId, 'document_uploads')` server-side — shows "Document uploads are not enabled for your account" in the Recent documents card and "Not included in your plan / Upgrade" in the checklist when the feature flag is on but the plan doesn't include the feature; 151 unit tests passing
+- [2026-05-17] **Day 46 — AI chat schema**: migration 0014 adds `prompt_versions`, `ai_sessions`, `ai_messages`, and `rate_limit_events`; prompt version seed entries for `document_qa` v1 and `general_chat` v1; Drizzle schemas + table/type exports; AI chat integration test covers prompt version uniqueness, session timestamp updates, threaded messages, missing-session FK rejection, and rate-limit event inserts
 
 ### In progress
 - Sprint 6: Document processing pipeline next
+- Sprint 8: AI chat MVP schema foundation landed
 
 ### Up next
-- Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate
-- Sprint 6: Document upload flow (R2 storage, background processing queue)
+- `/api/ai/chat`: auth → membership → entitlement → quota → rate limit → model call
+- Streaming responses via Vercel AI SDK with usage recording
+- Sprint 6: document processing worker pipeline
 
 ---
 

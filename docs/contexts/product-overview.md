@@ -138,7 +138,7 @@ All packages live in `packages/`; apps in `apps/`. See `CLAUDE.md §16` for fold
 | 1 | SaaS foundation (auth, orgs, memberships, audit logs) | 🔄 In progress |
 | 2 | Billing + entitlements | Upcoming |
 | 3 | Observability + analytics | Upcoming |
-| 4 | AI chat MVP | Upcoming |
+| 4 | AI chat MVP | In progress |
 | 5 | Document processing + RAG | Upcoming |
 | 6 | Admin operations | Upcoming |
 | 7 | Electron companion | Future |

@@ -1,30 +1,27 @@
+import { AutoRefresh } from '@/components/auto-refresh';
 import { Badge } from '@/components/ui/badge';
-import { db, desc, inArray, jobs } from '@ai-workspace-lab/db';
+import { db, desc, jobs } from '@ai-workspace-lab/db';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminJobsPage() {
-  const failedJobs = await db
-    .select()
-    .from(jobs)
-    .where(inArray(jobs.status, ['failed', 'dead_lettered', 'retrying']))
-    .orderBy(desc(jobs.updatedAt))
-    .limit(50);
+  const allJobs = await db.select().from(jobs).orderBy(desc(jobs.updatedAt)).limit(100);
 
   return (
     <div className="p-6 flex flex-col gap-6">
+      <AutoRefresh intervalMs={5000} />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Jobs</h1>
-        <p className="text-sm text-muted-foreground">Failed, dead-lettered, and retrying jobs</p>
+        <p className="text-sm text-muted-foreground">All jobs — most recently updated first</p>
       </div>
 
-      {failedJobs.length === 0 ? (
+      {allJobs.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No failed jobs — everything is healthy.</p>
+          <p className="text-sm text-muted-foreground">No jobs yet.</p>
         </div>
       ) : (
         <div className="rounded-lg border divide-y">
-          {failedJobs.map((job) => {
+          {allJobs.map((job) => {
             const formatted = job.updatedAt.toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
@@ -66,5 +63,10 @@ function StatusBadge({ status }: { status: string }) {
   if (status === 'failed') return <Badge variant="destructive">Failed</Badge>;
   if (status === 'retrying')
     return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Retrying</Badge>;
+  if (status === 'processing')
+    return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Processing</Badge>;
+  if (status === 'completed')
+    return <Badge className="bg-green-100 text-green-800 border-green-200">Completed</Badge>;
+  if (status === 'pending') return <Badge variant="secondary">Pending</Badge>;
   return <Badge variant="secondary">{status}</Badge>;
 }

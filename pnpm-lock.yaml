@@ -107,6 +107,9 @@ importers:
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
         version: 0.13.11(typescript@5.7.3)(zod@4.4.2)
+      '@upstash/qstash':
+        specifier: ^2.11.0
+        version: 2.11.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -3051,6 +3054,9 @@ packages:
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
+  '@upstash/qstash@2.11.0':
+    resolution: {integrity: sha512-AfPPxsUeOJCrxMQ9dkh1RZL40wgxCsUNFkxrbBSomC3U4j4qKFRawU8sDK+dqqH+sZFUS1biVM4GK46d5Tg2Vg==}
+
   '@vercel/backends@0.7.0':
     resolution: {integrity: sha512-BPmjGQw6G6tq6Qym9DvvtLHYhFsrjswIJ5K1vPjdZUzmagfzCK9nmDqqNjOnDUmR3tS6SpCxcYwWaM4USy6Aag==}
 
@@ -3561,6 +3567,9 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -4311,6 +4320,10 @@ packages:
   netmask@2.1.1:
     resolution: {integrity: sha512-eonl3sLUha+S1GzTPxychyhnUzKyeQkZ7jLjKrBagJgPla13F+uQ71HgpFefyHgqrjEbCPkDArxYsjY8/+gLKA==}
     engines: {node: '>= 0.4.0'}
+
+  neverthrow@7.2.0:
+    resolution: {integrity: sha512-iGBUfFB7yPczHHtA8dksKTJ9E8TESNTAx1UQWW6TzMF280vo9jdPYpLUXrMN1BCkPdHFdNG3fxOt2CUad8KhAw==}
+    engines: {node: '>=18'}
 
   next@15.3.9:
     resolution: {integrity: sha512-bat50ogkh2esjfkbqmVocL5QunR9RGCSO2oQKFjKeDcEylIgw3JY6CMfGnzoVfXJ9SDLHI546sHmsk90D2ivwQ==}
@@ -7786,6 +7799,12 @@ snapshots:
     dependencies:
       '@types/node': 22.10.5
 
+  '@upstash/qstash@2.11.0':
+    dependencies:
+      crypto-js: 4.2.0
+      jose: 5.9.6
+      neverthrow: 7.2.0
+
   '@vercel/backends@0.7.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(rollup@4.60.4)':
     dependencies:
       '@vercel/build-utils': 13.25.0
@@ -8506,6 +8525,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  crypto-js@4.2.0: {}
 
   cssesc@3.0.0: {}
 
@@ -9231,6 +9252,8 @@ snapshots:
   neo-async@2.6.2: {}
 
   netmask@2.1.1: {}
+
+  neverthrow@7.2.0: {}
 
   next@15.3.9(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.49.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:

@@ -39,6 +39,7 @@ pnpm-debug.log*
 # claude
 .agents/
 .claude/
+.mcp.json
 
 # planning docs
 docs/plans/

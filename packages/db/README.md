@@ -44,26 +44,42 @@ with `pnpm <script>`:
 | Script | Description |
 |---|---|
 | `pnpm db:generate` | Generate a new `.sql` migration from schema changes |
-| `pnpm db:migrate` | Apply pending migrations to the target database |
+| `pnpm db:migrate` | Apply pending migrations to **cloud** (default) |
+| `pnpm db:migrate:cloud` | Explicit alias for cloud migrations |
+| `pnpm db:migrate:local` | Apply pending migrations to **local Supabase** (`localhost:54322`) |
 | `pnpm db:push` | Push schema directly to database (dev only — no migration file) |
 | `pnpm db:studio` | Open Drizzle Studio for visual inspection |
 | `pnpm db:seed` | Run seed script (blocked in `NODE_ENV=production`) |
 
-All scripts require `DATABASE_URL` in the environment. The migrate runner uses `dotenv/config`,
-which only reads `.env` from the package's working directory — **the repo-root `.env.local` is
-not loaded automatically**. Pick one of:
+The migrate runner loads `.env.local` then `.env` from the repo root automatically — no shell
+exports needed. Connection strings:
 
-```bash
-# 1. Symlink once (recommended — single source of truth with apps/web)
-ln -sf ../../.env.local packages/db/.env
+- **Cloud** (`db:migrate` / `db:migrate:cloud`): uses `DATABASE_DIRECT_URL` (direct Postgres,
+  port 5432). **Do not use `DATABASE_URL`** (the pooler URL, port 6543) — PgBouncer in
+  transaction mode resets state between queries and breaks Drizzle's migration transaction.
+- **Local** (`db:migrate:local`): uses `DATABASE_DIRECT_URL_LOCAL`, defaulting to
+  `postgresql://postgres:postgres@localhost:54322/postgres`. Requires `pnpx supabase start`.
 
-# 2. Source the root file inline for a single run
-set -a && source .env.local && set +a && pnpm --filter @ai-workspace-lab/db db:migrate
+## How Drizzle migration tracking works
 
-# 3. Set DATABASE_URL in your shell directly
-export DATABASE_URL='postgres://...'
-pnpm --filter @ai-workspace-lab/db db:migrate
+Drizzle tracks applied migrations in `drizzle.__drizzle_migrations` with two columns:
+`hash` (SHA-256 of the `.sql` file content) and `created_at` (bigint, milliseconds).
+
+**The comparison is not hash-based.** The algorithm is:
+
 ```
+lastApplied = SELECT ... ORDER BY created_at DESC LIMIT 1
+for each migration in journal (ordered by `when`):
+    if lastApplied.created_at < migration.when  →  run it
+```
+
+This means:
+- `created_at` values **must be the `when` timestamps from `_journal.json`**, not arbitrary integers.
+- If the tracking table is empty or has wrong `created_at` values, Drizzle will re-run all migrations and fail on already-existing objects (`type already exists`, `table already exists`, etc.).
+- Hash values in the tracking table are stored for auditing but are **not used** to decide what to run.
+
+See `docs/runbooks/migration-tracking-repair.md` for the repair procedure if the tracking
+table gets out of sync.
 
 ## Schema conventions
 

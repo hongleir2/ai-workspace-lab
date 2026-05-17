@@ -26,9 +26,9 @@ export async function signUpAction(formData: FormData): Promise<void> {
     redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
   }
 
-  if (data.user) {
-    await captureServerEvent(data.user.id, 'user_signed_up', { email });
-  }
+  // When email confirmation is required, data.user may be null (resend case).
+  // Fall back to email as the PostHog distinct ID so the event always fires.
+  await captureServerEvent(data.user?.id ?? email, 'user_signed_up', { email });
 
   redirect('/sign-in?message=check_email');
 }

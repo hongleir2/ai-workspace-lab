@@ -1,7 +1,7 @@
 'use client';
 
 import { captureEvent } from '@ai-workspace-lab/analytics';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface PageAnalyticsProps {
   event: string;
@@ -9,11 +9,9 @@ interface PageAnalyticsProps {
 }
 
 export function PageAnalytics({ event, properties }: PageAnalyticsProps) {
-  // Only re-fire when the event name changes (page navigation).
-  // `properties` is a new object each render; including it would cause infinite re-fires.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const propertiesRef = useRef(properties);
   useEffect(() => {
-    captureEvent(event, properties);
+    captureEvent(event, propertiesRef.current);
   }, [event]);
 
   return null;

@@ -78,6 +78,27 @@
       "when": 1779261079126,
       "tag": "0010_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1747497600000,
+      "tag": "0011_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1747497700000,
+      "tag": "0012_job_attempts",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1747497800000,
+      "tag": "0013_document_chunks",
+      "breakpoints": true
     }
   ]
 }

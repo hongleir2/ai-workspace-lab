@@ -23,10 +23,16 @@ export type { BillingCustomer, NewBillingCustomer } from './schema/billing_custo
 export type { StripeEvent, NewStripeEvent } from './schema/stripe_events';
 export type { StorageObject, NewStorageObject } from './schema/storage_objects';
 export type { Document, NewDocument } from './schema/documents';
+export type { DocumentChunk, NewDocumentChunk } from './schema/document_chunks';
+export type { Job, NewJob } from './schema/jobs';
+export type { JobAttempt, NewJobAttempt } from './schema/job_attempts';
 export {
   auditLogs,
   billingCustomers,
+  documentChunks,
   documents,
+  jobAttempts,
+  jobs,
   organizations,
   organizationMemberships,
   planLimits,
@@ -42,6 +48,8 @@ export {
   billingIntervalEnum,
   documentSourceTypeEnum,
   documentStatusEnum,
+  jobAttemptStatusEnum,
+  jobStatusEnum,
   limitUnitEnum,
   resetIntervalEnum,
   storageObjectStatusEnum,

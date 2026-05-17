@@ -14,3 +14,20 @@ export const inet = customType<{ data: string; driverData: string }>({
     return 'inet';
   },
 });
+
+// vector stores pgvector embeddings. Dimension must match the embedding model.
+export const vector = (dimensions: number) =>
+  customType<{ data: number[] | null; driverData: string | null }>({
+    dataType() {
+      return `vector(${dimensions})`;
+    },
+    fromDriver(value: string | null): number[] | null {
+      if (value === null) return null;
+      // pgvector returns "[0.1,0.2,...]" — strip brackets and parse
+      return value.slice(1, -1).split(',').map(Number);
+    },
+    toDriver(value: number[] | null): string | null {
+      if (value === null) return null;
+      return `[${value.join(',')}]`;
+    },
+  });

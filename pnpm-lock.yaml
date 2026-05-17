@@ -71,6 +71,12 @@ importers:
       '@ai-workspace-lab/entitlements':
         specifier: workspace:*
         version: link:../../packages/entitlements
+      '@ai-workspace-lab/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@ai-workspace-lab/usage':
+        specifier: workspace:*
+        version: link:../../packages/usage
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

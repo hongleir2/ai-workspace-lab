@@ -1,3 +1,4 @@
+import { AnalyticsIdentity } from '@/components/analytics-identity';
 import { AppSidebar } from '@/components/nav/app-sidebar';
 import { AppTopbar } from '@/components/nav/app-topbar';
 import { requireMembership } from '@/lib/orgs/guards';
@@ -49,6 +50,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
         <AppTopbar orgSlug={orgSlug} />
         <main className="flex-1">{children}</main>
       </div>
+      <AnalyticsIdentity userId={user.id} orgId={organization.id} orgSlug={organization.slug} />
     </div>
   );
 }

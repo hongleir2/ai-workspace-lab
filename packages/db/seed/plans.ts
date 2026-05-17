@@ -130,6 +130,7 @@ export async function seedPlans(db: PostgresJsDatabase<any>): Promise<void> {
         },
       });
   }
+  // biome-ignore lint/suspicious/noConsole: seed CLI script
   console.log(`Seeded ${PLAN_DATA.length} plans`);
 
   for (const limit of LIMIT_DATA) {
@@ -146,5 +147,6 @@ export async function seedPlans(db: PostgresJsDatabase<any>): Promise<void> {
         },
       });
   }
+  // biome-ignore lint/suspicious/noConsole: seed CLI script
   console.log(`Seeded ${LIMIT_DATA.length} plan limits`);
 }

@@ -1,12 +1,12 @@
 import { PageAnalytics } from '@/components/page-analytics';
-import { getServerFeatureFlag } from '@/lib/analytics/flags';
-import { requireUser } from '@/lib/auth/user';
-import { getOrganizationBySlug } from '@/lib/orgs/service';
-import { CheckCircle2, Circle, ExternalLink, Lock } from 'lucide-react';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getServerFeatureFlag } from '@/lib/analytics/flags';
+import { requireMembership } from '@/lib/orgs/guards';
+import { getOrganizationUsageOverview } from '@ai-workspace-lab/entitlements';
+import { CheckCircle2, Circle, ExternalLink, FileText, Lock, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +24,18 @@ interface ChecklistItem {
 
 export default async function OrgDashboardPage({ params }: OrgDashboardPageProps) {
   const { orgSlug } = await params;
-  const [organization, user] = await Promise.all([getOrganizationBySlug(orgSlug), requireUser()]);
-  if (!organization) notFound();
+  const { user, organization } = await requireMembership(orgSlug);
 
-  const [uploadEnabled, aiChatEnabled] = await Promise.all([
+  const [overview, uploadEnabled, aiChatEnabled] = await Promise.all([
+    getOrganizationUsageOverview(organization.id).catch(() => null),
     getServerFeatureFlag('document_upload_enabled', user.id),
     getServerFeatureFlag('ai_chat_enabled', user.id),
   ]);
+
+  const isFree =
+    !overview ||
+    overview.subscription.status === 'free' ||
+    overview.plan.billingInterval === 'none';
 
   const checklist: ChecklistItem[] = [
     {
@@ -57,17 +62,146 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-3xl">
+    <div className="flex flex-col gap-6 p-6 max-w-4xl">
       <PageAnalytics event="dashboard_viewed" properties={{ org_slug: orgSlug }} />
+
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight">
           {`Welcome to ${organization.name}`}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Here&apos;s how to get the most out of your workspace.
+          {"Here's an overview of your workspace."}
         </p>
       </div>
 
+      {/* Top row: org info + plan */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>{'Organization'}</CardDescription>
+            <CardTitle className="text-lg">{organization.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {'Slug: '}
+              <span className="font-mono text-foreground">{organization.slug}</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>{'Current plan'}</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              {overview?.plan.name ?? 'Free'}
+              <Badge variant={isFree ? 'secondary' : 'default'}>
+                {overview?.subscription.status ?? 'free'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isFree ? (
+              <Link href={`/app/${orgSlug}/settings/billing`}>
+                <Button size="sm" variant="outline">
+                  {'Upgrade plan'}
+                </Button>
+              </Link>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {overview?.plan.billingInterval === 'month' ? 'Monthly billing' : 'Annual billing'}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Usage summary */}
+      {overview && overview.lines.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{'Usage this period'}</CardTitle>
+            <CardDescription>{'Your consumption against plan limits.'}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {overview.lines.map((line) => (
+              <div key={line.featureKey} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{line.title}</span>
+                  <span className="text-muted-foreground">
+                    {line.unlimited
+                      ? 'Unlimited'
+                      : line.limitUnit === 'bytes'
+                        ? `${line.limit} MB max`
+                        : `${line.used ?? 0} / ${line.limit}`}
+                  </span>
+                </div>
+                {!line.unlimited && line.limit !== null && line.limitUnit === 'count' && (
+                  <div className="h-1.5 w-full rounded-full bg-secondary">
+                    <div
+                      className="h-1.5 rounded-full bg-primary transition-all"
+                      style={{ width: `${line.percentUsed ?? 0}%` }}
+                    />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{line.resetSummary}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Placeholders: recent docs + recent AI sessions */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              {'Recent documents'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {'No documents yet. '}
+              {uploadEnabled ? (
+                <Link
+                  href={`/app/${orgSlug}/documents/new`}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {'Upload your first document'}
+                </Link>
+              ) : (
+                'Document upload coming soon.'
+              )}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              {'Recent AI sessions'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {'No sessions yet. '}
+              {aiChatEnabled ? (
+                <Link
+                  href={`/app/${orgSlug}/ai`}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {'Start an AI conversation'}
+                </Link>
+              ) : (
+                'AI chat coming soon.'
+              )}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Getting started checklist */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{'Getting started'}</CardTitle>
@@ -108,6 +242,23 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
           )}
         </CardContent>
       </Card>
+
+      {/* Upgrade CTA for free plans */}
+      {isFree && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-base">{'Unlock more with a paid plan'}</CardTitle>
+            <CardDescription>
+              {'Get higher limits, priority support, and access to advanced AI features.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href={`/app/${orgSlug}/settings/billing`}>
+              <Button>{'View plans & pricing'}</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

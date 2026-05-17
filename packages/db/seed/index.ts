@@ -18,8 +18,10 @@ const client = postgres(DATABASE_URL, { prepare: false });
 const db = drizzle(client, { casing: 'snake_case' });
 
 async function main() {
+  // biome-ignore lint/suspicious/noConsole: seed CLI script
   console.log('Seeding...');
   await seedPlans(db);
+  // biome-ignore lint/suspicious/noConsole: seed CLI script
   console.log('Done.');
   await client.end();
 }

@@ -10,6 +10,11 @@
 ```
 WORKER_SECRET=any-secret-string        # bearer token for /api/internal/run-worker
 ADMIN_EMAILS=you@example.com           # comma-separated; grants access to /admin/jobs
+
+# QStash (optional in local dev — upload still works, no push trigger)
+QSTASH_TOKEN=your-qstash-token
+QSTASH_CURRENT_SIGNING_KEY=your-current-key
+QSTASH_NEXT_SIGNING_KEY=your-next-key
 ```
 
 **Start the stack:**
@@ -19,15 +24,33 @@ pnpm --filter @ai-workspace-lab/db db:migrate
 pnpm dev
 ```
 
-**Test the end-to-end flow:**
-1. Upload a document at `/app/[orgSlug]/documents/new` — document status shows **Queued**
-2. Trigger the worker:
+**Test the end-to-end flow (local, no QStash):**
+1. Upload a document at `/app/[orgSlug]/documents/new` — document status shows **Queued** and detail page starts auto-refreshing every 3s
+2. Trigger the worker manually:
    ```bash
    curl -X POST http://localhost:3000/api/internal/run-worker \
      -H "Authorization: Bearer your-secret-string"
    ```
-3. Refresh the document detail page — status progresses to **Processing → Ready**
-4. Visit `/admin/jobs` (email must be in `ADMIN_EMAILS`) to see failed/dead-lettered jobs
+3. Watch the document detail page — status progresses **Queued → Processing → Ready** automatically (no manual refresh needed)
+4. Visit `/admin/jobs` (email must be in `ADMIN_EMAILS`) — page auto-refreshes every 5s showing all job statuses
+
+**Test QStash push trigger (production / ngrok tunnel):**
+1. Set `NEXT_PUBLIC_APP_URL` to your publicly reachable URL (e.g. `https://your-app.vercel.app`)
+2. Set `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` from your QStash dashboard
+3. Upload a document — `triggerWorker()` fires automatically after the job is enqueued
+4. QStash delivers a `POST /api/internal/run-worker` with a signed `upstash-signature` header
+5. Document detail page auto-refreshes and reaches **Ready** without any manual `curl`
+
+**Test QStash cron safety net:**
+1. Configure a QStash schedule in the dashboard: `POST https://your-app/api/internal/run-worker` every 2 minutes, body `{}`, add `Authorization: Bearer $WORKER_SECRET` header
+2. Do NOT set `QSTASH_TOKEN` in the app env (disables push trigger)
+3. Upload a document — job is enqueued but push trigger is a no-op
+4. Within 2 minutes, the cron fires and the document reaches **Ready**
+
+**Test AutoRefresh stops when terminal state is reached:**
+1. Open the document detail page while status is **Queued**
+2. Open DevTools → Network tab — observe periodic `?_rsc=...` requests (Server Component refreshes)
+3. After the document reaches **Ready** or **Failed**, the periodic requests stop (component unmounts)
 
 ---
 

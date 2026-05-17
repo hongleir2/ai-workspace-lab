@@ -13,6 +13,7 @@ import {
   getMaxFileSizeMb,
 } from '@ai-workspace-lab/storage';
 import { recordUsageWithCounter } from '@ai-workspace-lab/usage';
+import { triggerWorker } from '../jobs/trigger';
 
 export interface CreateDocumentUploadTargetInput {
   organizationId: string;
@@ -96,6 +97,9 @@ export async function createDocumentUploadTarget(
   });
 
   await createProcessDocumentJob(document.id, organizationId);
+  // Fire-and-forget: QStash triggers run-worker immediately. If QStash is
+  // unavailable, the job stays pending until the cron safety net picks it up.
+  triggerWorker().catch(() => {});
 
   return { document, uploadUrl };
 }

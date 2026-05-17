@@ -1,14 +1,9 @@
 import { env } from '@/lib/env';
+import { FLAG_DEFAULTS } from '@ai-workspace-lab/analytics';
 import type { FeatureFlag } from '@ai-workspace-lab/analytics';
 import { PostHog } from 'posthog-node';
 
-const FLAG_DEFAULTS: Record<FeatureFlag, boolean> = {
-  document_upload_enabled: false,
-  ai_chat_enabled: false,
-  rag_v1_enabled: false,
-  desktop_upload_enabled: false,
-  realtime_status_enabled: false,
-};
+export { FLAGS } from '@ai-workspace-lab/analytics';
 
 export async function getServerFeatureFlag(
   flag: FeatureFlag,

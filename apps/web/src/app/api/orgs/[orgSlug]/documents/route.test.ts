@@ -12,6 +12,13 @@ vi.mock('@/lib/orgs/service', () => ({
 
 vi.mock('@/lib/analytics/flags', () => ({
   getServerFeatureFlag: vi.fn(),
+  FLAGS: {
+    DOCUMENT_UPLOAD: 'document_upload_enabled',
+    AI_CHAT: 'ai_chat_enabled',
+    RAG_V1: 'rag_v1_enabled',
+    DESKTOP_UPLOAD: 'desktop_upload_enabled',
+    REALTIME_STATUS: 'realtime_status_enabled',
+  },
 }));
 
 vi.mock('@/lib/documents/service', () => ({
@@ -329,5 +336,18 @@ describe('POST /api/orgs/[orgSlug]/documents', () => {
       contentType: 'application/pdf',
       byteSize: 2048,
     });
+  });
+
+  it('returns 402 when StorageError(NOT_AUTHORIZED)', async () => {
+    setupHappyPath();
+    const { StorageError } = await import('@ai-workspace-lab/storage');
+    vi.mocked(createDocumentUploadTarget).mockRejectedValue(
+      new StorageError('NOT_AUTHORIZED', 'Org membership check failed'),
+    );
+    const res = await POST(
+      makeRequest({ filename: 'report.pdf', contentType: 'application/pdf', byteSize: 1024 }),
+      { params: PARAMS },
+    );
+    expect(res.status).toBe(402);
   });
 });

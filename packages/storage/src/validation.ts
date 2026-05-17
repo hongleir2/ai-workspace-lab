@@ -2,6 +2,7 @@ import type { Database } from '@ai-workspace-lab/db';
 import { db } from '@ai-workspace-lab/db';
 import {
   EntitlementError,
+  FEATURE_KEYS,
   getOrganizationPlan,
   getPlanLimits,
 } from '@ai-workspace-lab/entitlements';
@@ -51,7 +52,7 @@ export async function getMaxFileSizeMb(
 ): Promise<number> {
   try {
     const { subscription } = await getOrganizationPlan(organizationId, dbConn);
-    const limits = await getPlanLimits(subscription.planId, 'max_file_size_mb', dbConn);
+    const limits = await getPlanLimits(subscription.planId, FEATURE_KEYS.MAX_FILE_SIZE_MB, dbConn);
     const row = limits[0];
     if (!row) return DEFAULT_MAX_FILE_SIZE_MB;
     if (row.limitValue === null) return Number.POSITIVE_INFINITY;

@@ -118,6 +118,7 @@ Done:
 - **Day 37**: `packages/storage` — `StorageProvider` interface; R2 + Supabase Storage providers; presigned upload URL generation; org-auth boundary; extension+MIME validation; plan-limit-aware file size gate; `createStorageObjectRow`; 19 unit tests
 - **Day 38**: Upload API endpoint `POST /api/orgs/[orgSlug]/documents` — creates document + presigned URL, quota/billing/feature gates (429/402/403), analytics event tracking, 17 unit tests
 - **Day 39**: Document UI trio — `/documents` list page (status badges, empty state, org filter), `/documents/new` upload form (client component, two-phase, error handling), `/documents/[documentId]` detail page (metadata, status badge, soft-delete safety); 4 analytics events
+- **Day 40**: Document ownership tests (4 unit + 3 integration) covering FILE_TOO_LARGE/NOT_AUTHORIZED rejection, cross-org isolation, soft-delete exclusion; ADR 0010 (file storage + document ownership policy); dashboard entitlement-aware UI — shows plan-gated state with upgrade link when PostHog flag is on but plan doesn't include `document_uploads`; feature-gate sidebar nav — Documents and AI Chat nav items show lock icon + tooltip "Not available on your current plan" when PostHog flag is off; documents page returns 404 when flag is off; upload button gated by entitlement; `FLAGS` constant moved to `@ai-workspace-lab/analytics` (single source of truth, client-safe); tooltip component added
 
 Remaining:
 - Document processing pipeline (extract, chunk, embed)

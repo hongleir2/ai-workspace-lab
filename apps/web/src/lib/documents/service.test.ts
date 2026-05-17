@@ -9,6 +9,11 @@ vi.mock('@ai-workspace-lab/entitlements', () => ({
   getOrganizationPlan: vi.fn(),
   getPlanLimits: vi.fn(),
   getCurrentBillingPeriod: vi.fn(),
+  FEATURE_KEYS: {
+    DOCUMENT_UPLOADS: 'document_uploads',
+    AI_MESSAGES: 'ai_messages',
+    MAX_FILE_SIZE_MB: 'max_file_size_mb',
+  },
   EntitlementError: class EntitlementError extends Error {
     code: string;
     constructor(code: string) {
@@ -269,5 +274,64 @@ describe('createDocumentUploadTarget', () => {
     };
     const docArg = valuesMock.values.mock.calls[0]?.[0] as { fileType: string };
     expect(docArg?.fileType).toBe('txt');
+  });
+
+  it('rejects oversized file (FILE_TOO_LARGE)', async () => {
+    vi.mocked(assertFeatureAllowed).mockResolvedValue(undefined);
+    vi.mocked(getMaxFileSizeMb).mockResolvedValue(5);
+    const { StorageError: MockStorageError } = await import('@ai-workspace-lab/storage');
+    vi.mocked(createUploadTarget).mockRejectedValue(
+      new MockStorageError('FILE_TOO_LARGE', 'File exceeds 5 MB limit'),
+    );
+
+    await expect(
+      createDocumentUploadTarget({
+        organizationId: ORG_ID,
+        userId: USER_ID,
+        filename: 'huge.pdf',
+        contentType: 'application/pdf',
+        byteSize: 10 * 1024 * 1024,
+      }),
+    ).rejects.toMatchObject({ code: 'FILE_TOO_LARGE' });
+
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it('rejects upload when storage returns NOT_AUTHORIZED (cross-org attempt)', async () => {
+    vi.mocked(assertFeatureAllowed).mockResolvedValue(undefined);
+    vi.mocked(getMaxFileSizeMb).mockResolvedValue(50);
+    const { StorageError: MockStorageError } = await import('@ai-workspace-lab/storage');
+    vi.mocked(createUploadTarget).mockRejectedValue(
+      new MockStorageError('NOT_AUTHORIZED', 'Org membership check failed'),
+    );
+
+    await expect(
+      createDocumentUploadTarget({
+        organizationId: ORG_ID,
+        userId: USER_ID,
+        filename: 'report.pdf',
+        contentType: 'application/pdf',
+        byteSize: 1024,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_AUTHORIZED' });
+
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it('inserts document row with the correct organizationId', async () => {
+    setupHappyPath();
+    await createDocumentUploadTarget({
+      organizationId: ORG_ID,
+      userId: USER_ID,
+      filename: 'report.pdf',
+      contentType: 'application/pdf',
+      byteSize: 1024,
+    });
+
+    const insertMock = vi.mocked(db.insert);
+    expect(insertMock).toHaveBeenCalled();
+    const valuesMock = insertMock.mock.results[0]?.value as { values: ReturnType<typeof vi.fn> };
+    const docArg = valuesMock.values.mock.calls[0]?.[0] as { organizationId: string };
+    expect(docArg?.organizationId).toBe(ORG_ID);
   });
 });

@@ -9,6 +9,14 @@ export type FeatureFlag =
   | 'desktop_upload_enabled'
   | 'realtime_status_enabled';
 
+export const FLAGS = {
+  DOCUMENT_UPLOAD: 'document_upload_enabled',
+  AI_CHAT: 'ai_chat_enabled',
+  RAG_V1: 'rag_v1_enabled',
+  DESKTOP_UPLOAD: 'desktop_upload_enabled',
+  REALTIME_STATUS: 'realtime_status_enabled',
+} as const satisfies Record<string, FeatureFlag>;
+
 export const FLAG_DEFAULTS: Record<FeatureFlag, boolean> = {
   document_upload_enabled: false,
   ai_chat_enabled: false,

@@ -25,14 +25,22 @@ vi.mock('@/lib/env', () => ({
 vi.mock('@ai-workspace-lab/entitlements', () => ({
   EntitlementError: class EntitlementError extends Error {
     code: string;
-    constructor(code: string) { super(code); this.code = code; this.name = 'EntitlementError'; }
+    constructor(code: string) {
+      super(code);
+      this.code = code;
+      this.name = 'EntitlementError';
+    }
   },
 }));
 
 vi.mock('@ai-workspace-lab/storage', () => ({
   StorageError: class StorageError extends Error {
     code: string;
-    constructor(code: string, msg: string) { super(msg); this.code = code; this.name = 'StorageError'; }
+    constructor(code: string, msg: string) {
+      super(msg);
+      this.code = code;
+      this.name = 'StorageError';
+    }
   },
 }));
 
@@ -50,14 +58,15 @@ vi.mock('@ai-workspace-lab/db', () => {
 });
 
 // ── Import after mocks ────────────────────────────────────────────────────────
-import { POST } from './route';
-import { getCurrentUser } from '@/lib/auth/user';
-import { getOrganizationBySlug } from '@/lib/orgs/service';
 import { getServerFeatureFlag } from '@/lib/analytics/flags';
+import { getCurrentUser } from '@/lib/auth/user';
 import { createDocumentUploadTarget } from '@/lib/documents/service';
-import { db } from '@ai-workspace-lab/db';
 import { env } from '@/lib/env';
+import { getOrganizationBySlug } from '@/lib/orgs/service';
+import { db } from '@ai-workspace-lab/db';
 import type { NextRequest } from 'next/server';
+
+import { POST } from './route';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -74,11 +83,55 @@ function makeRequest(body: unknown): NextRequest {
 }
 
 const PARAMS = Promise.resolve({ orgSlug: ORG_SLUG });
-const MOCK_USER = { id: USER_ID, email: 'test@example.com', status: 'active' } as never;
-const MOCK_ORG = { id: ORG_ID, slug: ORG_SLUG, name: 'Test Org', status: 'active' } as never;
+const MOCK_USER = {
+  id: USER_ID,
+  email: 'test@example.com',
+  status: 'active' as const,
+  authProvider: 'google',
+  authProviderUserId: 'google-123',
+  displayName: null,
+  avatarUrl: null,
+  timezone: null,
+  lastSeenAt: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  deletedAt: null,
+};
+const MOCK_ORG = {
+  id: ORG_ID,
+  slug: ORG_SLUG,
+  name: 'Test Org',
+  status: 'active' as const,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  deletedAt: null,
+  ownerUserId: USER_ID,
+  metadata: null,
+};
 const MOCK_MEMBERSHIP = { id: 'membership-1' };
-const MOCK_DOCUMENT = { id: 'doc-1', status: 'uploaded', sourceType: 'web_upload' } as never;
-const MOCK_RESULT = { document: MOCK_DOCUMENT, uploadUrl: 'https://r2.example.com/presigned' };
+const MOCK_DOCUMENT = {
+  id: 'doc-1',
+  status: 'uploaded' as const,
+  sourceType: 'web_upload' as const,
+  organizationId: ORG_ID,
+  storageObjectId: 'storage-1',
+  createdByUserId: USER_ID,
+  title: 'report.pdf',
+  fileType: 'application/pdf',
+  processingErrorCode: null,
+  processingErrorMessage: null,
+  pageCount: null,
+  language: null,
+  checksumSha256: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  deletedAt: null,
+  readyAt: null,
+};
+const MOCK_RESULT = {
+  document: MOCK_DOCUMENT,
+  uploadUrl: 'https://r2.example.com/presigned',
+};
 
 function setupHappyPath() {
   vi.mocked(getCurrentUser).mockResolvedValue(MOCK_USER);
@@ -91,7 +144,9 @@ function setupHappyPath() {
 }
 
 describe('POST /api/orgs/[orgSlug]/documents', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
   afterEach(() => {
     (env as { NEXT_PUBLIC_POSTHOG_KEY: string | undefined }).NEXT_PUBLIC_POSTHOG_KEY = undefined;
   });
@@ -139,7 +194,8 @@ describe('POST /api/orgs/[orgSlug]/documents', () => {
 
   it('returns 404 when org exists but is not active', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(MOCK_USER);
-    vi.mocked(getOrganizationBySlug).mockResolvedValue({ ...MOCK_ORG, status: 'suspended' } as never);
+    const suspendedOrg = { ...MOCK_ORG, status: 'suspended' as const };
+    vi.mocked(getOrganizationBySlug).mockResolvedValue(suspendedOrg);
     const res = await POST(
       makeRequest({ filename: 'report.pdf', contentType: 'application/pdf', byteSize: 1024 }),
       { params: PARAMS },
@@ -186,7 +242,9 @@ describe('POST /api/orgs/[orgSlug]/documents', () => {
   it('returns 402 when EntitlementError(FEATURE_NOT_INCLUDED)', async () => {
     setupHappyPath();
     const { EntitlementError } = await import('@ai-workspace-lab/entitlements');
-    vi.mocked(createDocumentUploadTarget).mockRejectedValue(new EntitlementError('FEATURE_NOT_INCLUDED'));
+    vi.mocked(createDocumentUploadTarget).mockRejectedValue(
+      new EntitlementError('FEATURE_NOT_INCLUDED'),
+    );
     const res = await POST(
       makeRequest({ filename: 'report.pdf', contentType: 'application/pdf', byteSize: 1024 }),
       { params: PARAMS },
@@ -238,7 +296,7 @@ describe('POST /api/orgs/[orgSlug]/documents', () => {
       { params: PARAMS },
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { document: { id: string }; uploadUrl: string };
+    const body = (await res.json()) as { document: { id: string }; uploadUrl: string };
     expect(body.document.id).toBe('doc-1');
     expect(body.uploadUrl).toBe('https://r2.example.com/presigned');
   });

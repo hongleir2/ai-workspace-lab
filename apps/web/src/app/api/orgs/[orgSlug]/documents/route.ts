@@ -1,11 +1,11 @@
-import { getCurrentUser } from '@/lib/auth/user';
 import { getServerFeatureFlag } from '@/lib/analytics/flags';
+import { getCurrentUser } from '@/lib/auth/user';
 import { createDocumentUploadTarget } from '@/lib/documents/service';
 import { env } from '@/lib/env';
 import { getOrganizationBySlug } from '@/lib/orgs/service';
+import { and, db, eq, organizationMemberships } from '@ai-workspace-lab/db';
 import { EntitlementError } from '@ai-workspace-lab/entitlements';
 import { StorageError } from '@ai-workspace-lab/storage';
-import { and, db, eq, organizationMemberships } from '@ai-workspace-lab/db';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -89,15 +89,15 @@ export async function POST(
       byteSize: body.byteSize,
     });
     return NextResponse.json({ document: result.document, uploadUrl: result.uploadUrl });
-  } catch (err) {
-    if (err instanceof EntitlementError) {
-      if (err.code === 'QUOTA_EXCEEDED') {
+  } catch (error: unknown) {
+    if (error instanceof EntitlementError) {
+      if (error.code === 'QUOTA_EXCEEDED') {
         return NextResponse.json(
           { error: 'Upload quota exceeded for this period' },
           { status: 429 },
         );
       }
-      if (err.code === 'NO_ACTIVE_SUBSCRIPTION') {
+      if (error.code === 'NO_ACTIVE_SUBSCRIPTION') {
         return NextResponse.json(
           { error: 'No active subscription — please set up billing' },
           { status: 402 },
@@ -108,17 +108,17 @@ export async function POST(
         { status: 402 },
       );
     }
-    if (err instanceof StorageError) {
-      if (err.code === 'INVALID_FILE_TYPE' || err.code === 'FILE_TOO_LARGE') {
-        return NextResponse.json({ error: err.message }, { status: 400 });
+    if (error instanceof StorageError) {
+      if (error.code === 'INVALID_FILE_TYPE' || error.code === 'FILE_TOO_LARGE') {
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
-      if (err.code === 'NOT_AUTHORIZED') {
+      if (error.code === 'NOT_AUTHORIZED') {
         return NextResponse.json(
           { error: 'No active subscription — please set up billing' },
           { status: 402 },
         );
       }
     }
-    throw err;
+    throw error;
   }
 }

@@ -10,6 +10,7 @@ import {
 import { requireMembership } from '@/lib/orgs/guards';
 import { db, eq, plans } from '@ai-workspace-lab/db';
 import { getOrganizationPlan } from '@ai-workspace-lab/entitlements';
+import { PageAnalytics } from '@/components/page-analytics';
 import { CreditCard } from 'lucide-react';
 import { ManageBillingButton } from './manage-billing-button';
 import { UpgradeButton } from './upgrade-button';
@@ -61,6 +62,7 @@ export default async function BillingSettingsPage({ params }: Props) {
 
   return (
     <Card>
+      <PageAnalytics event="billing_viewed" properties={{ org_slug: orgSlug }} />
       <CardHeader>
         <CardTitle className="text-base">{'Billing'}</CardTitle>
         <CardDescription>{'Your current plan and payment details.'}</CardDescription>

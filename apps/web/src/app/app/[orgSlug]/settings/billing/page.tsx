@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { requireMembership } from '@/lib/orgs/guards';
 import { db, eq, plans } from '@ai-workspace-lab/db';
-import { getOrganizationPlan } from '@ai-workspace-lab/entitlements';
+import { EntitlementError, getOrganizationPlan } from '@ai-workspace-lab/entitlements';
 import { CreditCard } from 'lucide-react';
 import { ManageBillingButton } from './manage-billing-button';
 import { UpgradeButton } from './upgrade-button';
@@ -41,7 +41,12 @@ export default async function BillingSettingsPage({ params }: Props) {
   const { organization, membership } = await requireMembership(orgSlug);
   const isOwner = membership.role === 'owner';
 
-  const { subscription, plan } = await getOrganizationPlan(organization.id);
+  const planResult = await getOrganizationPlan(organization.id).catch((err: unknown) => {
+    if (err instanceof EntitlementError && err.code === 'NO_ACTIVE_SUBSCRIPTION') return null;
+    throw err;
+  });
+  const plan = planResult?.plan;
+  const subscription = planResult?.subscription;
 
   const [monthlyPlan, yearlyPlan] = await Promise.all([
     db
@@ -58,7 +63,7 @@ export default async function BillingSettingsPage({ params }: Props) {
       .then((r) => r[0]),
   ]);
 
-  const isPaidPlan = plan.id !== 'free';
+  const isPaidPlan = (plan?.id ?? 'free') !== 'free';
 
   return (
     <Card>
@@ -73,18 +78,18 @@ export default async function BillingSettingsPage({ params }: Props) {
           <div className="flex items-center gap-3">
             <CreditCard className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="font-medium">{plan.name}</p>
+              <p className="font-medium">{plan?.name ?? 'Free'}</p>
               <p className="text-sm text-muted-foreground">
-                {formatPrice(plan.priceCents, plan.billingInterval)}
+                {formatPrice(plan?.priceCents ?? 0, plan?.billingInterval ?? 'month')}
               </p>
             </div>
           </div>
-          <Badge variant={subscription.status === 'past_due' ? 'destructive' : 'secondary'}>
-            {STATUS_LABELS[subscription.status] ?? subscription.status}
+          <Badge variant={subscription?.status === 'past_due' ? 'destructive' : 'secondary'}>
+            {STATUS_LABELS[subscription?.status ?? 'free'] ?? subscription?.status ?? 'Free'}
           </Badge>
         </div>
 
-        {subscription.currentPeriodEnd !== null && (
+        {subscription?.currentPeriodEnd != null && (
           <p className="text-sm text-muted-foreground">
             {subscription.cancelAtPeriodEnd
               ? `Plan ends ${subscription.currentPeriodEnd.toLocaleDateString()}`

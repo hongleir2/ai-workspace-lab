@@ -241,6 +241,59 @@ export async function deadLetterJob(
     .where(eq(jobs.id, jobId));
 }
 
+export interface ZombieJob {
+  id: string;
+  jobType: string;
+  payload: Record<string, unknown>;
+  attemptsCount: number;
+  maxAttempts: number;
+}
+
+/**
+ * Finds jobs stuck in `processing` for longer than `timeoutSeconds` and
+ * immediately marks them as `failed`. These are zombie jobs — the Vercel
+ * function that claimed them was killed by the platform timeout before it
+ * could write a completion or error row.
+ *
+ * Returns the list of reaped jobs so callers can perform domain-specific
+ * cleanup (e.g. marking the associated document as failed).
+ */
+export async function reapZombieJobs(
+  timeoutSeconds: number,
+  dbConn: Database = db,
+): Promise<ZombieJob[]> {
+  const failedAt = new Date();
+  const rows = await dbConn.execute(sql`
+    UPDATE jobs SET
+      status = 'failed',
+      locked_by = NULL,
+      locked_at = NULL,
+      last_error_code = 'TIMEOUT',
+      last_error_message = 'Job timed out — the worker was killed before it could finish.',
+      failed_at = ${failedAt.toISOString()},
+      updated_at = ${failedAt.toISOString()}
+    WHERE status = 'processing'
+      AND locked_at < now() - (${timeoutSeconds} * interval '1 second')
+    RETURNING id, job_type, payload, attempts_count, max_attempts
+  `);
+
+  return (
+    rows as unknown as {
+      id: string;
+      job_type: string;
+      payload: Record<string, unknown>;
+      attempts_count: number;
+      max_attempts: number;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    jobType: row.job_type,
+    payload: row.payload,
+    attemptsCount: row.attempts_count,
+    maxAttempts: row.max_attempts,
+  }));
+}
+
 /**
  * Cancels a job that has not yet been processed.
  */

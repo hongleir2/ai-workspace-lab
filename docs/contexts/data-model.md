@@ -67,6 +67,8 @@ Real-time & collaboration
 | `usage_counters` | 0005 | `id`, `organization_id`, `feature_key`, `period_start`, `period_end`, `used_quantity`, `limit_quantity`; UNIQUE on (org, feature, period) |
 | `billing_customers` | 0007 | `id`, `organization_id` → organizations (ON DELETE CASCADE), `stripe_customer_id` (UNIQUE), `created_at` |
 | `stripe_events` | 0007 | `id`, `stripe_event_id` (UNIQUE), `event_type`, `processing_status` CHECK (`received\|processing\|processed\|failed`), `error_message`, `received_at`, `processed_at`; idempotency gate for webhook handler (see ADR 0008) |
+| `storage_objects` | 0009 | `id`, `organization_id`, `bucket`, `object_key`; UNIQUE(bucket, object_key); `original_filename`, `content_type`, `byte_size` (bigint, CHECK ≥ 0), `checksum_sha256`, `uploaded_by_user_id`, `status` enum (uploaded/deleted/quarantined), `created_at`, `deleted_at` |
+| `documents` | 0010 | `id`, `organization_id`, `storage_object_id` → storage_objects, `created_by_user_id`, `title`, `source_type` enum (web_upload/desktop_upload/api/url), `file_type` (text), `status` enum (uploaded→queued→processing→chunking→embedding→indexed→ready/failed/deleted), `processing_error_code`, `processing_error_message`, `page_count`, `language`, `checksum_sha256`, `ready_at`, `created_at`, `updated_at` (trigger), `deleted_at` |
 
 ### Server packages using these tables
 
@@ -77,11 +79,10 @@ Real-time & collaboration
 
 ---
 
-## Upcoming tables (Sprint 5+)
+## Upcoming tables (Sprint 6+)
 
 | Table | Purpose |
 |-------|---------|
-| `documents` | Upload metadata + processing status |
 | `document_chunks` | Text chunks + pgvector embeddings |
 | `ai_sessions` | Conversation container |
 | `ai_messages` | User + assistant messages with token tracking |
@@ -105,8 +106,13 @@ Actor tracking via `user_id` in: `documents.created_by_user_id`, `ai_messages.cr
 
 ```sql
 organization_memberships(user_id, organization_id)
+storage_objects(bucket, object_key)  -- UNIQUE
+storage_objects(organization_id, created_at)
+storage_objects(checksum_sha256)
 documents(organization_id, status)
 documents(organization_id, created_at)
+documents(created_by_user_id, created_at)
+documents(checksum_sha256)
 document_chunks(organization_id, document_id)
 ai_sessions(organization_id, created_at)
 usage_events(organization_id, created_at)

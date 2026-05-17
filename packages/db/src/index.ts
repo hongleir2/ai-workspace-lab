@@ -21,13 +21,17 @@ export type {
 } from './schema/index';
 export type { BillingCustomer, NewBillingCustomer } from './schema/billing_customers';
 export type { StripeEvent, NewStripeEvent } from './schema/stripe_events';
+export type { StorageObject, NewStorageObject } from './schema/storage_objects';
+export type { Document, NewDocument } from './schema/documents';
 export {
   auditLogs,
   billingCustomers,
+  documents,
   organizations,
   organizationMemberships,
   planLimits,
   plans,
+  storageObjects,
   stripeEvents,
   subscriptions,
   usageCounters,
@@ -36,8 +40,11 @@ export {
 } from './schema/index';
 export {
   billingIntervalEnum,
+  documentSourceTypeEnum,
+  documentStatusEnum,
   limitUnitEnum,
   resetIntervalEnum,
+  storageObjectStatusEnum,
   subscriptionStatusEnum,
   usageUnitEnum,
 } from './schema/index';

@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-16 Day 34)
+## Current status (last updated: 2026-05-16 Day 36)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -34,9 +34,11 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-16] **Day 32 — PostHog analytics**: `packages/analytics` wrapper (`identifyUser`, `identifyOrganization`, `captureEvent`, `resetAnalytics`) + 9 unit tests; `PostHogProvider` client component with App Router pageview tracking via `usePathname`/`useSearchParams`; `AnalyticsIdentity` identifies user+org on every `/app/[orgSlug]` entry; `captureServerEvent` posthog-node utility for server actions; server events: `user_signed_up`, `user_signed_in`, `organization_created`; client events: `dashboard_viewed`, `billing_viewed`, `checkout_started`, `checkout_success_viewed`, `checkout_canceled`, `billing_portal_opened`; 6 new unit tests
 - [2026-05-16] **Day 33 — Feature flag wrapper**: `packages/analytics` `FeatureFlag` union type + `FLAG_DEFAULTS` + `isFeatureEnabled()` client helper; `getServerFeatureFlag()` server helper (posthog-node, same fail-safe pattern as captureServerEvent); `document_upload_enabled` flag wired into dashboard checklist — locked row when off, live link when on; 8 new unit tests
 - [2026-05-16] **Day 34 — Observability ADR**: `docs/adr/0009-observability-and-product-analytics.md` covering Sentry purpose, PostHog event taxonomy, user/org context policy, privacy rules, feature flag strategy, alert ideas; README updated with local observability env setup
+- [2026-05-16] **Day 35 — Dashboard widgets**: `/app/[orgSlug]` dashboard replaced with real data widgets — org card, plan card (name + status badge + billing interval), usage-this-period bars via `getOrganizationUsageOverview`, recent docs/AI session placeholder cards, getting-started checklist (feature-flag gated), upgrade CTA banner for free orgs; switched from `requireUser`+`getOrganizationBySlug` to `requireMembership`
+- [2026-05-16] **Day 36 — Storage + documents tables**: migrations 0009 (`storage_objects`) and 0010 (`documents`); full ERD §8.1/§8.2 columns; status enums (`storage_object_status`, `document_status`, `document_source_type`); all required indexes (UNIQUE on bucket+object_key, org+created_at, org+status, created_by+created_at, checksum); `set_updated_at` trigger on documents; RLS enabled with SELECT policy for active org members on both tables; Drizzle schemas + type/table exports; 9 integration tests; ERD Mermaid corrected (composite UNIQUE replaces standalone UQ on object_key)
 
 ### In progress
-- Sprint 5: PostHog feature flags remain (server-side local evaluation requires POSTHOG_PERSONAL_API_KEY, deferred until AI sprint)
+- Sprint 6: upload endpoint, document list UI next
 
 ### Up next
 - Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate

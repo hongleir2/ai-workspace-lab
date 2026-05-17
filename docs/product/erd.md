@@ -342,7 +342,7 @@ erDiagram
         uuid id PK
         uuid organization_id FK NN
         text bucket NN
-        text object_key NN UQ
+        text object_key NN
         text original_filename NN
         text content_type NN
         bigint byte_size NN
@@ -1131,7 +1131,7 @@ Metadata for files in R2, Supabase Storage, or another object store.
 | `id`                  | UUID PK                    | Storage object                       |
 | `organization_id`     | UUID FK → organizations.id | Tenant                               |
 | `bucket`              | TEXT                       | Storage bucket                       |
-| `object_key`          | TEXT UQ                    | Storage key/path                     |
+| `object_key`          | TEXT                       | Storage key/path; UNIQUE with bucket |
 | `original_filename`   | TEXT                       | User filename                        |
 | `content_type`        | TEXT                       | MIME type                            |
 | `byte_size`           | BIGINT                     | File size                            |

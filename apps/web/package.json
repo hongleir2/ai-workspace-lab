@@ -30,6 +30,8 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "tailwind-merge": "^3.5.0",
+    "posthog-js": "^1",
+    "posthog-node": "^4",
     "zod": "^4.4.2"
   },
   "devDependencies": {

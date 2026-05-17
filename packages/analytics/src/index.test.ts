@@ -33,7 +33,7 @@ describe('analytics wrapper', () => {
   });
 
   it('captureEvent is a no-op when window is undefined', () => {
-    const original = (globalThis as Record<string, unknown>).window;
+    const original = (globalThis as Record<string, unknown>)['window'];
     Object.defineProperty(globalThis, 'window', { value: undefined, writable: true });
     captureEvent('test_event');
     expect(mockCapture).not.toHaveBeenCalled();

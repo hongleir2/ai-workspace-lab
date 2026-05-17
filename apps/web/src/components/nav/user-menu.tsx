@@ -16,11 +16,25 @@ import { cn } from '@/lib/utils';
 
 interface UserMenuProps {
   className?: string;
+  displayName?: string | null;
+  email?: string;
 }
 
-export function UserMenu({ className }: UserMenuProps) {
+function getInitials(displayName: string | null | undefined, email: string | undefined): string {
+  if (displayName) {
+    const parts = displayName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0]?.[0] ?? ''}${parts[parts.length - 1]?.[0] ?? ''}`.toUpperCase();
+    }
+    return displayName.slice(0, 2).toUpperCase();
+  }
+  return (email ?? 'U?').slice(0, 2).toUpperCase();
+}
+
+export function UserMenu({ className, displayName, email }: UserMenuProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const initials = getInitials(displayName, email);
 
   function handleSignOut() {
     startTransition(async () => {
@@ -39,15 +53,15 @@ export function UserMenu({ className }: UserMenuProps) {
           )}
         >
           <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/80 to-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
-            HL
+            {initials}
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-1.5 flex flex-col">
-          <span className="text-sm font-medium">Honglei Ren</span>
-          <span className="text-xs text-muted-foreground">honglei@otter.ai</span>
+          {displayName && <span className="text-sm font-medium">{displayName}</span>}
+          {email && <span className="text-xs text-muted-foreground">{email}</span>}
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -7,9 +7,16 @@ import { cn } from '@/lib/utils';
 interface AppTopbarProps {
   orgSlug: string;
   className?: string;
+  userDisplayName?: string | null;
+  userEmail?: string;
 }
 
-export function AppTopbar({ orgSlug: _orgSlug, className }: AppTopbarProps) {
+export function AppTopbar({
+  orgSlug: _orgSlug,
+  className,
+  userDisplayName,
+  userEmail,
+}: AppTopbarProps) {
   return (
     <header
       className={cn(
@@ -35,7 +42,10 @@ export function AppTopbar({ orgSlug: _orgSlug, className }: AppTopbarProps) {
             <Bell className="h-4 w-4" />
             <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
           </button>
-          <UserMenu />
+          <UserMenu
+            {...(userDisplayName !== undefined ? { displayName: userDisplayName } : {})}
+            {...(userEmail !== undefined ? { email: userEmail } : {})}
+          />
         </div>
       </div>
     </header>

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
+import { UserMenu } from '@/components/nav/user-menu';
 import { Button } from '@/components/ui/button';
+import { getCurrentUser } from '@/lib/auth/user';
 import { cn } from '@/lib/utils';
 
 interface MarketingHeaderProps {
@@ -14,7 +16,9 @@ const navLinks = [
   { label: 'Changelog', href: '#' },
 ];
 
-export function MarketingHeader({ className }: MarketingHeaderProps) {
+export async function MarketingHeader({ className }: MarketingHeaderProps) {
+  const user = await getCurrentUser();
+
   return (
     <header
       className={cn(
@@ -42,12 +46,23 @@ export function MarketingHeader({ className }: MarketingHeaderProps) {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="cursor-pointer">
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
-          <Button asChild size="sm" className="cursor-pointer">
-            <Link href="/sign-up">Get started</Link>
-          </Button>
+          {user ? (
+            <>
+              <Button asChild variant="ghost" size="sm" className="cursor-pointer">
+                <Link href="/app">Go to app</Link>
+              </Button>
+              <UserMenu displayName={user.displayName} email={user.email} />
+            </>
+          ) : (
+            <>
+              <Button asChild variant="outline" size="sm" className="cursor-pointer">
+                <Link href="/sign-in">Sign in</Link>
+              </Button>
+              <Button asChild size="sm" className="cursor-pointer">
+                <Link href="/sign-up">Get started</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

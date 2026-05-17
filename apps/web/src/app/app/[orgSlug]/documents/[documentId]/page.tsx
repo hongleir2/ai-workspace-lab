@@ -14,8 +14,16 @@ interface DocumentDetailPageProps {
 }
 
 function statusBadge(status: Document['status']) {
-  const processingStatuses = ['queued', 'processing', 'chunking', 'embedding', 'indexed'];
-  if (status === 'ready') return <Badge className="bg-green-100 text-green-800 border-green-200">Ready</Badge>;
+  const processingStatuses: Document['status'][] = [
+    'uploaded',
+    'queued',
+    'processing',
+    'chunking',
+    'embedding',
+    'indexed',
+  ];
+  if (status === 'ready')
+    return <Badge className="bg-green-100 text-green-800 border-green-200">Ready</Badge>;
   if (status === 'failed') return <Badge variant="destructive">Failed</Badge>;
   if (processingStatuses.includes(status)) return <Badge>{status}</Badge>;
   return <Badge variant="secondary">{status}</Badge>;
@@ -40,6 +48,7 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
         eq(documents.id, documentId),
         eq(documents.organizationId, organization.id),
         isNull(documents.deletedAt),
+        isNull(storageObjects.deletedAt),
       ),
     )
     .limit(1);
@@ -79,20 +88,28 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
 
         <dl className="grid grid-cols-2 gap-4 rounded-lg border p-4 text-sm sm:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">File type</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              File type
+            </dt>
             <dd className="font-medium uppercase">{document.fileType}</dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Size</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Size
+            </dt>
             <dd className="font-medium">{formatBytes(storageObject.byteSize)}</dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploaded</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Uploaded
+            </dt>
             <dd className="font-medium">{uploadedAt}</dd>
           </div>
           {document.processingErrorMessage ? (
             <div className="col-span-full flex flex-col gap-1">
-              <dt className="text-xs font-medium uppercase tracking-wide text-destructive">Error</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-destructive">
+                Error
+              </dt>
               <dd className="text-destructive">{document.processingErrorMessage}</dd>
             </div>
           ) : null}

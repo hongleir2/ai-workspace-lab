@@ -1,3 +1,4 @@
+import { PageAnalytics } from '@/components/page-analytics';
 import { requireMembership } from '@/lib/orgs/guards';
 import Link from 'next/link';
 import { UploadForm } from './upload-form';
@@ -13,20 +14,23 @@ export default async function UploadDocumentPage({ params }: UploadDocumentPageP
   await requireMembership(orgSlug);
 
   return (
-    <div className="flex flex-col gap-6 max-w-xl">
-      <div>
-        <Link
-          href={`/app/${orgSlug}/documents`}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Documents
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Upload Document</h1>
-        <p className="text-sm text-muted-foreground">
-          Upload a PDF, plain text, or Markdown file. Files are processed in the background.
-        </p>
+    <>
+      <PageAnalytics event="document_upload_page_viewed" properties={{ org_slug: orgSlug }} />
+      <div className="flex flex-col gap-6 max-w-xl">
+        <div>
+          <Link
+            href={`/app/${orgSlug}/documents`}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Documents
+          </Link>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Upload Document</h1>
+          <p className="text-sm text-muted-foreground">
+            Upload a PDF, plain text, or Markdown file. Files are processed in the background.
+          </p>
+        </div>
+        <UploadForm orgSlug={orgSlug} />
       </div>
-      <UploadForm orgSlug={orgSlug} />
-    </div>
+    </>
   );
 }

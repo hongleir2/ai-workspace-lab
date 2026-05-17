@@ -15,8 +15,16 @@ interface DocumentsPageProps {
 }
 
 function statusBadge(status: Document['status']) {
-  const processingStatuses = ['queued', 'processing', 'chunking', 'embedding', 'indexed'];
-  if (status === 'ready') return <Badge className="bg-green-100 text-green-800 border-green-200">Ready</Badge>;
+  const processingStatuses: Document['status'][] = [
+    'uploaded',
+    'queued',
+    'processing',
+    'chunking',
+    'embedding',
+    'indexed',
+  ];
+  if (status === 'ready')
+    return <Badge className="bg-green-100 text-green-800 border-green-200">Ready</Badge>;
   if (status === 'failed') return <Badge variant="destructive">Failed</Badge>;
   if (processingStatuses.includes(status)) return <Badge>{status}</Badge>;
   return <Badge variant="secondary">{status}</Badge>;

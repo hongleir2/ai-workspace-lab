@@ -71,6 +71,7 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
 
       if (!metaRes.ok) {
         const data = (await metaRes.json()) as { error?: string };
+        const isPermanent = [402, 403, 429].includes(metaRes.status);
         if (metaRes.status === 429) {
           setErrorMessage('Document quota reached. Please upgrade your plan to upload more.');
           captureEvent('document_upload_failed', { org_slug: orgSlug, reason: 'quota_exceeded' });
@@ -87,6 +88,10 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
             reason: 'server_error',
             status: metaRes.status,
           });
+        }
+        if (isPermanent) {
+          setSelectedFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
         }
         setState('error');
         return;
@@ -149,7 +154,8 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
           accept=".pdf,.txt,.md"
           className="sr-only"
           onChange={handleFileChange}
-          aria-label="File input"
+          aria-hidden={true}
+          tabIndex={-1}
         />
       </button>
 

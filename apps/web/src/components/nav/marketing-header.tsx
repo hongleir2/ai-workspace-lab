@@ -22,14 +22,14 @@ export async function MarketingHeader({ className }: MarketingHeaderProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[#070a15]/80 border-b border-white/10',
+        'sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80',
         className,
       )}
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-6 px-6">
         <Link
           href="/"
-          className="font-semibold tracking-tight text-lg text-white transition-colors hover:text-white/80"
+          className="text-lg font-semibold tracking-tight text-foreground transition-colors hover:text-foreground/80"
         >
           AI Workspace
         </Link>
@@ -38,7 +38,7 @@ export async function MarketingHeader({ className }: MarketingHeaderProps) {
             <Link
               key={link.label}
               href={link.href}
-              className="text-sm text-slate-400 transition-colors hover:text-white"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
             </Link>
@@ -47,28 +47,14 @@ export async function MarketingHeader({ className }: MarketingHeaderProps) {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="cursor-pointer text-slate-300 hover:bg-white/10 hover:text-white"
-              >
+              <Button asChild variant="ghost" size="sm" className="cursor-pointer">
                 <Link href="/app">{'Go to app'}</Link>
               </Button>
-              <UserMenu
-                displayName={user.displayName}
-                email={user.email}
-                className="text-slate-300 hover:bg-white/10 hover:text-white"
-              />
+              <UserMenu displayName={user.displayName} email={user.email} />
             </>
           ) : (
             <>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="cursor-pointer border-white/20 bg-transparent text-slate-300 hover:bg-white/10 hover:text-white"
-              >
+              <Button asChild variant="outline" size="sm" className="cursor-pointer">
                 <Link href="/sign-in">{'Sign in'}</Link>
               </Button>
               <Button

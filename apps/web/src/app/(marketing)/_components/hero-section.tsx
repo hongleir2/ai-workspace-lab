@@ -11,18 +11,18 @@ export function HeroSection() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           {/* Text column */}
           <div>
-            <div className="mb-5 inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-medium text-indigo-400">
+            <div className="mb-5 inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-medium text-indigo-500 dark:text-indigo-400">
               {'AI-powered document workspace'}
             </div>
 
-            <h1 className="font-display mb-6 text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl">
+            <h1 className="font-display mb-6 text-5xl font-bold leading-tight tracking-tight text-foreground md:text-6xl">
               {"Your team's AI workspace for "}
-              <span className="bg-gradient-to-r from-indigo-400 to-blue-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
                 {'knowledge.'}
               </span>
             </h1>
 
-            <p className="font-body mb-8 max-w-lg text-lg leading-relaxed text-slate-400">
+            <p className="font-body mb-8 max-w-lg text-lg leading-relaxed text-muted-foreground">
               {
                 'Upload documents, ask questions in plain language, and get AI-powered answers with cited sources — all inside a secure team workspace.'
               }
@@ -36,17 +36,12 @@ export function HeroSection() {
               >
                 <Link href="/sign-up">{'Get started free'}</Link>
               </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="cursor-pointer border-white/20 bg-white/5 px-8 text-white hover:bg-white/10 hover:text-white"
-              >
+              <Button asChild size="lg" variant="outline" className="cursor-pointer px-8">
                 <Link href="#how-it-works">{'See how it works'}</Link>
               </Button>
             </div>
 
-            <p className="font-body mt-6 text-sm text-slate-500">
+            <p className="font-body mt-6 text-sm text-muted-foreground">
               {'No credit card required · Free tier available · Cancel anytime'}
             </p>
           </div>
@@ -54,26 +49,28 @@ export function HeroSection() {
           {/* Product mockup column */}
           <div className="relative lg:pl-4">
             <div className="absolute -inset-4 rounded-2xl bg-indigo-500/5 blur-2xl" />
-            <div className="relative rounded-xl border border-white/10 bg-[#0d1226] shadow-2xl shadow-black/50">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-black/20">
               {/* Browser chrome */}
-              <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-3">
+              <div className="flex items-center gap-1.5 border-b border-border bg-muted/50 px-4 py-3">
                 <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
                 <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
                 <div className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
-                <span className="ml-3 text-xs text-slate-500">{'AI Workspace — Documents'}</span>
+                <span className="ml-3 text-xs text-muted-foreground">
+                  {'AI Workspace — Documents'}
+                </span>
               </div>
 
               <div className="flex" style={{ minHeight: '300px' }}>
                 {/* Sidebar */}
-                <div className="w-44 shrink-0 border-r border-white/10 p-3">
-                  <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
+                <div className="w-44 shrink-0 border-r border-border p-3">
+                  <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {'Documents'}
                   </p>
                   {['Q3 Roadmap.pdf', 'Product Spec.pdf', 'Team Handbook.pdf', 'API Docs.pdf'].map(
                     (name) => (
                       <div
                         key={name}
-                        className="mb-0.5 flex items-center gap-2 rounded px-2 py-1.5 text-xs text-slate-500 hover:bg-white/5"
+                        className="mb-0.5 flex items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted"
                       >
                         <div className="h-2.5 w-2.5 shrink-0 rounded-sm bg-indigo-500/50" />
                         <span className="truncate">{name}</span>
@@ -85,10 +82,10 @@ export function HeroSection() {
                 {/* Chat */}
                 <div className="flex-1 p-4">
                   <div className="mb-3 flex items-start gap-2.5">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xs text-slate-300">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground">
                       {'U'}
                     </div>
-                    <div className="rounded-lg bg-white/5 px-3 py-2 text-xs leading-relaxed text-slate-300">
+                    <div className="rounded-lg bg-muted px-3 py-2 text-xs leading-relaxed text-foreground">
                       {'What does Q3 roadmap say about the API timeline?'}
                     </div>
                   </div>
@@ -97,14 +94,14 @@ export function HeroSection() {
                       {'AI'}
                     </div>
                     <div className="flex-1 space-y-1.5">
-                      <div className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs leading-relaxed text-slate-300">
+                      <div className="rounded-lg bg-indigo-500/10 px-3 py-2 text-xs leading-relaxed text-foreground">
                         {
                           'According to Q3 Roadmap, the API integration is scheduled for completion by end of August, with a public beta in September...'
                         }
                       </div>
                       <div className="flex items-center gap-1.5 px-1">
-                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                        <span className="text-xs text-indigo-400">
+                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                        <span className="text-xs text-indigo-500 dark:text-indigo-400">
                           {'Source: Q3 Roadmap.pdf, page 4'}
                         </span>
                       </div>

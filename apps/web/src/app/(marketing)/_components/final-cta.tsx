@@ -7,13 +7,13 @@ export function FinalCta() {
     <section className="relative overflow-hidden px-6 py-24">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_100%,rgba(99,102,241,0.15),transparent)]" />
       <div className="relative mx-auto max-w-3xl text-center">
-        <p className="font-body mb-4 text-sm font-semibold uppercase tracking-widest text-indigo-400">
+        <p className="font-body mb-4 text-sm font-semibold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
           {'Get started'}
         </p>
-        <h2 className="font-display mb-4 text-4xl font-bold text-white md:text-5xl">
+        <h2 className="font-display mb-4 text-4xl font-bold text-foreground md:text-5xl">
           {'Build your AI Workspace'}
         </h2>
-        <p className="font-body mb-10 text-lg text-slate-400">
+        <p className="font-body mb-10 text-lg text-muted-foreground">
           {
             'Join teams already using AI Workspace to find answers faster. Free to start, no credit card required.'
           }
@@ -26,12 +26,7 @@ export function FinalCta() {
           >
             <Link href="/sign-up">{'Get started free'}</Link>
           </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="cursor-pointer border-white/20 bg-white/5 px-10 text-white hover:bg-white/10 hover:text-white"
-          >
+          <Button asChild size="lg" variant="outline" className="cursor-pointer px-10">
             <Link href="#pricing">{'View pricing'}</Link>
           </Button>
         </div>

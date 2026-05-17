@@ -14,11 +14,13 @@ export async function getServerFeatureFlag(
   flag: FeatureFlag,
   distinctId: string,
 ): Promise<boolean> {
-  const key = env.POSTHOG_PERSONAL_API_KEY ?? env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!key) return FLAG_DEFAULTS[flag];
+  const projectKey = env.NEXT_PUBLIC_POSTHOG_KEY;
+  if (!projectKey) return FLAG_DEFAULTS[flag];
 
-  const client = new PostHog(key, {
+  const client = new PostHog(projectKey, {
     host: env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
+    // personalApiKey enables local evaluation (no /decide network call per request)
+    ...(env.POSTHOG_PERSONAL_API_KEY ? { personalApiKey: env.POSTHOG_PERSONAL_API_KEY } : {}),
     flushAt: 1,
     flushInterval: 0,
   });

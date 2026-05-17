@@ -27,7 +27,10 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
   const [organization, user] = await Promise.all([getOrganizationBySlug(orgSlug), requireUser()]);
   if (!organization) notFound();
 
-  const uploadEnabled = await getServerFeatureFlag('document_upload_enabled', user.id);
+  const [uploadEnabled, aiChatEnabled] = await Promise.all([
+    getServerFeatureFlag('document_upload_enabled', user.id),
+    getServerFeatureFlag('ai_chat_enabled', user.id),
+  ]);
 
   const checklist: ChecklistItem[] = [
     {
@@ -42,7 +45,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
       description: 'Query across your documents with cited answers.',
       href: `/app/${orgSlug}/ai`,
       done: false,
-      enabled: false,
+      enabled: aiChatEnabled,
     },
     {
       label: 'Review your usage',

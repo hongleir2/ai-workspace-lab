@@ -9,7 +9,7 @@ const { mockGetFeatureFlag, mockShutdown, MockPostHog, mockEnv } = vi.hoisted(()
   }));
   const mockEnv = {
     POSTHOG_PERSONAL_API_KEY: 'phx_test_key' as string | undefined,
-    NEXT_PUBLIC_POSTHOG_KEY: undefined as string | undefined,
+    NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_key' as string | undefined,
     NEXT_PUBLIC_POSTHOG_HOST: undefined as string | undefined,
   };
   return { mockGetFeatureFlag, mockShutdown, MockPostHog, mockEnv };
@@ -24,7 +24,7 @@ describe('getServerFeatureFlag', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockEnv.POSTHOG_PERSONAL_API_KEY = 'phx_test_key';
-    mockEnv.NEXT_PUBLIC_POSTHOG_KEY = undefined;
+    mockEnv.NEXT_PUBLIC_POSTHOG_KEY = 'phc_test_key';
   });
 
   it('returns true when PostHog returns true', async () => {

@@ -1,5 +1,6 @@
--- Day 46 conflict-resolution follow-up: preserve existing 0014 migration history,
--- then add the stricter AI chat integrity constraints from PR #36.
+-- Tenant-safe FK constraints: messages can only reference sessions in the same
+-- org, and parent messages must belong to the same session. The rate_limit_events
+-- action column is tightened from free-form text to a typed enum.
 DO $$
 BEGIN
   CREATE TYPE "public"."rate_limit_action" AS ENUM('allowed', 'blocked');

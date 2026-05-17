@@ -1,9 +1,13 @@
-import 'dotenv/config';
+import { resolve } from 'node:path';
+import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 
-const databaseUrl = process.env['DATABASE_URL'];
+config({ path: resolve(import.meta.dirname, '../../.env.local') });
+config({ path: resolve(import.meta.dirname, '../../.env') });
+
+const databaseUrl = process.env['DATABASE_DIRECT_URL'] ?? process.env['DATABASE_URL'];
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not set');
+  throw new Error('DATABASE_DIRECT_URL or DATABASE_URL must be set');
 }
 
 export default defineConfig({
@@ -11,8 +15,6 @@ export default defineConfig({
   out: './migrations',
   dialect: 'postgresql',
   dbCredentials: { url: databaseUrl },
-  // Emit snake_case SQL identifiers — matches the casing option in drizzle() client.
   casing: 'snake_case',
-  // Only manage the public schema; treat Supabase's auth/storage/realtime schemas as foreign.
   schemaFilter: ['public'],
 });

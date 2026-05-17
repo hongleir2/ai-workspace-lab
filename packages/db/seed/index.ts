@@ -1,4 +1,8 @@
-import 'dotenv/config';
+import { resolve } from 'node:path';
+import { config } from 'dotenv';
+
+config({ path: resolve(import.meta.dirname, '../../../.env.local') });
+config({ path: resolve(import.meta.dirname, '../../../.env') });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { seedPlans } from './plans';

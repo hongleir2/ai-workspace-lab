@@ -4,21 +4,34 @@ import { Button } from '@/components/ui/button';
 
 export function FinalCta() {
   return (
-    <section className="px-6 py-24">
-      <div className="mx-auto max-w-3xl text-center">
-        <h2 className="font-display mb-4 text-4xl font-bold text-slate-900 md:text-5xl">
-          {'Ready to unlock your team’s knowledge?'}
+    <section className="relative overflow-hidden px-6 py-24">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_100%,rgba(99,102,241,0.15),transparent)]" />
+      <div className="relative mx-auto max-w-3xl text-center">
+        <p className="font-body mb-4 text-sm font-semibold uppercase tracking-widest text-indigo-400">
+          {'Get started'}
+        </p>
+        <h2 className="font-display mb-4 text-4xl font-bold text-white md:text-5xl">
+          {'Build your AI Workspace'}
         </h2>
-        <p className="font-body mb-10 text-lg text-slate-600">
+        <p className="font-body mb-10 text-lg text-slate-400">
           {
             'Join teams already using AI Workspace to find answers faster. Free to start, no credit card required.'
           }
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild size="lg" className="cursor-pointer bg-blue-600 px-10 hover:bg-blue-700">
+          <Button
+            asChild
+            size="lg"
+            className="cursor-pointer bg-gradient-to-r from-indigo-500 to-blue-500 px-10 font-semibold text-white hover:from-indigo-600 hover:to-blue-600"
+          >
             <Link href="/sign-up">{'Get started free'}</Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="cursor-pointer px-10">
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="cursor-pointer border-white/20 bg-white/5 px-10 text-white hover:bg-white/10 hover:text-white"
+          >
             <Link href="#pricing">{'View pricing'}</Link>
           </Button>
         </div>

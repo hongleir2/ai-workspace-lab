@@ -1,6 +1,8 @@
 import { PostHogProvider } from '@/components/posthog-provider';
+import { ThemeProvider } from '@/components/theme-provider';
 import type { Metadata } from 'next';
 import { DM_Sans, Space_Grotesk } from 'next/font/google';
+import NextTopLoader from 'nextjs-toploader';
 import type { ReactNode } from 'react';
 import './globals.css';
 
@@ -34,7 +36,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         className="min-h-screen bg-background font-body text-foreground antialiased"
         suppressHydrationWarning
       >
-        <PostHogProvider>{children}</PostHogProvider>
+        <NextTopLoader color="#6366f1" height={3} showSpinner={false} />
+        <ThemeProvider>
+          <PostHogProvider>{children}</PostHogProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

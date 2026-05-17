@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { signOutAction } from '@/app/(auth)/sign-out/actions';
+import { ThemeToggle, useThemeToggle } from '@/components/theme-toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,7 @@ export function UserMenu({ className, displayName, email }: UserMenuProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const initials = getInitials(displayName, email);
+  const toggleTheme = useThemeToggle();
 
   function handleSignOut() {
     startTransition(async () => {
@@ -55,7 +57,7 @@ export function UserMenu({ className, displayName, email }: UserMenuProps) {
           <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/80 to-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
             {initials}
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 opacity-60" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -68,16 +70,20 @@ export function UserMenu({ className, displayName, email }: UserMenuProps) {
           className="cursor-pointer"
           onSelect={() => router.push('/account/profile')}
         >
-          Profile
+          {'Profile'}
         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer" onSelect={() => router.push('/account')}>
-          Account
+          {'Account'}
         </DropdownMenuItem>
         <DropdownMenuItem
           className="cursor-pointer"
           onSelect={() => router.push('/account/notifications')}
         >
-          Notifications
+          {'Notifications'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="cursor-pointer" onSelect={toggleTheme}>
+          <ThemeToggle />
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

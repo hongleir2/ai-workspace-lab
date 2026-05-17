@@ -3,18 +3,20 @@ import { FinalCta } from './_components/final-cta';
 import { HeroSection } from './_components/hero-section';
 import { HowItWorks } from './_components/how-it-works';
 import { PricingSection } from './_components/pricing-section';
-import { ProblemStrip } from './_components/problem-strip';
-import { TestimonialsSection } from './_components/testimonials-section';
+import { ProductDemo } from './_components/product-demo';
+import { ReliabilitySection } from './_components/reliability-section';
+import { TrustedBy } from './_components/trusted-by';
 
 export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <ProblemStrip />
-      <HowItWorks />
+      <TrustedBy />
       <FeaturesSection />
-      <TestimonialsSection />
+      <ProductDemo />
+      <HowItWorks />
       <PricingSection />
+      <ReliabilitySection />
       <FinalCta />
     </>
   );

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type MemberRole, requireMembership } from '@/lib/orgs/guards';
+import { ThemeSelector } from './_components/theme-selector';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +72,16 @@ export default async function GeneralSettingsPage({ params }: GeneralSettingsPag
               </dd>
             </div>
           </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{'Appearance'}</CardTitle>
+          <CardDescription>{'Choose your preferred color theme.'}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeSelector />
         </CardContent>
       </Card>
     </div>

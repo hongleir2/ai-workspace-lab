@@ -44,7 +44,7 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
       return;
     }
     if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
-      setErrorMessage(`File too large. Maximum size is 5 MB.`);
+      setErrorMessage('File too large. Maximum size is 5 MB.');
       captureEvent('document_upload_failed', { org_slug: orgSlug, reason: 'file_too_large' });
       return;
     }
@@ -82,7 +82,11 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
           captureEvent('document_upload_failed', { org_slug: orgSlug, reason: 'feature_disabled' });
         } else {
           setErrorMessage(data.error ?? 'Upload failed. Please try again.');
-          captureEvent('document_upload_failed', { org_slug: orgSlug, reason: 'server_error', status: metaRes.status });
+          captureEvent('document_upload_failed', {
+            org_slug: orgSlug,
+            reason: 'server_error',
+            status: metaRes.status,
+          });
         }
         setState('error');
         return;
@@ -124,12 +128,10 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div
+      <button
+        type="button"
         className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-border bg-muted/20 px-6 py-12 text-center cursor-pointer hover:border-primary/50 transition-colors"
         onClick={() => fileInputRef.current?.click()}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
-        role="button"
-        tabIndex={0}
         aria-label="Select file to upload"
       >
         <div className="flex size-12 items-center justify-center rounded-full bg-muted ring-1 ring-border/60">
@@ -149,7 +151,7 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
           onChange={handleFileChange}
           aria-label="File input"
         />
-      </div>
+      </button>
 
       {errorMessage ? (
         <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -158,7 +160,11 @@ export function UploadForm({ orgSlug }: UploadFormProps) {
         </div>
       ) : null}
 
-      <Button type="submit" disabled={!selectedFile || state === 'uploading'} className="self-start">
+      <Button
+        type="submit"
+        disabled={!selectedFile || state === 'uploading'}
+        className="self-start"
+      >
         {state === 'uploading' ? (
           <>
             <Loader2 className="size-4 animate-spin" />

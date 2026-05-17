@@ -113,10 +113,7 @@ export async function POST(
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
       if (error.code === 'NOT_AUTHORIZED') {
-        return NextResponse.json(
-          { error: 'No active subscription — please set up billing' },
-          { status: 402 },
-        );
+        return NextResponse.json({ error: 'Upload not authorized' }, { status: 402 });
       }
     }
     throw error;

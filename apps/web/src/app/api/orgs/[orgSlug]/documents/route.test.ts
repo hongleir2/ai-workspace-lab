@@ -252,6 +252,21 @@ describe('POST /api/orgs/[orgSlug]/documents', () => {
     expect(res.status).toBe(402);
   });
 
+  it('returns 402 with billing message when EntitlementError(NO_ACTIVE_SUBSCRIPTION)', async () => {
+    setupHappyPath();
+    const { EntitlementError } = await import('@ai-workspace-lab/entitlements');
+    vi.mocked(createDocumentUploadTarget).mockRejectedValue(
+      new EntitlementError('NO_ACTIVE_SUBSCRIPTION'),
+    );
+    const res = await POST(
+      makeRequest({ filename: 'report.pdf', contentType: 'application/pdf', byteSize: 1024 }),
+      { params: PARAMS },
+    );
+    expect(res.status).toBe(402);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/subscription/i);
+  });
+
   it('returns 429 when EntitlementError(QUOTA_EXCEEDED)', async () => {
     setupHappyPath();
     const { EntitlementError } = await import('@ai-workspace-lab/entitlements');

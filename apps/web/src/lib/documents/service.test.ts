@@ -236,6 +236,25 @@ describe('createDocumentUploadTarget', () => {
     );
   });
 
+  it('documents quota-hole: document row exists when recordUsageWithCounter fails', async () => {
+    setupHappyPath();
+    vi.mocked(recordUsageWithCounter).mockRejectedValueOnce(new Error('DB connection lost'));
+
+    await expect(
+      createDocumentUploadTarget({
+        organizationId: ORG_ID,
+        userId: USER_ID,
+        filename: 'report.pdf',
+        contentType: 'application/pdf',
+        byteSize: 1024,
+      }),
+    ).rejects.toThrow('DB connection lost');
+
+    // document insert was called before usage recording — the row exists but quota is not counted
+    expect(db.insert).toHaveBeenCalled();
+    expect(recordUsageWithCounter).toHaveBeenCalled();
+  });
+
   it('passes fileType as extension extracted from filename', async () => {
     setupHappyPath();
     await createDocumentUploadTarget({

@@ -52,7 +52,8 @@ export async function createDocumentUploadTarget(
     byteSize,
   });
 
-  const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+  const lastDot = filename.lastIndexOf('.');
+  const ext = lastDot >= 0 ? filename.slice(lastDot + 1).toLowerCase() : '';
   const newDoc: NewDocument = {
     organizationId,
     storageObjectId: storageObject.id,

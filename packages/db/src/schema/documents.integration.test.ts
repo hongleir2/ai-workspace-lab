@@ -7,7 +7,7 @@
  * Skipped automatically when DATABASE_URL is absent.
  */
 
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -28,6 +28,8 @@ describe.skipIf(!DATABASE_URL)('documents table', () => {
   let orgId: string;
   let storageObjectId: string;
   let insertedDocId: string;
+  let altOrgId: string;
+  let altStorageObjectId: string;
 
   beforeAll(async () => {
     await db.delete(users).where(eq(users.email, 'docs-test@example.com'));
@@ -72,12 +74,43 @@ describe.skipIf(!DATABASE_URL)('documents table', () => {
       .returning();
     // biome-ignore lint/style/noNonNullAssertion: just inserted
     storageObjectId = storageObj!.id;
+
+    const [altOrg] = await db
+      .insert(organizations)
+      .values({
+        name: 'Alt Org',
+        slug: 'docs-test-alt-org',
+        ownerUserId: userId,
+        status: 'active',
+      })
+      .returning();
+    // biome-ignore lint/style/noNonNullAssertion: just inserted
+    altOrgId = altOrg!.id;
+
+    const [altStorageObj] = await db
+      .insert(storageObjects)
+      .values({
+        organizationId: altOrgId,
+        bucket: 'documents',
+        objectKey: 'docs-test-alt-org/alt-doc-001.pdf',
+        originalFilename: 'alt-report.pdf',
+        contentType: 'application/pdf',
+        byteSize: 204800,
+        checksumSha256: 'sha256-alt-doc-001',
+        uploadedByUserId: userId,
+        status: 'uploaded',
+      })
+      .returning();
+    // biome-ignore lint/style/noNonNullAssertion: just inserted
+    altStorageObjectId = altStorageObj!.id;
   });
 
   afterAll(async () => {
     if (insertedDocId) {
       await db.delete(documents).where(eq(documents.id, insertedDocId));
     }
+    await db.delete(storageObjects).where(eq(storageObjects.id, altStorageObjectId));
+    await db.delete(organizations).where(eq(organizations.id, altOrgId));
     await db.delete(storageObjects).where(eq(storageObjects.id, storageObjectId));
     await db
       .delete(organizationMemberships)
@@ -168,5 +201,39 @@ describe.skipIf(!DATABASE_URL)('documents table', () => {
     expect(row?.status).toBe('failed');
     expect(row?.processingErrorCode).toBe('PARSE_ERROR');
     expect(row?.processingErrorMessage).toBe('Could not parse PDF structure');
+  });
+
+  it('document belongs to its organization — query with correct org returns the document', async () => {
+    const rows = await db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.id, insertedDocId), eq(documents.organizationId, orgId)));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.organizationId).toBe(orgId);
+  });
+
+  it('user cannot view another org document — query with wrong organizationId returns nothing', async () => {
+    const rows = await db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.id, insertedDocId), eq(documents.organizationId, altOrgId)));
+    expect(rows).toHaveLength(0);
+  });
+
+  it('soft-deleted document is excluded from org document list', async () => {
+    await db
+      .update(documents)
+      .set({ deletedAt: new Date() })
+      .where(eq(documents.id, insertedDocId));
+
+    const rows = await db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.organizationId, orgId), isNull(documents.deletedAt)));
+
+    const found = rows.find((r) => r.id === insertedDocId);
+    expect(found).toBeUndefined();
+
+    await db.update(documents).set({ deletedAt: null }).where(eq(documents.id, insertedDocId));
   });
 });

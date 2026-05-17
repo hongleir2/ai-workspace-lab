@@ -18,6 +18,7 @@ vi.mock('@ai-workspace-lab/billing', () => ({
 vi.mock('next/navigation', () => ({ redirect: mockRedirect }));
 vi.mock('@/lib/env', () => ({
   env: { NEXT_PUBLIC_APP_URL: 'https://app.example.com' },
+  appUrl: () => 'https://app.example.com',
 }));
 
 import { openBillingPortalAction, startCheckoutAction } from './actions';

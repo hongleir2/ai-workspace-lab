@@ -51,6 +51,11 @@ export const env = createEnv({
       )
       .optional(),
 
+    // ── Vercel system variable — injected automatically on all Vercel deployments ──
+    // Contains the deployment hostname without protocol (e.g. "my-app-abc123.vercel.app").
+    // Used as a fallback when NEXT_PUBLIC_APP_URL is not explicitly configured.
+    VERCEL_URL: z.string().optional(),
+
     // ── Required-later: Sentry error tracking (Sprint 1+) ─────────────────
     // https://sentry.io/settings/<org>/projects/<project>/keys/
     SENTRY_DSN: z.string().url().optional(),
@@ -89,8 +94,9 @@ export const env = createEnv({
 
   // ── Client-side vars (NEXT_PUBLIC_* only — safe in browser bundles) ──────
   client: {
-    // ── Required-now ──────────────────────────────────────────────────────
-    NEXT_PUBLIC_APP_URL: z.string().url(),
+    // Explicit app URL. Required in Production. Optional in Preview (falls back
+    // to VERCEL_URL via appUrl()). Required locally (set in .env.local).
+    NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 
     // ── Required-later: Stripe publishable key (Sprint 4) ─────────────────
     // https://dashboard.stripe.com/apikeys — pk_test_ in dev, pk_live_ in prod.
@@ -129,6 +135,7 @@ export const env = createEnv({
     STRIPE_PRO_YEARLY_PRICE_ID: process.env['STRIPE_PRO_YEARLY_PRICE_ID'],
     RESEND_API_KEY: process.env['RESEND_API_KEY'],
     EMAIL_FROM: process.env['EMAIL_FROM'],
+    VERCEL_URL: process.env['VERCEL_URL'],
     SENTRY_DSN: process.env['SENTRY_DSN'],
     SENTRY_ENVIRONMENT: process.env['SENTRY_ENVIRONMENT'],
     SENTRY_AUTH_TOKEN: process.env['SENTRY_AUTH_TOKEN'],
@@ -168,3 +175,15 @@ export const env = createEnv({
    */
   emptyStringAsUndefined: true,
 });
+
+/**
+ * Resolves the canonical app base URL for the current environment.
+ * Server-only — uses VERCEL_URL which is never exposed to the client bundle.
+ *
+ * Priority: NEXT_PUBLIC_APP_URL → VERCEL_URL (Vercel auto-inject) → localhost fallback
+ */
+export function appUrl(): string {
+  if (env.NEXT_PUBLIC_APP_URL) return env.NEXT_PUBLIC_APP_URL;
+  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`;
+  return 'http://localhost:3000';
+}

@@ -2,9 +2,13 @@ import { PageAnalytics } from '@/components/page-analytics';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getServerFeatureFlag } from '@/lib/analytics/flags';
+import { FLAGS, getServerFeatureFlag } from '@/lib/analytics/flags';
 import { requireMembership } from '@/lib/orgs/guards';
-import { checkEntitlement, getOrganizationUsageOverview } from '@ai-workspace-lab/entitlements';
+import {
+  FEATURE_KEYS,
+  checkEntitlement,
+  getOrganizationUsageOverview,
+} from '@ai-workspace-lab/entitlements';
 import { CheckCircle2, Circle, ExternalLink, FileText, Lock, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,10 +36,10 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
   const [overview, uploadEnabled, aiChatEnabled, uploadEntitled, aiChatEntitled] =
     await Promise.all([
       getOrganizationUsageOverview(organization.id).catch(() => null),
-      getServerFeatureFlag('document_upload_enabled', user.id),
-      getServerFeatureFlag('ai_chat_enabled', user.id),
-      checkEntitlement(organization.id, 'document_uploads').catch(() => false),
-      checkEntitlement(organization.id, 'ai_chat').catch(() => false),
+      getServerFeatureFlag(FLAGS.DOCUMENT_UPLOAD, user.id),
+      getServerFeatureFlag(FLAGS.AI_CHAT, user.id),
+      checkEntitlement(organization.id, FEATURE_KEYS.DOCUMENT_UPLOADS).catch(() => false),
+      checkEntitlement(organization.id, FEATURE_KEYS.AI_MESSAGES).catch(() => false),
     ]);
 
   const isFree =

@@ -9,6 +9,11 @@ vi.mock('@ai-workspace-lab/entitlements', () => ({
   getOrganizationPlan: vi.fn(),
   getPlanLimits: vi.fn(),
   getCurrentBillingPeriod: vi.fn(),
+  FEATURE_KEYS: {
+    DOCUMENT_UPLOADS: 'document_uploads',
+    AI_MESSAGES: 'ai_messages',
+    MAX_FILE_SIZE_MB: 'max_file_size_mb',
+  },
   EntitlementError: class EntitlementError extends Error {
     code: string;
     constructor(code: string) {

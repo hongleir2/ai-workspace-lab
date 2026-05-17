@@ -1,5 +1,6 @@
 import { type Document, type NewDocument, db, documents } from '@ai-workspace-lab/db';
 import {
+  FEATURE_KEYS,
   assertFeatureAllowed,
   getCurrentBillingPeriod,
   getOrganizationPlan,
@@ -30,7 +31,7 @@ export async function createDocumentUploadTarget(
 ): Promise<CreateDocumentUploadTargetResult> {
   const { organizationId, userId, filename, contentType, byteSize } = input;
 
-  await assertFeatureAllowed(organizationId, 'document_uploads');
+  await assertFeatureAllowed(organizationId, FEATURE_KEYS.DOCUMENT_UPLOADS);
 
   const maxFileSizeMb = await getMaxFileSizeMb(organizationId);
   const { uploadUrl, objectKey, bucket } = await createUploadTarget({
@@ -68,7 +69,7 @@ export async function createDocumentUploadTarget(
   if (!document) throw new Error('Failed to create document row');
 
   const { subscription } = await getOrganizationPlan(organizationId);
-  const limits = await getPlanLimits(subscription.planId, 'document_uploads');
+  const limits = await getPlanLimits(subscription.planId, FEATURE_KEYS.DOCUMENT_UPLOADS);
   const resetInterval = limits[0]?.resetInterval ?? 'day';
   const period = getCurrentBillingPeriod(subscription, resetInterval) ?? {
     start: new Date(new Date().setUTCHours(0, 0, 0, 0)),
@@ -82,7 +83,7 @@ export async function createDocumentUploadTarget(
     event: {
       organizationId,
       userId,
-      featureKey: 'document_uploads',
+      featureKey: FEATURE_KEYS.DOCUMENT_UPLOADS,
       eventType: 'document_upload',
       quantity: '1',
       unit: 'count',

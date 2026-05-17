@@ -1,4 +1,4 @@
-import { getServerFeatureFlag } from '@/lib/analytics/flags';
+import { FLAGS, getServerFeatureFlag } from '@/lib/analytics/flags';
 import { getCurrentUser } from '@/lib/auth/user';
 import { createDocumentUploadTarget } from '@/lib/documents/service';
 import { env } from '@/lib/env';
@@ -74,7 +74,7 @@ export async function POST(
   }
 
   if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-    const flagEnabled = await getServerFeatureFlag('document_upload_enabled', user.id);
+    const flagEnabled = await getServerFeatureFlag(FLAGS.DOCUMENT_UPLOAD, user.id);
     if (!flagEnabled) {
       return NextResponse.json({ error: 'Feature not available' }, { status: 403 });
     }

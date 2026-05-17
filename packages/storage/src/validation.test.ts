@@ -21,6 +21,11 @@ vi.mock('@ai-workspace-lab/entitlements', () => ({
   },
   getOrganizationPlan: vi.fn(),
   getPlanLimits: vi.fn(),
+  FEATURE_KEYS: {
+    DOCUMENT_UPLOADS: 'document_uploads',
+    AI_MESSAGES: 'ai_messages',
+    MAX_FILE_SIZE_MB: 'max_file_size_mb',
+  },
 }));
 
 const MB = 1024 * 1024;

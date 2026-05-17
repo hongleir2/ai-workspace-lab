@@ -2,6 +2,8 @@ import { AdminSidebar } from '@/components/nav/admin-sidebar';
 import { requirePlatformAdmin } from '@/lib/auth/admin';
 import type { ReactNode } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requirePlatformAdmin();
 

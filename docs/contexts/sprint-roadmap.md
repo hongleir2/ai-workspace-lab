@@ -127,6 +127,11 @@ Remaining:
 
 ## Sprint 7 — Background jobs + processing pipeline
 
+Done:
+- **Day 41**: `jobs` (migration 0011), `job_attempts` (migration 0012), `document_chunks` (migration 0013) — enums, constraints (unique idempotency_key, unique job_id+attempt_number, unique document_id+chunk_index), indexes, RLS; Drizzle schemas + types; pgvector custom type added to `custom-types.ts`; 2 integration test files (jobs/attempts + chunks)
+
+Remaining:
+
 **Outcome:** Uploaded document reaches `ready` status asynchronously.
 
 - `jobs`, `job_attempts` tables

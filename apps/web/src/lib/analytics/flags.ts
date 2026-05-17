@@ -1,9 +1,9 @@
 import { env } from '@/lib/env';
-import { FLAG_DEFAULTS } from '@ai-workspace-lab/analytics';
-import type { FeatureFlag } from '@ai-workspace-lab/analytics';
+import { FLAG_DEFAULTS } from '@ai-workspace-lab/analytics/flag-definitions';
+import type { FeatureFlag } from '@ai-workspace-lab/analytics/flag-definitions';
 import { PostHog } from 'posthog-node';
 
-export { FLAGS } from '@ai-workspace-lab/analytics';
+export { FLAGS } from '@ai-workspace-lab/analytics/flag-definitions';
 
 export async function getServerFeatureFlag(
   flag: FeatureFlag,

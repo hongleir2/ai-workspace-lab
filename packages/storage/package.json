@@ -1,0 +1,26 @@
+{
+  "name": "@ai-workspace-lab/storage",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo"
+  },
+  "dependencies": {
+    "@ai-workspace-lab/db": "workspace:*",
+    "@ai-workspace-lab/entitlements": "workspace:*",
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "@supabase/supabase-js": "^2.105.1"
+  },
+  "devDependencies": {
+    "@ai-workspace-lab/config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

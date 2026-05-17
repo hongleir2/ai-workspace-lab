@@ -116,6 +116,6 @@ export async function createStorageObjectRow(
   }
 
   const [row] = await dbConn.insert(storageObjects).values(values).returning();
-  if (!row) throw new StorageError('PROVIDER_ERROR', 'Failed to insert storage_objects row');
+  if (!row) throw new StorageError('DATABASE_ERROR', 'Failed to insert storage_objects row');
   return row;
 }

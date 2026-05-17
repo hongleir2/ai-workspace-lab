@@ -100,6 +100,36 @@ describe('createUploadTarget', () => {
     expect(result.bucket).toBe('documents');
   });
 
+  it('rejects non-member before calling provider', async () => {
+    const nonMemberDb = {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue([]), // no membership row
+    } as unknown as Database;
+
+    let caught: unknown;
+    try {
+      await createUploadTarget(
+        {
+          organizationId: ORG_ID,
+          userId: USER_ID,
+          filename: 'report.pdf',
+          contentType: 'application/pdf',
+          byteSize: 1024,
+          maxFileSizeMb: 5,
+        },
+        mockProvider,
+        nonMemberDb,
+      );
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(StorageError);
+    expect((caught as StorageError).code).toBe('NOT_AUTHORIZED');
+    expect(mockProvider.createUploadTarget).not.toHaveBeenCalled();
+  });
+
   it('generates objectKey in organizations/{orgId}/uploads/{yyyy}/{mm}/{uuid}.{ext} format', async () => {
     const mockDb = createMockDb();
 

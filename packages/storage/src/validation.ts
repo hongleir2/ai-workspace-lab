@@ -1,6 +1,10 @@
 import type { Database } from '@ai-workspace-lab/db';
 import { db } from '@ai-workspace-lab/db';
-import { getOrganizationPlan, getPlanLimits } from '@ai-workspace-lab/entitlements';
+import {
+  EntitlementError,
+  getOrganizationPlan,
+  getPlanLimits,
+} from '@ai-workspace-lab/entitlements';
 import { StorageError } from './errors';
 
 export const ALLOWED_FILE_EXTENSIONS = ['pdf', 'txt', 'md'] as const;
@@ -45,10 +49,20 @@ export async function getMaxFileSizeMb(
   organizationId: string,
   dbConn: Database = db,
 ): Promise<number> {
-  const { subscription } = await getOrganizationPlan(organizationId, dbConn);
-  const limits = await getPlanLimits(subscription.planId, 'max_file_size_mb', dbConn);
-  const row = limits[0];
-  if (!row) return DEFAULT_MAX_FILE_SIZE_MB;
-  if (row.limitValue === null) return Number.POSITIVE_INFINITY;
-  return row.limitValue;
+  try {
+    const { subscription } = await getOrganizationPlan(organizationId, dbConn);
+    const limits = await getPlanLimits(subscription.planId, 'max_file_size_mb', dbConn);
+    const row = limits[0];
+    if (!row) return DEFAULT_MAX_FILE_SIZE_MB;
+    if (row.limitValue === null) return Number.POSITIVE_INFINITY;
+    return row.limitValue;
+  } catch (err) {
+    if (err instanceof EntitlementError && err.code === 'NO_ACTIVE_SUBSCRIPTION') {
+      throw new StorageError(
+        'NOT_AUTHORIZED',
+        `Organization ${organizationId} has no active subscription`,
+      );
+    }
+    throw err;
+  }
 }

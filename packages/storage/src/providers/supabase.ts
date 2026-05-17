@@ -73,17 +73,21 @@ export class SupabaseStorageProvider implements StorageProvider {
       : '';
     const filename = objectKey.split('/').pop() ?? objectKey;
 
-    const { data, error } = await supabase.storage.from(bucket).list(folder, { search: filename });
+    const { data, error } = await supabase.storage.from(bucket).list(folder, { limit: 1000 });
 
-    if (error || !data?.length) {
+    if (error) {
       throw new StorageError('OBJECT_NOT_FOUND', `Object not found: ${objectKey}`);
     }
 
-    const file = data[0];
+    const file = data?.find((f) => f.name === filename);
+    if (!file) {
+      throw new StorageError('OBJECT_NOT_FOUND', `Object not found: ${objectKey}`);
+    }
+
     return {
       contentType:
-        (file?.metadata?.['mimetype'] as string | undefined) ?? 'application/octet-stream',
-      byteSize: (file?.metadata?.['size'] as number | undefined) ?? 0,
+        (file.metadata?.['mimetype'] as string | undefined) ?? 'application/octet-stream',
+      byteSize: (file.metadata?.['size'] as number | undefined) ?? 0,
     };
   }
 

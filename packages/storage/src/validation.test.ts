@@ -1,6 +1,27 @@
-import { describe, expect, it } from 'vitest';
+import {
+  EntitlementError,
+  getOrganizationPlan,
+  getPlanLimits,
+} from '@ai-workspace-lab/entitlements';
+import { describe, expect, it, vi } from 'vitest';
 import { StorageError } from './errors';
-import { validateFileSize, validateFileType } from './validation';
+import {
+  DEFAULT_MAX_FILE_SIZE_MB,
+  getMaxFileSizeMb,
+  validateFileSize,
+  validateFileType,
+} from './validation';
+
+vi.mock('@ai-workspace-lab/entitlements', () => ({
+  EntitlementError: class EntitlementError extends Error {
+    constructor(public code: string) {
+      super(code);
+      this.name = 'EntitlementError';
+    }
+  },
+  getOrganizationPlan: vi.fn(),
+  getPlanLimits: vi.fn(),
+}));
 
 const MB = 1024 * 1024;
 
@@ -47,6 +68,45 @@ describe('validateFileType', () => {
     it('accepts md with text/plain (some clients send this)', () => {
       expect(() => validateFileType('README.md', 'text/plain')).not.toThrow();
     });
+  });
+});
+
+describe('getMaxFileSizeMb', () => {
+  const mockPlan = { subscription: { planId: 'plan-1', id: 'sub-1' } };
+
+  it('returns limitValue from plan limits', async () => {
+    vi.mocked(getOrganizationPlan).mockResolvedValue(mockPlan as never);
+    vi.mocked(getPlanLimits).mockResolvedValue([{ limitValue: 50 }] as never);
+    const result = await getMaxFileSizeMb('org-1');
+    expect(result).toBe(50);
+  });
+
+  it('returns Infinity when limitValue is null (unlimited plan)', async () => {
+    vi.mocked(getOrganizationPlan).mockResolvedValue(mockPlan as never);
+    vi.mocked(getPlanLimits).mockResolvedValue([{ limitValue: null }] as never);
+    const result = await getMaxFileSizeMb('org-1');
+    expect(result).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it(`returns DEFAULT_MAX_FILE_SIZE_MB (${DEFAULT_MAX_FILE_SIZE_MB}) when no plan_limits row exists`, async () => {
+    vi.mocked(getOrganizationPlan).mockResolvedValue(mockPlan as never);
+    vi.mocked(getPlanLimits).mockResolvedValue([] as never);
+    const result = await getMaxFileSizeMb('org-1');
+    expect(result).toBe(DEFAULT_MAX_FILE_SIZE_MB);
+  });
+
+  it('throws StorageError NOT_AUTHORIZED when org has no active subscription', async () => {
+    vi.mocked(getOrganizationPlan).mockRejectedValue(
+      new EntitlementError('NO_ACTIVE_SUBSCRIPTION'),
+    );
+    let caught: unknown;
+    try {
+      await getMaxFileSizeMb('org-1');
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(StorageError);
+    expect((caught as StorageError).code).toBe('NOT_AUTHORIZED');
   });
 });
 

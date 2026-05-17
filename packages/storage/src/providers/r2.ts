@@ -89,7 +89,8 @@ export class R2StorageProvider implements StorageProvider {
       }
       return metadata;
     } catch (err) {
-      if ((err as { name?: string }).name === 'NotFound') {
+      const errName = (err as { name?: string }).name;
+      if (errName === 'NotFound' || errName === 'NoSuchKey') {
         throw new StorageError('OBJECT_NOT_FOUND', `Object not found: ${objectKey}`);
       }
       throw new StorageError('PROVIDER_ERROR', `HeadObject failed: ${String(err)}`);

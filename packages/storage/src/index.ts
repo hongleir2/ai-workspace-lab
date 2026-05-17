@@ -24,6 +24,7 @@ export {
   createStorageObjectRow,
   createUploadTarget,
   deleteObject,
+  downloadObject,
   getObjectMetadata,
   uploadObject,
 } from './service';

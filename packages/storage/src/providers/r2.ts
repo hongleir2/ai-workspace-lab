@@ -1,5 +1,6 @@
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -101,5 +102,29 @@ export class R2StorageProvider implements StorageProvider {
     const client = getR2Client();
     const bucket = getR2Bucket();
     await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }));
+  }
+
+  async downloadObject(objectKey: string): Promise<Buffer> {
+    const client = getR2Client();
+    const bucket = getR2Bucket();
+    try {
+      const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }));
+      if (!response.Body) {
+        throw new StorageError('OBJECT_NOT_FOUND', `Object body is empty: ${objectKey}`);
+      }
+      const chunks: Buffer[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } catch (err) {
+      if (err instanceof StorageError) throw err;
+      const errName = (err as { name?: string }).name;
+      if (errName === 'NotFound' || errName === 'NoSuchKey') {
+        throw new StorageError('OBJECT_NOT_FOUND', `Object not found: ${objectKey}`);
+      }
+      throw new StorageError('PROVIDER_ERROR', `GetObject failed: ${String(err)}`);
+    }
   }
 }

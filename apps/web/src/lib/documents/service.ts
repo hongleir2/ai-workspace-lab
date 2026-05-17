@@ -6,6 +6,7 @@ import {
   getOrganizationPlan,
   getPlanLimits,
 } from '@ai-workspace-lab/entitlements';
+import { createProcessDocumentJob } from '@ai-workspace-lab/jobs';
 import {
   createStorageObjectRow,
   createUploadTarget,
@@ -62,7 +63,7 @@ export async function createDocumentUploadTarget(
     title: filename,
     sourceType: 'web_upload',
     fileType: ext,
-    status: 'uploaded',
+    status: 'queued',
   };
 
   const [document] = await db.insert(documents).values(newDoc).returning();
@@ -93,6 +94,8 @@ export async function createDocumentUploadTarget(
     },
     period,
   });
+
+  await createProcessDocumentJob(document.id, organizationId);
 
   return { document, uploadUrl };
 }

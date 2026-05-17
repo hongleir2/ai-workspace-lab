@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-17 Day 38)
+## Current status (last updated: 2026-05-17 Days 42–45)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -40,13 +40,16 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-17] **Day 38 — Document upload API endpoint** (`POST /api/orgs/[orgSlug]/documents`): creates document row + presigned R2 URL, returns 429 on quota exceeded (document_count limit), 402 on no subscription, 403 on feature disabled, 200 on success; 2-phase client flow (POST for metadata, PUT file to presigned URL); analytics event `document_upload_started`; 17 unit tests covering all error paths
 - [2026-05-17] **Day 39 — Document list, upload, and detail pages**: `/documents` page lists org docs (status badges, org filter by id+deletedAt), empty state with upload CTA, `PageAnalytics` for `documents_viewed`; `/documents/new` upload form (client component, two-phase flow, quota/billing/feature error messages, `document_upload_failed` / `document_uploaded` events); `/documents/[documentId]` detail page (status badge, file metadata, formatted size/date, `notFound()` on org/soft-delete mismatch, `document_detail_viewed` event); all pages use `requireMembership` + `force-dynamic`; analytics: 4 events total
 - [2026-05-17] **Day 40 — Document ownership tests + ADR 0010 + dashboard entitlement fix**: 4 unit tests (service: FILE_TOO_LARGE, NOT_AUTHORIZED cross-org, organizationId correctness; route: NOT_AUTHORIZED → 402); 3 integration tests (document belongs to org, cross-org isolation, soft-delete exclusion); `docs/adr/0010-file-storage-and-document-ownership.md`; dashboard now checks `checkEntitlement(orgId, 'document_uploads')` server-side — shows "Document uploads are not enabled for your account" in the Recent documents card and "Not included in your plan / Upgrade" in the checklist when the feature flag is on but the plan doesn't include the feature; 151 unit tests passing
+- [2026-05-17] **Day 42 — Job service abstraction**: `packages/jobs/src/job-service.ts` with 8 named functions (`createJob`, `claimNextJob`, `startJobAttempt`, `completeJob`, `failJob`, `retryJobWithBackoff`, `deadLetterJob`, `cancelJob`); idempotency via `ON CONFLICT DO NOTHING` on `idempotencyKey`; exponential backoff formula `min(60 × 5^(n−1), 86400)`; 17 unit tests covering all 8 functions; `worker.ts` refactored to delegate to service functions; all 8 functions re-exported from `packages/jobs/src/index.ts`
+- [2026-05-17] **Day 43–45 — Background job processing pipeline**: `downloadObject` added to both storage providers (R2 stream, Supabase blob); `packages/jobs` wired with db+storage deps; `chunkText` (paragraph → sentence → sub-chunk, 1500-char limit), `extractText` (txt/md/pdf), `processDocumentHandler` (load → mark processing → extract → chunk → delete+insert for idempotency → mark ready/failed), `runWorkerOnce` (FOR UPDATE SKIP LOCKED claim, exponential backoff capped 24h, dead-letter); upload → job wiring (`createProcessDocumentJob` with ON CONFLICT DO NOTHING, document status now `queued`); internal worker trigger route `POST /api/internal/run-worker` (WORKER_SECRET bearer auth); document detail animated status panel; `/admin/jobs` page (failed/retrying/dead-lettered) with `requirePlatformAdmin()` email-allowlist guard; `WORKER_SECRET`+`ADMIN_EMAILS` in env.ts + .env.example; 22 new unit tests; ADR 0011; `docs/runbooks/queue-backlog.md`
+- [2026-05-17] **Day 46 — AI chat schema**: `prompt_versions`, `ai_sessions`, `ai_messages`, and optional `rate_limit_events` migration 0014; seed rows for `document_qa` v1 and `general_chat` v1; RLS + indexes for AI session/message lookup; integration tests added for prompt seeds, session/message inserts, and rate-limit rows
 
 ### In progress
-- Sprint 6: Document processing pipeline next
+- Sprint 8: AI chat MVP wiring next
 
 ### Up next
 - Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate
-- Sprint 6: Document upload flow (R2 storage, background processing queue)
+- Sprint 8: AI chat endpoints, streaming, citations, and rate-limit enforcement
 
 ---
 

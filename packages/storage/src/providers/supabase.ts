@@ -100,4 +100,21 @@ export class SupabaseStorageProvider implements StorageProvider {
       throw new StorageError('PROVIDER_ERROR', `Delete failed: ${error.message}`);
     }
   }
+
+  async downloadObject(objectKey: string): Promise<Buffer> {
+    const supabase = getSupabaseClient();
+    const bucket = getSupabaseBucket();
+    const { data, error } = await supabase.storage.from(bucket).download(objectKey);
+    if (error || !data) {
+      const msg = error?.message ?? 'unknown';
+      const isNotFound =
+        msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('does not exist');
+      throw new StorageError(
+        isNotFound ? 'OBJECT_NOT_FOUND' : 'PROVIDER_ERROR',
+        `Download failed for ${objectKey}: ${msg}`,
+      );
+    }
+    const arrayBuffer = await data.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
 }

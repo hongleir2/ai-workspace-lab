@@ -12,8 +12,15 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .turbo"
   },
+  "dependencies": {
+    "@ai-workspace-lab/db": "workspace:*",
+    "@ai-workspace-lab/storage": "workspace:*",
+    "pdf-parse": "^1.1.1"
+  },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",
-    "typescript": "5.7.3"
+    "@types/pdf-parse": "^1.1.4",
+    "typescript": "5.7.3",
+    "vitest": "^3.1.2"
   }
 }

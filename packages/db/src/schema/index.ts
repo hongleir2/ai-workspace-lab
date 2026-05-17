@@ -1,4 +1,5 @@
 export * from './audit_logs';
+export * from './ai';
 export * from './billing_customers';
 export * from './custom-types';
 export * from './document_chunks';

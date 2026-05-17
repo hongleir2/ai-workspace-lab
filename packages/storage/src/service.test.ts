@@ -16,6 +16,7 @@ const mockProvider: StorageProvider = {
   uploadObject: vi.fn().mockResolvedValue(undefined),
   getObjectMetadata: vi.fn().mockResolvedValue({ contentType: 'application/pdf', byteSize: 1024 }),
   deleteObject: vi.fn().mockResolvedValue(undefined),
+  downloadObject: vi.fn().mockResolvedValue(Buffer.from('test content')),
 };
 
 const MB = 1024 * 1024;

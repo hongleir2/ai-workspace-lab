@@ -90,6 +90,16 @@ export const env = createEnv({
     // Pin model + token ceiling for production safety. Defaults applied at runtime.
     ANTHROPIC_MODEL: z.string().optional(),
     ANTHROPIC_MAX_TOKENS: z.coerce.number().int().positive().optional(),
+
+    // ── Internal worker trigger (Sprint 10+) ─────────────────────────────
+    // Bearer token required to POST /api/internal/run-worker. Omit in local dev
+    // to allow unauthenticated calls. Always set in production.
+    WORKER_SECRET: z.string().min(1).optional(),
+
+    // ── Platform admin access (Sprint 10+) ───────────────────────────────
+    // Comma-separated list of email addresses allowed to access /admin/* routes.
+    // Temporary until a platform_admin flag is added to the users table.
+    ADMIN_EMAILS: z.string().optional(),
   },
 
   // ── Client-side vars (NEXT_PUBLIC_* only — safe in browser bundles) ──────
@@ -152,6 +162,8 @@ export const env = createEnv({
     ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
     ANTHROPIC_MODEL: process.env['ANTHROPIC_MODEL'],
     ANTHROPIC_MAX_TOKENS: process.env['ANTHROPIC_MAX_TOKENS'],
+    WORKER_SECRET: process.env['WORKER_SECRET'],
+    ADMIN_EMAILS: process.env['ADMIN_EMAILS'],
     // client
     NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL'],
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'],

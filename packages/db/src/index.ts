@@ -4,6 +4,16 @@ export * as schema from './schema/index';
 export type { User, NewUser } from './schema/users';
 export type { AuditLog, NewAuditLog } from './schema/audit_logs';
 export type {
+  AiMessage,
+  AiSession,
+  NewAiMessage,
+  NewAiSession,
+  NewPromptVersion,
+  NewRateLimitEvent,
+  PromptVersion,
+  RateLimitEvent,
+} from './schema/ai';
+export type {
   Organization,
   NewOrganization,
   OrganizationMembership,
@@ -28,6 +38,8 @@ export type { Job, NewJob } from './schema/jobs';
 export type { JobAttempt, NewJobAttempt } from './schema/job_attempts';
 export {
   auditLogs,
+  aiMessages,
+  aiSessions,
   billingCustomers,
   documentChunks,
   documents,
@@ -37,6 +49,8 @@ export {
   organizationMemberships,
   planLimits,
   plans,
+  promptVersions,
+  rateLimitEvents,
   storageObjects,
   stripeEvents,
   subscriptions,
@@ -45,6 +59,10 @@ export {
   users,
 } from './schema/index';
 export {
+  aiMessageRoleEnum,
+  aiMessageStatusEnum,
+  aiSessionStatusEnum,
+  aiSessionVisibilityEnum,
   billingIntervalEnum,
   documentSourceTypeEnum,
   documentStatusEnum,

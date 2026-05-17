@@ -127,15 +127,18 @@ Remaining:
 
 ## Sprint 7 — Background jobs + processing pipeline
 
-Done:
-- **Day 41**: `jobs` (migration 0011), `job_attempts` (migration 0012), `document_chunks` (migration 0013) — enums, constraints (unique idempotency_key, unique job_id+attempt_number, unique document_id+chunk_index), indexes, RLS; Drizzle schemas + types; pgvector custom type added to `custom-types.ts`; 2 integration test files (jobs/attempts + chunks)
-
-Remaining:
-
 **Outcome:** Uploaded document reaches `ready` status asynchronously.
 
-- `jobs`, `job_attempts` tables
-- Worker: extract text → chunk → embed → store chunks
+Done:
+- **Day 41**: `jobs` (migration 0011), `job_attempts` (migration 0012), `document_chunks` (migration 0013) — enums, constraints (unique idempotency_key, unique job_id+attempt_number, unique document_id+chunk_index), indexes, RLS; Drizzle schemas + types; pgvector custom type added to `custom-types.ts`; 2 integration test files (jobs/attempts + chunks)
+- **Day 42**: `packages/jobs/src/job-service.ts` — 8 named service functions (`createJob`, `claimNextJob`, `startJobAttempt`, `completeJob`, `failJob`, `retryJobWithBackoff`, `deadLetterJob`, `cancelJob`); `FOR UPDATE SKIP LOCKED` in `claimNextJob` raw SQL; exponential backoff `min(60 × 5^(n−1), 86400)`; `onConflictDoNothing` idempotency; 17 unit tests; `worker.ts` refactored to use service functions; all 8 functions exported from `index.ts`
+- **Day 43**: `process_document` job handler — `downloadObject` added to storage providers (R2 stream, Supabase blob); `chunkText` (paragraph-first, sentence-fallback, sub-chunk overflow, max 1500 chars); `extractText` (txt/md UTF-8 passthrough, pdf via `pdf-parse`); `processDocumentHandler` (load doc+storage, mark processing, extract, chunk, delete+insert chunks for idempotency, mark ready/failed); `runWorkerOnce` with `FOR UPDATE SKIP LOCKED` atomic claim, exponential backoff (60×5^n−1 capped at 24h), dead-letter after max_attempts; `packages/jobs` package wired with db+storage deps
+- **Day 44**: Wire upload → job — `createProcessDocumentJob(documentId, orgId)` with `ON CONFLICT DO NOTHING` on idempotency key; document status changed to `queued` on upload; `POST /api/internal/run-worker` internal trigger route (bearer token auth via `WORKER_SECRET`, `maxDuration = 60`); document detail page shows animated status panel for queued/processing states; `WORKER_SECRET` and `ADMIN_EMAILS` added to `env.ts` + `.env.example`
+- **Day 45**: Tests + admin + ADR — 17 unit tests across `chunkText`/`extractText`/`processDocumentHandler`/`runWorkerOnce`; 5 route auth tests for `/api/internal/run-worker`; admin jobs page (`/admin/jobs`) showing failed/dead_lettered/retrying jobs with error codes + attempt counts; `requirePlatformAdmin()` (email-allowlist via `ADMIN_EMAILS`) enforced at admin layout level; ADR 0011 (background job architecture); `docs/runbooks/queue-backlog.md`
+
+Remaining:
+- Embeddings: add vector generation in `processDocumentHandler` after chunking
+- Worker scheduling: Vercel Cron wiring for automatic invocation
 - Retry on transient failure; `failed` state visible to user
 
 ---
@@ -144,7 +147,7 @@ Remaining:
 
 **Outcome:** User can ask a question and get a streaming answer; quota enforced.
 
-- `ai_sessions`, `ai_messages`, `usage_events`, `usage_counters` tables
+- `prompt_versions`, `ai_sessions`, `ai_messages`, optional `rate_limit_events`, `usage_events`, `usage_counters` tables
 - `/api/ai/chat`: auth → membership → entitlement → quota → rate limit → model call
 - Streaming via Vercel AI SDK; token usage recorded
 - Rate limit via Upstash Redis

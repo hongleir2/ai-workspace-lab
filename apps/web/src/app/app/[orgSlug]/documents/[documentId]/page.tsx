@@ -116,9 +116,19 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
         </dl>
 
         {document.status !== 'ready' && document.status !== 'failed' ? (
-          <p className="text-sm text-muted-foreground">
-            This document is being processed. Check back shortly.
-          </p>
+          <div className="rounded-lg border border-border bg-muted/40 p-4">
+            <div className="flex items-center gap-3">
+              <div className="size-2 animate-pulse rounded-full bg-blue-500" />
+              <div>
+                <p className="text-sm font-medium">Processing</p>
+                <p className="text-xs text-muted-foreground">
+                  {document.status === 'queued'
+                    ? 'Queued for processing — will start shortly.'
+                    : 'Extracting and indexing content — check back in a moment.'}
+                </p>
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </>

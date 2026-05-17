@@ -15,6 +15,7 @@
     "@ai-workspace-lab/billing": "workspace:*",
     "@ai-workspace-lab/db": "workspace:*",
     "@ai-workspace-lab/entitlements": "workspace:*",
+    "@ai-workspace-lab/jobs": "workspace:*",
     "@ai-workspace-lab/storage": "workspace:*",
     "@ai-workspace-lab/usage": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",

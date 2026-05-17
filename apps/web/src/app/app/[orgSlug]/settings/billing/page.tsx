@@ -15,6 +15,8 @@ import { CreditCard } from 'lucide-react';
 import { ManageBillingButton } from './manage-billing-button';
 import { UpgradeButton } from './upgrade-button';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{ orgSlug: string }>;
 }

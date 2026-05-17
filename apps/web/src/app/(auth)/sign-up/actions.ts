@@ -1,5 +1,6 @@
 'use server';
 
+import { captureServerEvent } from '@/lib/analytics/server';
 import { appUrl } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -13,7 +14,7 @@ export async function signUpAction(formData: FormData): Promise<void> {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -23,6 +24,10 @@ export async function signUpAction(formData: FormData): Promise<void> {
 
   if (error) {
     redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (data.user) {
+    await captureServerEvent(data.user.id, 'user_signed_up', { email });
   }
 
   redirect('/sign-in?message=check_email');

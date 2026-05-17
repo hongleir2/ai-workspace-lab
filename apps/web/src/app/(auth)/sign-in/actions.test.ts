@@ -40,7 +40,10 @@ describe('signInAction', () => {
   });
 
   it('does not capture event on sign-in error', async () => {
-    mockSignIn.mockResolvedValue({ data: { user: null }, error: { message: 'Invalid credentials' } });
+    mockSignIn.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'Invalid credentials' },
+    });
     mockRedirect.mockImplementation(() => {
       throw new Error('NEXT_REDIRECT');
     });

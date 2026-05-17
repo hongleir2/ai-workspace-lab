@@ -1,3 +1,4 @@
+import { PageAnalytics } from '@/components/page-analytics';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -10,7 +11,6 @@ import {
 import { requireMembership } from '@/lib/orgs/guards';
 import { db, eq, plans } from '@ai-workspace-lab/db';
 import { getOrganizationPlan } from '@ai-workspace-lab/entitlements';
-import { PageAnalytics } from '@/components/page-analytics';
 import { CreditCard } from 'lucide-react';
 import { ManageBillingButton } from './manage-billing-button';
 import { UpgradeButton } from './upgrade-button';

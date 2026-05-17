@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRequireUser, mockCreateOrganization, mockCaptureServerEvent, mockRedirect, mockHeaders } =
-  vi.hoisted(() => ({
-    mockRequireUser: vi.fn(),
-    mockCreateOrganization: vi.fn(),
-    mockCaptureServerEvent: vi.fn(),
-    mockRedirect: vi.fn(),
-    mockHeaders: vi.fn().mockResolvedValue({ get: () => null }),
-  }));
+const {
+  mockRequireUser,
+  mockCreateOrganization,
+  mockCaptureServerEvent,
+  mockRedirect,
+  mockHeaders,
+} = vi.hoisted(() => ({
+  mockRequireUser: vi.fn(),
+  mockCreateOrganization: vi.fn(),
+  mockCaptureServerEvent: vi.fn(),
+  mockRedirect: vi.fn(),
+  mockHeaders: vi.fn().mockResolvedValue({ get: () => null }),
+}));
 
 vi.mock('@/lib/auth/user', () => ({ requireUser: mockRequireUser }));
 vi.mock('@/lib/orgs/service', () => ({

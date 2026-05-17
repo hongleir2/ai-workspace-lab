@@ -1,10 +1,10 @@
 'use client';
 
 import { env } from '@/lib/env';
+import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, type ReactNode } from 'react';
+import { type ReactNode, Suspense, useEffect } from 'react';
 
 if (typeof window !== 'undefined' && env.NEXT_PUBLIC_POSTHOG_KEY) {
   posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {

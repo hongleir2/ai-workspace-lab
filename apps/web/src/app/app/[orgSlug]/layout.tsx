@@ -4,7 +4,7 @@ import { AppTopbar } from '@/components/nav/app-topbar';
 import { FLAGS, getServerFeatureFlag } from '@/lib/analytics/flags';
 import { requireMembership } from '@/lib/orgs/guards';
 import { getUserOrganizations } from '@/lib/orgs/service';
-import { getOrganizationPlan } from '@ai-workspace-lab/entitlements';
+import { EntitlementError, getOrganizationPlan } from '@ai-workspace-lab/entitlements';
 import * as Sentry from '@sentry/nextjs';
 import type { ReactNode } from 'react';
 
@@ -22,12 +22,18 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
     slug: organization.slug,
     role: membership.role,
   });
-  const [memberships, { plan, subscription }, uploadEnabled, aiChatEnabled] = await Promise.all([
+  const [memberships, planResult, uploadEnabled, aiChatEnabled] = await Promise.all([
     getUserOrganizations(user.id),
-    getOrganizationPlan(organization.id),
+    getOrganizationPlan(organization.id).catch((err: unknown) => {
+      if (err instanceof EntitlementError && err.code === 'NO_ACTIVE_SUBSCRIPTION') return null;
+      throw err;
+    }),
     getServerFeatureFlag(FLAGS.DOCUMENT_UPLOAD, user.id),
     getServerFeatureFlag(FLAGS.AI_CHAT, user.id),
   ]);
+
+  const plan = planResult?.plan;
+  const subscription = planResult?.subscription;
 
   const disabledFeatures = new Set<string>();
   if (!uploadEnabled) disabledFeatures.add(FLAGS.DOCUMENT_UPLOAD);
@@ -38,7 +44,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   }));
 
   const daysLeft =
-    subscription.status === 'trialing' && subscription.currentPeriodEnd
+    subscription?.status === 'trialing' && subscription.currentPeriodEnd
       ? Math.max(0, Math.ceil((subscription.currentPeriodEnd.getTime() - Date.now()) / 86_400_000))
       : undefined;
 
@@ -48,9 +54,9 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
         orgSlug={orgSlug}
         orgName={organization.name}
         allOrgs={allOrgs}
-        planId={plan.id}
-        planName={plan.name}
-        subscriptionStatus={subscription.status}
+        planId={plan?.id ?? 'free'}
+        planName={plan?.name ?? 'Free'}
+        subscriptionStatus={subscription?.status ?? 'free'}
         disabledFeatures={disabledFeatures}
         {...(daysLeft !== undefined ? { daysLeft } : {})}
       />

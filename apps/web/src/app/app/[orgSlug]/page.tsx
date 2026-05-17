@@ -1,3 +1,4 @@
+import { PageAnalytics } from '@/components/page-analytics';
 import { CheckCircle2, Circle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
@@ -47,6 +48,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
 
   return (
     <div className="flex flex-col gap-8 p-6 max-w-3xl">
+      <PageAnalytics event="dashboard_viewed" properties={{ org_slug: orgSlug }} />
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight">
           {`Welcome to ${organization.name}`}

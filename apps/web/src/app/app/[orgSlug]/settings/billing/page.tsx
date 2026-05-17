@@ -1,3 +1,4 @@
+import { PageAnalytics } from '@/components/page-analytics';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -61,6 +62,7 @@ export default async function BillingSettingsPage({ params }: Props) {
 
   return (
     <Card>
+      <PageAnalytics event="billing_viewed" properties={{ org_slug: orgSlug }} />
       <CardHeader>
         <CardTitle className="text-base">{'Billing'}</CardTitle>
         <CardDescription>{'Your current plan and payment details.'}</CardDescription>

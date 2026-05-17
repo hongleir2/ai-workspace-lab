@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-16 Day 30)
+## Current status (last updated: 2026-05-16 Day 32)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -31,10 +31,10 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 27 — Stripe checkout + billing page + nav consolidation**: `packages/billing` service layer (`getOrCreateStripeCustomer`, `createCheckoutSession`, `createBillingPortalSession`, `mapStripePriceToPlan`) with 7 unit tests; `/settings/billing` page shows current plan (read-only for members, Upgrade buttons + Manage Billing for owner); `/settings/billing/success` post-checkout landing; `/settings/usage` page (moved from `/usage`); Usage + Billing removed from main sidebar, added to Settings sub-nav; standalone `/app/[orgSlug]/billing` and `/app/[orgSlug]/usage` routes deleted
 - [2026-05-16] Day 28–30: Stripe webhook handler (idempotent, 9 unit tests), billing success/canceled pages with analytics stubs, ADR 0008, runbook
 - [2026-05-16] **Day 31 — Sentry setup**: `@sentry/nextjs` added to `apps/web`; browser/server/edge SDK initialization files; `withSentryConfig` source-map upload config for org `leixingtech` project `ai-workspace-lab`; root `app/error.tsx` + `app/global-error.tsx`; settings error boundary now captures to Sentry; `/dev/sentry-test` page captures client and server test errors in development only; org layout attaches safe Sentry context (`user.id`, `organization.id`, `organization.slug`, membership role only)
+- [2026-05-16] **Day 32 — PostHog analytics**: `packages/analytics` wrapper (`identifyUser`, `identifyOrganization`, `captureEvent`, `resetAnalytics`) + 9 unit tests; `PostHogProvider` client component with App Router pageview tracking via `usePathname`/`useSearchParams`; `AnalyticsIdentity` identifies user+org on every `/app/[orgSlug]` entry; `captureServerEvent` posthog-node utility for server actions; server events: `user_signed_up`, `user_signed_in`, `organization_created`; client events: `dashboard_viewed`, `billing_viewed`, `checkout_started`, `checkout_success_viewed`, `checkout_canceled`, `billing_portal_opened`; 6 new unit tests
 
 ### In progress
-- Sprint 1 remainder: auth refinement, onboarding analytics events
-- Sprint 5 partial: PostHog analytics and feature flags remain after Sentry setup
+- Sprint 5 partial: PostHog feature flags remain (deferred to AI sprint when flag-gating first AI features)
 
 ### Up next
 - Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate

@@ -42,3 +42,4 @@ export {
   usageUnitEnum,
 } from './schema/index';
 export { sql, eq, and, or, not, inArray, desc, asc, isNull } from 'drizzle-orm';
+export { drizzle } from 'drizzle-orm/postgres-js';

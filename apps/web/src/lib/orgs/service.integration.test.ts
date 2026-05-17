@@ -5,6 +5,7 @@
 import type { AuditLog, Database } from '@ai-workspace-lab/db';
 import {
   auditLogs,
+  drizzle,
   eq,
   inArray,
   organizationMemberships,
@@ -14,7 +15,6 @@ import {
   users,
 } from '@ai-workspace-lab/db';
 import * as schema from '@ai-workspace-lab/db/schema';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {

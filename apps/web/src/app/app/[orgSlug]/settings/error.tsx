@@ -1,5 +1,6 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
 import { AlertCircle } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -12,7 +13,7 @@ interface SettingsErrorProps {
 
 export default function SettingsError({ error, reset }: SettingsErrorProps) {
   useEffect(() => {
-    console.error(error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

@@ -10,7 +10,7 @@
 Sprint 0         — Project setup                    ✅ Done
 Sprint 1–2       — Auth + tenant boundary           🔄 In progress
 Sprint 3–4       — Plans, entitlements, billing     ✅ Done
-Sprint 5–6       — Observability + file storage     Upcoming
+Sprint 5–6       — Observability + file storage     🔄 In progress
 Sprint 7–8       — Async jobs + AI chat MVP         Upcoming
 Sprint 9–10      — Embeddings + RAG                 Future
 Sprint 11–14     — Admin, emails, hardening         Future
@@ -98,7 +98,11 @@ Done:
 
 **Outcome:** Frontend + backend errors in Sentry; activation funnel in PostHog.
 
-- Sentry: Next.js SDK, source maps, error boundary, API instrumentation
+Done:
+- **Day 31**: Sentry for `apps/web` — `@sentry/nextjs`, browser/server/edge SDK initialization, source-map upload config via `withSentryConfig`, root `app/error.tsx` and `app/global-error.tsx`, development-only `/dev/sentry-test`, and safe authenticated org context (`user.id`, `organization.id`, slug, role only).
+
+Remaining:
+- Add `SENTRY_AUTH_TOKEN` in deployed environments to upload readable production source maps
 - PostHog: client + server event capture, core events
 - One feature flag (e.g. `rag_v1_enabled`)
 

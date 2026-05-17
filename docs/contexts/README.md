@@ -30,13 +30,15 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [x] **Day 26 — Stripe tables + env**: migration 0007 creates `billing_customers` (org ↔ Stripe customer bridge, ON DELETE CASCADE) and `stripe_events` (webhook idempotency log, `processing_status` CHECK constraint); wires FK `subscriptions.billing_customer_id → billing_customers.id` (ON DELETE SET NULL); Drizzle schemas + integration tests for both tables; `.env.example` Stripe section updated to Day 26+
 - [x] **Day 27 — Stripe checkout + billing page + nav consolidation**: `packages/billing` service layer (`getOrCreateStripeCustomer`, `createCheckoutSession`, `createBillingPortalSession`, `mapStripePriceToPlan`) with 7 unit tests; `/settings/billing` page shows current plan (read-only for members, Upgrade buttons + Manage Billing for owner); `/settings/billing/success` post-checkout landing; `/settings/usage` page (moved from `/usage`); Usage + Billing removed from main sidebar, added to Settings sub-nav; standalone `/app/[orgSlug]/billing` and `/app/[orgSlug]/usage` routes deleted
 - [2026-05-16] Day 28–30: Stripe webhook handler (idempotent, 9 unit tests), billing success/canceled pages with analytics stubs, ADR 0008, runbook
+- [2026-05-16] **Day 31 — Sentry setup**: `@sentry/nextjs` added to `apps/web`; browser/server/edge SDK initialization files; `withSentryConfig` source-map upload config for org `leixingtech` project `ai-workspace-lab`; root `app/error.tsx` + `app/global-error.tsx`; settings error boundary now captures to Sentry; `/dev/sentry-test` page captures client and server test errors in development only; org layout attaches safe Sentry context (`user.id`, `organization.id`, `organization.slug`, membership role only)
 
 ### In progress
 - Sprint 1 remainder: auth refinement, onboarding analytics events
+- Sprint 5 partial: PostHog analytics and feature flags remain after Sentry setup
 
-### Up next (Sprint 3 → Sprint 4)
+### Up next
 - Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate
-- Sprint 4: Stripe Checkout, idempotent webhook handler, billing portal, `billing_customers` + `stripe_events` tables
+- Sprint 5: PostHog analytics, feature flags, and production observability polish
 
 ---
 

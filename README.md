@@ -113,6 +113,7 @@ pnpm dev
 | Command | Description |
 |---------|-------------|
 | `pnpm dev` | Start all apps in development mode |
+| `pkill -f "next dev"; pkill -f "turbo"` | Kill all lingering dev processes before a clean restart |
 | `pnpm build` | Build all apps |
 | `pnpm verify` | Full CI gate: lint + typecheck + test — must pass before push |
 | `pnpm lint` | Lint and format-check (Biome) |
@@ -169,6 +170,11 @@ pnpm test:integration
 pnpm dev
 #   Web app → http://localhost:3000
 #   Supabase Studio (table viewer) → http://localhost:54323
+
+# If you get a stale connection error after changing DATABASE_URL or env vars,
+# kill lingering processes first then rerun:
+pkill -f "next dev" 2>/dev/null; pkill -f "turbo" 2>/dev/null
+pnpm dev
 
 # 8. Full CI gate — must be green before push
 pnpm verify

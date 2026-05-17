@@ -19,10 +19,10 @@ export async function getServerFeatureFlag(
 
   const client = new PostHog(projectKey, {
     host: env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
-    // personalApiKey enables local evaluation (no /decide network call per request)
     ...(env.POSTHOG_PERSONAL_API_KEY ? { personalApiKey: env.POSTHOG_PERSONAL_API_KEY } : {}),
     flushAt: 1,
     flushInterval: 0,
+    sendFeatureFlagEvent: false,
   });
 
   try {

@@ -95,6 +95,10 @@ export const env = createEnv({
     // Bearer token required to POST /api/internal/run-worker. Omit in local dev
     // to allow unauthenticated calls. Always set in production.
     WORKER_SECRET: z.string().min(1).optional(),
+    // Bearer token checked when the Vercel cron calls /api/internal/run-worker.
+    // Set to the value of the Vercel CRON_SECRET system variable.
+    // https://vercel.com/docs/cron-jobs/manage-cron-jobs#securing-cron-jobs
+    CRON_SECRET: z.string().min(1).optional(),
 
     // ── Platform admin access (Sprint 10+) ───────────────────────────────
     // Comma-separated list of email addresses allowed to access /admin/* routes.
@@ -163,6 +167,7 @@ export const env = createEnv({
     ANTHROPIC_MODEL: process.env['ANTHROPIC_MODEL'],
     ANTHROPIC_MAX_TOKENS: process.env['ANTHROPIC_MAX_TOKENS'],
     WORKER_SECRET: process.env['WORKER_SECRET'],
+    CRON_SECRET: process.env['CRON_SECRET'],
     ADMIN_EMAILS: process.env['ADMIN_EMAILS'],
     // client
     NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL'],

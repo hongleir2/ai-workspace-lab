@@ -1,3 +1,4 @@
+import { DeleteDocumentButton } from '@/app/app/[orgSlug]/documents/delete-document-button';
 import { AutoRefresh } from '@/components/auto-refresh';
 import { PageAnalytics } from '@/components/page-analytics';
 import { Badge } from '@/components/ui/badge';
@@ -133,6 +134,14 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
               </div>
             </div>
           </>
+        ) : null}
+
+        {document.status === 'failed' ? (
+          <DeleteDocumentButton
+            orgSlug={orgSlug}
+            documentId={document.id}
+            documentTitle={document.title}
+          />
         ) : null}
       </div>
     </>

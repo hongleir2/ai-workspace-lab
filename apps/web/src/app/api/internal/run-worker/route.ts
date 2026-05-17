@@ -19,9 +19,15 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
     return receiver.verify({ signature: qstashSignature, body }).catch(() => false);
   }
 
-  const secret = env.WORKER_SECRET;
-  if (secret) {
-    return request.headers.get('authorization') === `Bearer ${secret}`;
+  // Vercel cron sends Authorization: Bearer <CRON_SECRET>
+  const cronSecret = env.CRON_SECRET;
+  if (cronSecret && request.headers.get('authorization') === `Bearer ${cronSecret}`) {
+    return true;
+  }
+
+  const workerSecret = env.WORKER_SECRET;
+  if (workerSecret) {
+    return request.headers.get('authorization') === `Bearer ${workerSecret}`;
   }
 
   return true;

@@ -69,8 +69,10 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
     case 'pdf': {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const { default: pdfParse } = await import('pdf-parse');
+      // Limit to first 10 pages so PDF processing finishes well within the 60s
+      // Vercel function timeout. Large PDFs beyond page 10 are silently truncated.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const result = await pdfParse(buffer);
+      const result = await pdfParse(buffer, { max: 10 });
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       return result.text;
     }

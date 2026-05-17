@@ -1,5 +1,6 @@
 import { type Document, type NewDocument, db, documents } from '@ai-workspace-lab/db';
 import {
+  EntitlementError,
   FEATURE_KEYS,
   assertFeatureAllowed,
   getCurrentBillingPeriod,
@@ -70,10 +71,16 @@ export async function createDocumentUploadTarget(
   const [document] = await db.insert(documents).values(newDoc).returning();
   if (!document) throw new Error('Failed to create document row');
 
-  const { subscription } = await getOrganizationPlan(organizationId);
-  const limits = await getPlanLimits(subscription.planId, FEATURE_KEYS.DOCUMENT_UPLOADS);
+  const planResult = await getOrganizationPlan(organizationId).catch((err: unknown) => {
+    if (err instanceof EntitlementError && err.code === 'NO_ACTIVE_SUBSCRIPTION') return null;
+    throw err;
+  });
+  const subscription = planResult?.subscription;
+  const limits = subscription
+    ? await getPlanLimits(subscription.planId, FEATURE_KEYS.DOCUMENT_UPLOADS)
+    : [];
   const resetInterval = limits[0]?.resetInterval ?? 'day';
-  const period = getCurrentBillingPeriod(subscription, resetInterval) ?? {
+  const period = (subscription ? getCurrentBillingPeriod(subscription, resetInterval) : null) ?? {
     start: new Date(new Date().setUTCHours(0, 0, 0, 0)),
     end: new Date(new Date().setUTCHours(23, 59, 59, 999)),
   };
@@ -97,9 +104,10 @@ export async function createDocumentUploadTarget(
   });
 
   await createProcessDocumentJob(document.id, organizationId);
-  // Fire-and-forget: QStash triggers run-worker immediately. If QStash is
-  // unavailable, the job stays pending until the cron safety net picks it up.
-  triggerWorker().catch(() => {});
+  // Awaited so Vercel doesn't kill the function before the QStash publish
+  // completes. If QStash is unavailable, the job stays pending until the
+  // Vercel cron safety net picks it up.
+  await triggerWorker().catch(() => {});
 
   return { document, uploadUrl };
 }

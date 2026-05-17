@@ -5,6 +5,7 @@ export type { ProcessDocumentPayload } from './handlers/process-document';
 export {
   createJob,
   claimNextJob,
+  reapZombieJobs,
   startJobAttempt,
   completeJob,
   failJob,
@@ -12,7 +13,7 @@ export {
   deadLetterJob,
   cancelJob,
 } from './job-service';
-export type { CreateJobParams, ClaimedJob } from './job-service';
+export type { CreateJobParams, ClaimedJob, ZombieJob } from './job-service';
 
 import { createJob } from './job-service';
 

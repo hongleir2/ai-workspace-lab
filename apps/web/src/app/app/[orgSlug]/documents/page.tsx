@@ -1,3 +1,4 @@
+import { DeleteDocumentButton } from '@/app/app/[orgSlug]/documents/delete-document-button';
 import { PageAnalytics } from '@/components/page-analytics';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -106,20 +107,32 @@ export default async function DocumentsPage({ params }: DocumentsPageProps) {
         ) : (
           <div className="divide-y divide-border rounded-lg border">
             {docs.map((doc) => (
-              <Link
+              <div
                 key={doc.id}
-                href={`/app/${orgSlug}/documents/${doc.id}`}
                 className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <Link
+                  href={`/app/${orgSlug}/documents/${doc.id}`}
+                  className="flex items-center gap-3 min-w-0 flex-1"
+                >
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{doc.title}</p>
                     <p className="text-xs text-muted-foreground uppercase">{doc.fileType}</p>
                   </div>
+                </Link>
+                <div className="ml-4 flex shrink-0 items-center gap-2">
+                  {statusBadge(doc.status)}
+                  {doc.status === 'failed' ? (
+                    <DeleteDocumentButton
+                      orgSlug={orgSlug}
+                      documentId={doc.id}
+                      documentTitle={doc.title}
+                      variant="icon"
+                    />
+                  ) : null}
                 </div>
-                <div className="ml-4 shrink-0">{statusBadge(doc.status)}</div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

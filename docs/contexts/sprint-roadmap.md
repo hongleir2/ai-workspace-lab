@@ -112,7 +112,11 @@ Remaining:
 
 **Outcome:** User can upload a document; it appears with status `queued`.
 
-- `storage_objects`, `documents` tables
+Done:
+- **Day 35**: Real dashboard widgets — org card, plan card, usage bars, placeholder cards, upgrade CTA
+- **Day 36**: `storage_objects` (migration 0009) + `documents` (migration 0010) — full column spec, enums, indexes, RLS, Drizzle schemas, 9 integration tests
+
+Remaining:
 - Upload endpoint: validate type/size, entitlement check, create doc + job row
 - Document list UI with status
 

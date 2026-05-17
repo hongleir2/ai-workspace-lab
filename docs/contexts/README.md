@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-16 Day 32)
+## Current status (last updated: 2026-05-16 Day 34)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -32,13 +32,15 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-16] Day 28–30: Stripe webhook handler (idempotent, 9 unit tests), billing success/canceled pages with analytics stubs, ADR 0008, runbook
 - [2026-05-16] **Day 31 — Sentry setup**: `@sentry/nextjs` added to `apps/web`; browser/server/edge SDK initialization files; `withSentryConfig` source-map upload config for org `leixingtech` project `ai-workspace-lab`; root `app/error.tsx` + `app/global-error.tsx`; settings error boundary now captures to Sentry; `/dev/sentry-test` page captures client and server test errors in development only; org layout attaches safe Sentry context (`user.id`, `organization.id`, `organization.slug`, membership role only)
 - [2026-05-16] **Day 32 — PostHog analytics**: `packages/analytics` wrapper (`identifyUser`, `identifyOrganization`, `captureEvent`, `resetAnalytics`) + 9 unit tests; `PostHogProvider` client component with App Router pageview tracking via `usePathname`/`useSearchParams`; `AnalyticsIdentity` identifies user+org on every `/app/[orgSlug]` entry; `captureServerEvent` posthog-node utility for server actions; server events: `user_signed_up`, `user_signed_in`, `organization_created`; client events: `dashboard_viewed`, `billing_viewed`, `checkout_started`, `checkout_success_viewed`, `checkout_canceled`, `billing_portal_opened`; 6 new unit tests
+- [2026-05-16] **Day 33 — Feature flag wrapper**: `packages/analytics` `FeatureFlag` union type + `FLAG_DEFAULTS` + `isFeatureEnabled()` client helper; `getServerFeatureFlag()` server helper (posthog-node, same fail-safe pattern as captureServerEvent); `document_upload_enabled` flag wired into dashboard checklist — locked row when off, live link when on; 8 new unit tests
+- [2026-05-16] **Day 34 — Observability ADR**: `docs/adr/0009-observability-and-product-analytics.md` covering Sentry purpose, PostHog event taxonomy, user/org context policy, privacy rules, feature flag strategy, alert ideas; README updated with local observability env setup
 
 ### In progress
-- Sprint 5 partial: PostHog feature flags remain (deferred to AI sprint when flag-gating first AI features)
+- Sprint 5: PostHog feature flags remain (server-side local evaluation requires POSTHOG_PERSONAL_API_KEY, deferred until AI sprint)
 
 ### Up next
 - Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate
-- Sprint 5: PostHog analytics, feature flags, and production observability polish
+- Sprint 6: Document upload flow (R2 storage, background processing queue)
 
 ---
 

@@ -246,6 +246,44 @@ Full details and SQL queries: [`docs/runbooks/stripe-webhook-runbook.md`](./docs
 
 ---
 
+## Observability (local dev)
+
+### Sentry
+
+Sentry is disabled by default locally (no DSN set). To test error capture:
+
+1. Add to `.env.local`:
+   ```
+   NEXT_PUBLIC_SENTRY_DSN=<DSN from sentry.io → Settings → Projects → Keys>
+   SENTRY_ENVIRONMENT=development
+   ```
+2. Navigate to `/dev/sentry-test` — captures test client and server errors.
+3. Check your Sentry project inbox to confirm events arrive.
+
+### PostHog analytics + feature flags
+
+PostHog drops all events silently when `NEXT_PUBLIC_POSTHOG_KEY` is not set — safe for local dev without a PostHog account.
+
+To enable locally, add to `.env.local`:
+
+```
+NEXT_PUBLIC_POSTHOG_KEY=phc_...           # PostHog → Settings → Project → Project API key
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com  # optional, this is the default
+POSTHOG_PERSONAL_API_KEY=phx_...          # PostHog → Settings → Personal API keys
+                                          # Scope: Local feature flag evaluation → Read
+```
+
+**Verify events are flowing:**
+1. Sign up / sign in → open PostHog **Activity** tab and confirm `user_signed_up` / `user_signed_in`.
+2. Navigate to `/app/<org>` → confirm `dashboard_viewed` + person identified.
+
+**Test a feature flag locally:**
+1. Go to **PostHog → Feature flags → `document_upload_enabled`**.
+2. Add your user UUID (from the `users` table) as a test override.
+3. Reload `/app/<org>` — the "Upload your first document" checklist item unlocks.
+
+---
+
 ## Tests
 
 **Unit tests** run without a database:

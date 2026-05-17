@@ -42,13 +42,15 @@ export async function PricingSection() {
       .from(plans)
       .where(eq(plans.id, 'pro_monthly'))
       .limit(1)
-      .then((r) => r[0]),
+      .then((r) => r[0])
+      .catch(() => undefined),
     db
       .select()
       .from(plans)
       .where(eq(plans.id, 'pro_yearly'))
       .limit(1)
-      .then((r) => r[0]),
+      .then((r) => r[0])
+      .catch(() => undefined),
   ]);
 
   return (

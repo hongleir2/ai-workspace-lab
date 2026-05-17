@@ -2,6 +2,7 @@
 
 import { ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import NProgress from 'nprogress';
 import { useTransition } from 'react';
 
 import { signOutAction } from '@/app/(auth)/sign-out/actions';
@@ -39,6 +40,7 @@ export function UserMenu({ className, displayName, email }: UserMenuProps) {
   const toggleTheme = useThemeToggle();
 
   function handleSignOut() {
+    NProgress.start();
     startTransition(async () => {
       await signOutAction();
     });

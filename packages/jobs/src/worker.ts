@@ -21,9 +21,9 @@ export interface WorkerResult {
 export async function runWorkerOnce(dbConn: Database = db): Promise<WorkerResult> {
   const workerId = `worker-${randomUUID().slice(0, 8)}`;
 
-  // Reap zombie jobs (stuck in `processing` for > 120s) before claiming a new one.
-  // 120s is 2× the 60s Vercel maxDuration — anything older is guaranteed to be dead.
-  const zombies = await reapZombieJobs(120, dbConn);
+  // Reap zombie jobs (stuck in `processing` for > 55s) before claiming a new one.
+  // 55s is just under the 60s Vercel maxDuration — anything older is guaranteed dead.
+  const zombies = await reapZombieJobs(55, dbConn);
   for (const zombie of zombies) {
     if (zombie.jobType === 'process_document') {
       const { documentId } = zombie.payload as unknown as ProcessDocumentPayload;

@@ -1,6 +1,6 @@
 'use server';
 
-import { env } from '@/lib/env';
+import { appUrl } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -17,7 +17,7 @@ export async function signUpAction(formData: FormData): Promise<void> {
     email,
     password,
     options: {
-      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      emailRedirectTo: `${appUrl()}/auth/callback`,
     },
   });
 

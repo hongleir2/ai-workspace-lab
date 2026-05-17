@@ -24,13 +24,41 @@ pnpm install
 
 ## Environment setup
 
-Copy `.env.example` to `.env.local` and fill in the values. Sprint labels in `.env.example` tell you when each var becomes required. The minimum needed to run the app now:
+Environment variables live in `apps/web/.env.local` (gitignored). **Never edit it by hand** — pull from Vercel instead so local always matches what's deployed.
+
+### First-time setup (Vercel CLI)
+
+```bash
+pnpm install                          # installs vercel CLI from devDependencies
+pnpm vercel link                      # one-time: link this repo to your Vercel project
+pnpm env:pull                         # pulls "Development" vars → apps/web/.env.local
+```
+
+After that, whenever env vars change in Vercel, run `pnpm env:pull` again.
+
+### Vercel environment scoping
+
+Configure these in **Vercel → Project → Settings → Environment Variables**, with different values per scope:
+
+| Variable | Development (local) | Preview | Production |
+|---|---|---|---|
+| `DATABASE_URL` | `postgresql://postgres:postgres@localhost:54322/postgres` | Supabase pooler URL (port 6543) | Supabase pooler URL (port 6543) |
+| `STRIPE_SECRET_KEY` | `sk_test_...` | `sk_test_...` | `sk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | Stripe CLI secret | Test webhook secret | Live webhook secret |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | *(leave unset — auto-resolved from `VERCEL_URL`)* | `https://ai-workspace-lab-web.vercel.app` |
+| `SENTRY_ENVIRONMENT` | `development` | `preview` | `production` |
+
+> **DATABASE_URL for Vercel:** use the **Transaction mode pooler** (port 6543) from Supabase → Project Settings → Database → Connection Pooling. Append `?pgbouncer=true`. The direct connection (port 5432) does not work reliably in serverless environments.
+
+### Manual setup (no Vercel account)
+
+Copy `.env.example` → `apps/web/.env.local` and fill in the values manually. Minimum required:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
-DATABASE_URL
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon key>
+SUPABASE_SERVICE_ROLE_KEY=<service_role key>
+DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 

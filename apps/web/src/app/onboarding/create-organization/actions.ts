@@ -1,5 +1,6 @@
 'use server';
 
+import { captureServerEvent } from '@/lib/analytics/server';
 import { requireUser } from '@/lib/auth/user';
 import { OrgSlugConflictError, OrgSlugInvalidError, createOrganization } from '@/lib/orgs/service';
 import { headers } from 'next/headers';
@@ -30,6 +31,10 @@ export async function createOrganizationAction(formData: FormData): Promise<void
       ...(userAgent !== null ? { userAgent } : {}),
     });
     createdSlug = organization.slug;
+    await captureServerEvent(user.id, 'organization_created', {
+      org_id: organization.id,
+      org_slug: organization.slug,
+    });
   } catch (e: unknown) {
     if (e instanceof OrgSlugConflictError) {
       redirect('/onboarding/create-organization?error=slug_taken');

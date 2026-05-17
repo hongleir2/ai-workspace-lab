@@ -116,10 +116,11 @@ Done:
 - **Day 35**: Real dashboard widgets — org card, plan card, usage bars, placeholder cards, upgrade CTA
 - **Day 36**: `storage_objects` (migration 0009) + `documents` (migration 0010) — full column spec, enums, indexes, RLS, Drizzle schemas, 9 integration tests
 - **Day 37**: `packages/storage` — `StorageProvider` interface; R2 + Supabase Storage providers; presigned upload URL generation; org-auth boundary; extension+MIME validation; plan-limit-aware file size gate; `createStorageObjectRow`; 19 unit tests
+- **Day 38**: Document upload service + API route — `createDocumentUploadTarget` service layer (entitlement gate + presigned URL + storage row + document row + usage event); `POST /api/orgs/[orgSlug]/documents` route (auth/membership/feature-flag gates, error handling, 15 unit tests)
 
 Remaining:
-- Upload endpoint: validate type/size, entitlement check, create doc + job row
 - Document list UI with status
+- Background chunking pipeline (Sprint 7)
 
 ---
 

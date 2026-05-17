@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-16 Day 36)
+## Current status (last updated: 2026-05-17 Day 38)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -37,9 +37,10 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-16] **Day 35 — Dashboard widgets**: `/app/[orgSlug]` dashboard replaced with real data widgets — org card, plan card (name + status badge + billing interval), usage-this-period bars via `getOrganizationUsageOverview`, recent docs/AI session placeholder cards, getting-started checklist (feature-flag gated), upgrade CTA banner for free orgs; switched from `requireUser`+`getOrganizationBySlug` to `requireMembership`
 - [2026-05-16] **Day 36 — Storage + documents tables**: migrations 0009 (`storage_objects`) and 0010 (`documents`); full ERD §8.1/§8.2 columns; status enums (`storage_object_status`, `document_status`, `document_source_type`); all required indexes (UNIQUE on bucket+object_key, org+created_at, org+status, created_by+created_at, checksum); `set_updated_at` trigger on documents; RLS enabled with SELECT policy for active org members on both tables; Drizzle schemas + type/table exports; 9 integration tests; ERD Mermaid corrected (composite UNIQUE replaces standalone UQ on object_key)
 - [2026-05-16] **Day 37 — Object storage service (`packages/storage`)**: `StorageProvider` interface with R2 (AWS S3-compatible) and Supabase Storage implementations; explicit `STORAGE_PROVIDER=r2|supabase` env var selection; `createUploadTarget` (presigned upload URL, org-scoped key `organizations/{orgId}/uploads/{yyyy}/{mm}/{uuid}.{ext}`), `uploadObject`, `getObjectMetadata`, `deleteObject`, `createStorageObjectRow`; `assertCanUploadToOrg` auth boundary (active org membership check); `validateFileType` (extension + MIME allowlist for pdf/txt/md), `validateFileSize`, `getMaxFileSizeMb` (reads `max_file_size_mb` plan limit via entitlements); `StorageError` typed error class; 19 unit tests (15 validation + 4 service)
+- [2026-05-17] **Day 38 — Document upload service + API route**: `packages/db` refactored to export `organizationMemberships`; `packages/storage` + `packages/usage` added to `apps/web` dependencies; `createDocumentUploadTarget` service layer (entitlement/quota gate, presigned URL + storage row, document row insert, usage event recording); `POST /api/orgs/[orgSlug]/documents` route handler (auth/membership/feature-flag gates, entitlement/storage error handling, HTTP 402/429/400 status mapping); 15 unit tests covering all auth/authz/feature/error paths; Task 1 (service) completed & committed on 2026-05-16
 
 ### In progress
-- Sprint 6: upload endpoint, document list UI next
+- Sprint 6: document list UI, chunking pipeline next
 
 ### Up next
 - Wire entitlement checks to the first AI/upload endpoint as a proof-of-concept gate

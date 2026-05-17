@@ -16,6 +16,13 @@ export interface ProcessDocumentPayload {
 
 const MAX_CHARS_PER_CHUNK = 1500;
 
+type PdfParser = (buffer: Buffer, options?: { max?: number }) => Promise<{ text: string }>;
+// Start loading pdf-parse at module initialisation so the 60s Vercel function
+// clock doesn't tick during pdf.js cold-start on the first call.
+const pdfParseReady: Promise<PdfParser> = import('pdf-parse').then(
+  (m) => (m as { default: PdfParser }).default,
+);
+
 export function chunkText(text: string): string[] {
   const paragraphs = text.split(/\n\n+/);
   const chunks: string[] = [];
@@ -67,13 +74,8 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
     case 'md':
       return buffer.toString('utf-8');
     case 'pdf': {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const { default: pdfParse } = await import('pdf-parse');
-      // Limit to first 10 pages so PDF processing finishes well within the 60s
-      // Vercel function timeout. Large PDFs beyond page 10 are silently truncated.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      const pdfParse = await pdfParseReady;
       const result = await pdfParse(buffer, { max: 10 });
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       return result.text;
     }
     default:

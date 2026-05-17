@@ -57,14 +57,16 @@ export function MarketingFooter({ className }: MarketingFooterProps) {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div className="flex flex-col gap-2">
-            <span className="font-semibold tracking-tight text-lg">AI Workspace</span>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              AI workspace for teams that build with knowledge.
+            <span className="text-lg font-semibold tracking-tight text-foreground">
+              {'AI Workspace'}
+            </span>
+            <p className="max-w-xs text-sm text-muted-foreground">
+              {'AI workspace for teams that build with knowledge.'}
             </p>
           </div>
           {columns.map((col) => (
             <div key={col.title} className="flex flex-col gap-3">
-              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
                 {col.title}
               </h3>
               <ul className="flex flex-col gap-2">
@@ -72,7 +74,7 @@ export function MarketingFooter({ className }: MarketingFooterProps) {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-foreground/80 transition-colors hover:text-foreground"
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
                     </Link>
@@ -83,15 +85,17 @@ export function MarketingFooter({ className }: MarketingFooterProps) {
           ))}
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
-          <p className="text-xs text-muted-foreground">
-            &copy; {year} AI Workspace. All rights reserved.
+          <p className="text-xs text-muted-foreground/60">
+            {'© '}
+            {year}
+            {' AI Workspace. All rights reserved.'}
           </p>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
-            <span className="text-xs text-muted-foreground">All systems operational</span>
+            <span className="text-xs text-muted-foreground/60">{'All systems operational'}</span>
           </div>
         </div>
       </div>

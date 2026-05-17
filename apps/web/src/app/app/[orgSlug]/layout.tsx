@@ -61,7 +61,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
         {...(daysLeft !== undefined ? { daysLeft } : {})}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppTopbar orgSlug={orgSlug} />
+        <AppTopbar orgSlug={orgSlug} userDisplayName={user.displayName} userEmail={user.email} />
         <main className="flex-1">{children}</main>
       </div>
       <AnalyticsIdentity userId={user.id} orgId={organization.id} orgSlug={organization.slug} />

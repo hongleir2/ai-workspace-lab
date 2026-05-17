@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
+import { UserMenu } from '@/components/nav/user-menu';
 import { Button } from '@/components/ui/button';
+import { getCurrentUser } from '@/lib/auth/user';
 import { cn } from '@/lib/utils';
 
 interface MarketingHeaderProps {
@@ -14,19 +16,20 @@ const navLinks = [
   { label: 'Changelog', href: '#' },
 ];
 
-export function MarketingHeader({ className }: MarketingHeaderProps) {
+export async function MarketingHeader({ className }: MarketingHeaderProps) {
+  const user = await getCurrentUser();
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border',
+        'sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80',
         className,
       )}
     >
-      <div className="bg-gradient-to-r from-primary/40 via-primary to-primary/40 h-px" />
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-6 px-6">
         <Link
           href="/"
-          className="font-semibold tracking-tight text-lg text-foreground transition-colors hover:text-foreground/80"
+          className="text-lg font-semibold tracking-tight text-foreground transition-colors hover:text-foreground/80"
         >
           AI Workspace
         </Link>
@@ -42,12 +45,27 @@ export function MarketingHeader({ className }: MarketingHeaderProps) {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="cursor-pointer">
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
-          <Button asChild size="sm" className="cursor-pointer">
-            <Link href="/sign-up">Get started</Link>
-          </Button>
+          {user ? (
+            <>
+              <Button asChild variant="ghost" size="sm" className="cursor-pointer">
+                <Link href="/app">{'Go to app'}</Link>
+              </Button>
+              <UserMenu displayName={user.displayName} email={user.email} />
+            </>
+          ) : (
+            <>
+              <Button asChild variant="outline" size="sm" className="cursor-pointer">
+                <Link href="/sign-in">{'Sign in'}</Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="cursor-pointer bg-gradient-to-r from-indigo-500 to-blue-500 text-white hover:from-indigo-600 hover:to-blue-600"
+              >
+                <Link href="/sign-up">{'Get started'}</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

@@ -4,11 +4,11 @@ export type {
   RecordUsageEventInput,
   RecordUsageEventResult,
   RecordUsageWithCounterArgs,
-} from './service.js';
+} from './service';
 export {
   getUsageForFeature,
   getUsageSummaryForOrganization,
   incrementUsageCounter,
   recordUsageEvent,
   recordUsageWithCounter,
-} from './service.js';
+} from './service';

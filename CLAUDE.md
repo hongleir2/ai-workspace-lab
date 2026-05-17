@@ -316,6 +316,7 @@ ai-workspace-lab/
 
 - **Before any `gh pr create`, unset both `GH_TOKEN` and `GITHUB_TOKEN`** to authenticate as the repo owner (`hongleir2`). Both env vars are set to work-account tokens that lack collaborator access or `public_repo` scope on personal repos. Use: `env -u GH_TOKEN -u GITHUB_TOKEN gh pr create ...`
 - Always open PRs from feature/fix branches — never push directly to `main`.
+- **This repo has no `dev` branch. All PRs target `main`.** The global CLAUDE.md rule "base PRs against `dev`" applies to Otter.ai repos only — do not apply it here.
 
 ---
 

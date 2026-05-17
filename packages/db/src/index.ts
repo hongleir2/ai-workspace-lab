@@ -69,6 +69,7 @@ export {
   jobAttemptStatusEnum,
   jobStatusEnum,
   limitUnitEnum,
+  rateLimitActionEnum,
   resetIntervalEnum,
   storageObjectStatusEnum,
   subscriptionStatusEnum,

@@ -12,7 +12,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 
 ---
 
-## Current status (last updated: 2026-05-17 Days 42–45)
+## Current status (last updated: 2026-05-17 Day 46)
 
 ### Done
 - [x] Sprint 0 — Repo scaffold: pnpm workspaces, Turborepo, Biome, Vitest, Playwright, CI
@@ -42,7 +42,7 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-17] **Day 40 — Document ownership tests + ADR 0010 + dashboard entitlement fix**: 4 unit tests (service: FILE_TOO_LARGE, NOT_AUTHORIZED cross-org, organizationId correctness; route: NOT_AUTHORIZED → 402); 3 integration tests (document belongs to org, cross-org isolation, soft-delete exclusion); `docs/adr/0010-file-storage-and-document-ownership.md`; dashboard now checks `checkEntitlement(orgId, 'document_uploads')` server-side — shows "Document uploads are not enabled for your account" in the Recent documents card and "Not included in your plan / Upgrade" in the checklist when the feature flag is on but the plan doesn't include the feature; 151 unit tests passing
 - [2026-05-17] **Day 42 — Job service abstraction**: `packages/jobs/src/job-service.ts` with 8 named functions (`createJob`, `claimNextJob`, `startJobAttempt`, `completeJob`, `failJob`, `retryJobWithBackoff`, `deadLetterJob`, `cancelJob`); idempotency via `ON CONFLICT DO NOTHING` on `idempotencyKey`; exponential backoff formula `min(60 × 5^(n−1), 86400)`; 17 unit tests covering all 8 functions; `worker.ts` refactored to delegate to service functions; all 8 functions re-exported from `packages/jobs/src/index.ts`
 - [2026-05-17] **Day 43–45 — Background job processing pipeline**: `downloadObject` added to both storage providers (R2 stream, Supabase blob); `packages/jobs` wired with db+storage deps; `chunkText` (paragraph → sentence → sub-chunk, 1500-char limit), `extractText` (txt/md/pdf), `processDocumentHandler` (load → mark processing → extract → chunk → delete+insert for idempotency → mark ready/failed), `runWorkerOnce` (FOR UPDATE SKIP LOCKED claim, exponential backoff capped 24h, dead-letter); upload → job wiring (`createProcessDocumentJob` with ON CONFLICT DO NOTHING, document status now `queued`); internal worker trigger route `POST /api/internal/run-worker` (WORKER_SECRET bearer auth); document detail animated status panel; `/admin/jobs` page (failed/retrying/dead-lettered) with `requirePlatformAdmin()` email-allowlist guard; `WORKER_SECRET`+`ADMIN_EMAILS` in env.ts + .env.example; 22 new unit tests; ADR 0011; `docs/runbooks/queue-backlog.md`
-- [2026-05-17] **Day 46 — AI chat schema**: `prompt_versions`, `ai_sessions`, `ai_messages`, and optional `rate_limit_events` migration 0014; seed rows for `document_qa` v1 and `general_chat` v1; RLS + indexes for AI session/message lookup; integration tests added for prompt seeds, session/message inserts, and rate-limit rows
+- [2026-05-17] **Day 46 — AI chat schema**: `prompt_versions`, `ai_sessions`, `ai_messages`, and optional `rate_limit_events` migration 0014; seed rows for `document_qa` v1 and `general_chat` v1; RLS + indexes for AI session/message lookup; migration 0015 adds a typed rate-limit action enum plus tenant-safe composite constraints so messages match their session org and parent messages stay in the same session; integration tests cover prompt seeds, session/message inserts, negative FK cases, and rate-limit rows
 
 ### In progress
 - Sprint 8: AI chat MVP wiring next

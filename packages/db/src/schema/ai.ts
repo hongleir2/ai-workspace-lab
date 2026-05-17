@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -31,6 +32,8 @@ export const aiMessageStatusEnum = pgEnum('ai_message_status', [
   'failed',
   'canceled',
 ]);
+
+export const rateLimitActionEnum = pgEnum('rate_limit_action', ['allowed', 'blocked']);
 
 export const promptVersions = pgTable(
   'prompt_versions',
@@ -70,6 +73,7 @@ export const aiSessions = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (t) => [
+    unique('ai_sessions_id_org_unique').on(t.id, t.organizationId),
     index('ai_sessions_org_created_at_idx').on(t.organizationId, t.createdAt),
     index('ai_sessions_created_by_created_at_idx').on(t.createdByUserId, t.createdAt),
     index('ai_sessions_org_status_idx').on(t.organizationId, t.status),
@@ -103,10 +107,16 @@ export const aiMessages = pgTable(
     completedAt: timestamp('completed_at', { withTimezone: true }),
   },
   (t) => [
+    unique('ai_messages_id_session_org_unique').on(t.id, t.sessionId, t.organizationId),
     foreignKey({
-      columns: [t.parentMessageId],
-      foreignColumns: [t.id],
-      name: 'ai_messages_parent_message_id_fkey',
+      columns: [t.sessionId, t.organizationId],
+      foreignColumns: [aiSessions.id, aiSessions.organizationId],
+      name: 'ai_messages_session_org_fk',
+    }),
+    foreignKey({
+      columns: [t.parentMessageId, t.sessionId, t.organizationId],
+      foreignColumns: [t.id, t.sessionId, t.organizationId],
+      name: 'ai_messages_parent_same_session_fk',
     }),
     index('ai_messages_org_session_created_at_idx').on(t.organizationId, t.sessionId, t.createdAt),
     index('ai_messages_session_created_at_idx').on(t.sessionId, t.createdAt),
@@ -123,7 +133,7 @@ export const rateLimitEvents = pgTable(
     userId: uuid('user_id').references(() => users.id),
     endpoint: text('endpoint').notNull(),
     limitKey: text('limit_key').notNull(),
-    action: text('action').notNull(),
+    action: rateLimitActionEnum('action').notNull(),
     tokensConsumed: integer('tokens_consumed'),
     metadata: jsonb('metadata').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

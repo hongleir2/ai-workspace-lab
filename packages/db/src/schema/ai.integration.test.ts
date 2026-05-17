@@ -31,8 +31,11 @@ describe.skipIf(!DATABASE_URL)('AI chat tables', () => {
 
   let userId: string;
   let orgId: string;
+  let otherOrgId: string;
   let sessionId: string;
+  let otherSessionId: string;
   let rootMessageId: string;
+  let otherRootMessageId: string;
   let replyMessageId: string;
   let rateLimitEventId: string;
 
@@ -63,6 +66,18 @@ describe.skipIf(!DATABASE_URL)('AI chat tables', () => {
       .returning({ id: organizations.id });
     orgId = org?.id ?? '';
     if (!orgId) throw new Error('Failed to seed org');
+
+    const [otherOrg] = await db
+      .insert(organizations)
+      .values({
+        name: `AI Chat Other Org ${suffix}`,
+        slug: `ai-chat-other-${suffix}`,
+        ownerUserId: userId,
+        status: 'active',
+      })
+      .returning({ id: organizations.id });
+    otherOrgId = otherOrg?.id ?? '';
+    if (!otherOrgId) throw new Error('Failed to seed other org');
   });
 
   afterAll(async () => {
@@ -75,9 +90,16 @@ describe.skipIf(!DATABASE_URL)('AI chat tables', () => {
     if (rootMessageId) {
       await db.delete(aiMessages).where(eq(aiMessages.id, rootMessageId));
     }
+    if (otherRootMessageId) {
+      await db.delete(aiMessages).where(eq(aiMessages.id, otherRootMessageId));
+    }
     if (sessionId) {
       await db.delete(aiSessions).where(eq(aiSessions.id, sessionId));
     }
+    if (otherSessionId) {
+      await db.delete(aiSessions).where(eq(aiSessions.id, otherSessionId));
+    }
+    await db.delete(organizations).where(eq(organizations.id, otherOrgId));
     await db.delete(organizations).where(eq(organizations.id, orgId));
     await db.delete(users).where(eq(users.id, userId));
     await client.end();
@@ -208,6 +230,64 @@ describe.skipIf(!DATABASE_URL)('AI chat tables', () => {
     expect(reply?.totalTokens).toBe(30);
     expect(reply?.costMicroUsd).toBe(42);
     expect(reply?.completedAt).toBeNull();
+  });
+
+  it('rejects ai_messages that reference a missing session', async () => {
+    await expect(
+      db.insert(aiMessages).values({
+        organizationId: orgId,
+        sessionId: '00000000-0000-0000-0000-000000000000',
+        role: 'user',
+        content: 'This should fail',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('rejects ai_messages whose organization does not match the session organization', async () => {
+    await expect(
+      db.insert(aiMessages).values({
+        organizationId: otherOrgId,
+        sessionId,
+        role: 'user',
+        content: 'This should fail because the session belongs to another organization',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('rejects parent ai_messages from another session', async () => {
+    const [otherSession] = await db
+      .insert(aiSessions)
+      .values({
+        organizationId: otherOrgId,
+        createdByUserId: userId,
+        title: 'Other org session',
+      })
+      .returning();
+    otherSessionId = otherSession?.id ?? '';
+    if (!otherSessionId) throw new Error('Failed to seed other session');
+
+    const [otherRoot] = await db
+      .insert(aiMessages)
+      .values({
+        organizationId: otherOrgId,
+        sessionId: otherSessionId,
+        createdByUserId: userId,
+        role: 'user',
+        content: 'Other session root',
+      })
+      .returning();
+    otherRootMessageId = otherRoot?.id ?? '';
+    if (!otherRootMessageId) throw new Error('Failed to seed other root message');
+
+    await expect(
+      db.insert(aiMessages).values({
+        organizationId: orgId,
+        sessionId,
+        parentMessageId: otherRootMessageId,
+        role: 'assistant',
+        content: 'This should fail because the parent belongs to another session',
+      }),
+    ).rejects.toThrow();
   });
 
   it('inserts rate_limit_events rows with nullable org/user fields', async () => {

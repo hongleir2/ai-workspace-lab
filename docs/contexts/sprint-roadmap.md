@@ -147,7 +147,10 @@ Remaining:
 
 **Outcome:** User can ask a question and get a streaming answer; quota enforced.
 
-- `prompt_versions`, `ai_sessions`, `ai_messages`, optional `rate_limit_events`, `usage_events`, `usage_counters` tables
+Done:
+- `prompt_versions`, `ai_sessions`, `ai_messages`, optional `rate_limit_events`, `usage_events`, `usage_counters` tables; migration 0015 adds AI message constraints that enforce session/org match and same-session parent messages
+
+Remaining:
 - `/api/ai/chat`: auth → membership → entitlement → quota → rate limit → model call
 - Streaming via Vercel AI SDK; token usage recorded
 - Rate limit via Upstash Redis

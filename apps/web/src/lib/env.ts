@@ -55,6 +55,8 @@ export const env = createEnv({
     // https://sentry.io/settings/<org>/projects/<project>/keys/
     SENTRY_DSN: z.string().url().optional(),
     SENTRY_ENVIRONMENT: z.string().optional(),
+    // Build-time token for source map upload. Server-only; never expose to client bundles.
+    SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
 
     // ── Required-later: PostHog analytics + flags (Sprint 1+) ─────────────
     // Server-side personal API key for server-initiated events.
@@ -129,6 +131,7 @@ export const env = createEnv({
     EMAIL_FROM: process.env['EMAIL_FROM'],
     SENTRY_DSN: process.env['SENTRY_DSN'],
     SENTRY_ENVIRONMENT: process.env['SENTRY_ENVIRONMENT'],
+    SENTRY_AUTH_TOKEN: process.env['SENTRY_AUTH_TOKEN'],
     POSTHOG_PERSONAL_API_KEY: process.env['POSTHOG_PERSONAL_API_KEY'],
     UPSTASH_REDIS_REST_URL: process.env['UPSTASH_REDIS_REST_URL'],
     UPSTASH_REDIS_REST_TOKEN: process.env['UPSTASH_REDIS_REST_TOKEN'],

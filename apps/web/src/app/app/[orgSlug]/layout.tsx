@@ -3,6 +3,7 @@ import { AppTopbar } from '@/components/nav/app-topbar';
 import { requireMembership } from '@/lib/orgs/guards';
 import { getUserOrganizations } from '@/lib/orgs/service';
 import { getOrganizationPlan } from '@ai-workspace-lab/entitlements';
+import * as Sentry from '@sentry/nextjs';
 import type { ReactNode } from 'react';
 
 interface OrgLayoutProps {
@@ -12,7 +13,13 @@ interface OrgLayoutProps {
 
 export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   const { orgSlug } = await params;
-  const { user, organization } = await requireMembership(orgSlug);
+  const { user, organization, membership } = await requireMembership(orgSlug);
+  Sentry.setUser({ id: user.id });
+  Sentry.setContext('organization', {
+    id: organization.id,
+    slug: organization.slug,
+    role: membership.role,
+  });
   const [memberships, { plan, subscription }] = await Promise.all([
     getUserOrganizations(user.id),
     getOrganizationPlan(organization.id),

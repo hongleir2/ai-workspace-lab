@@ -246,6 +246,79 @@ Full details and SQL queries: [`docs/runbooks/stripe-webhook-runbook.md`](./docs
 
 ---
 
+## Object storage — Cloudflare R2 (local dev)
+
+Document uploads use a two-phase flow: the server creates a presigned URL (via `POST /api/orgs/[orgSlug]/documents`), and the browser PUTs the file directly to R2. You need either R2 or Supabase Storage configured for uploads to work.
+
+### Option A — Cloudflare R2 (recommended)
+
+**1. Create a bucket**
+
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Storage & Databases → R2 → Overview**
+2. Click **Create bucket** — e.g. `ai-workspace-lab-uploads`
+3. Note your **Account ID** from the right sidebar
+
+**2. Generate an API token**
+
+1. On the R2 overview page click **Manage R2 API Tokens → Create API token**
+2. Permission: **Object Read & Write**, scoped to your bucket
+3. Copy the **Access Key ID** and **Secret Access Key** immediately — the secret is shown only once
+
+**3. Set env vars**
+
+Add to `apps/web/.env.local`:
+
+```bash
+STORAGE_PROVIDER=r2
+R2_ACCOUNT_ID=your_account_id
+R2_ACCESS_KEY_ID=your_access_key_id
+R2_SECRET_ACCESS_KEY=your_secret_access_key
+R2_BUCKET=ai-workspace-lab-uploads
+```
+
+`NEXT_PUBLIC_R2_PUBLIC_URL` is optional — only needed if you expose the bucket via a public CDN domain.
+
+**4. Configure CORS on the bucket**
+
+The browser PUT goes directly to R2, so you must allow it. In the R2 dashboard go to your bucket → **Settings → CORS Policy**:
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Replace `http://localhost:3000` with your production domain when deploying.
+
+### Option B — Supabase Storage (zero extra config locally)
+
+If you already have local Supabase running, this requires no new accounts:
+
+```bash
+STORAGE_PROVIDER=supabase
+SUPABASE_STORAGE_BUCKET=documents   # create this bucket in Supabase Studio first
+```
+
+Create the bucket in Supabase Studio (`http://localhost:54323`) → **Storage → New bucket** → name it `documents`, set it to **Private**.
+
+### Testing uploads
+
+With storage configured:
+
+1. `pnpm dev`
+2. Go to `/app/<org>/documents` → click **Upload**
+3. Pick a PDF, TXT, or MD file ≤ 5 MB → **Upload Document**
+4. You should land on the document detail page with status `uploaded`
+
+> If you see a CORS error in the browser console, double-check the CORS policy on the bucket matches your local URL exactly (including protocol and port).
+
+---
+
 ## Observability (local dev)
 
 ### Sentry

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getServerFeatureFlag } from '@/lib/analytics/flags';
 import { requireMembership } from '@/lib/orgs/guards';
-import { getOrganizationUsageOverview } from '@ai-workspace-lab/entitlements';
+import { checkEntitlement, getOrganizationUsageOverview } from '@ai-workspace-lab/entitlements';
 import { CheckCircle2, Circle, ExternalLink, FileText, Lock, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
@@ -19,18 +19,24 @@ interface ChecklistItem {
   description: string;
   href: string;
   done: boolean;
-  enabled: boolean;
+  /** PostHog flag: feature is rolled out to this user */
+  featureEnabled: boolean;
+  /** Plan entitlement: feature is included in the org's plan */
+  entitled: boolean;
 }
 
 export default async function OrgDashboardPage({ params }: OrgDashboardPageProps) {
   const { orgSlug } = await params;
   const { user, organization } = await requireMembership(orgSlug);
 
-  const [overview, uploadEnabled, aiChatEnabled] = await Promise.all([
-    getOrganizationUsageOverview(organization.id).catch(() => null),
-    getServerFeatureFlag('document_upload_enabled', user.id),
-    getServerFeatureFlag('ai_chat_enabled', user.id),
-  ]);
+  const [overview, uploadEnabled, aiChatEnabled, uploadEntitled, aiChatEntitled] =
+    await Promise.all([
+      getOrganizationUsageOverview(organization.id).catch(() => null),
+      getServerFeatureFlag('document_upload_enabled', user.id),
+      getServerFeatureFlag('ai_chat_enabled', user.id),
+      checkEntitlement(organization.id, 'document_uploads').catch(() => false),
+      checkEntitlement(organization.id, 'ai_chat').catch(() => false),
+    ]);
 
   const isFree =
     !overview ||
@@ -43,21 +49,24 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
       description: 'Add a PDF, Word doc, or text file to start asking AI questions.',
       href: `/app/${orgSlug}/documents/new`,
       done: false,
-      enabled: uploadEnabled,
+      featureEnabled: uploadEnabled,
+      entitled: uploadEntitled,
     },
     {
       label: 'Ask an AI question',
       description: 'Query across your documents with cited answers.',
       href: `/app/${orgSlug}/ai`,
       done: false,
-      enabled: aiChatEnabled,
+      featureEnabled: aiChatEnabled,
+      entitled: aiChatEntitled,
     },
     {
       label: 'Review your usage',
       description: "See your plan limits and how much you've used.",
       href: `/app/${orgSlug}/settings/usage`,
       done: false,
-      enabled: true,
+      featureEnabled: true,
+      entitled: true,
     },
   ];
 
@@ -162,13 +171,15 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
           <CardContent>
             <p className="text-sm text-muted-foreground">
               {'No documents yet. '}
-              {uploadEnabled ? (
+              {uploadEnabled && uploadEntitled ? (
                 <Link
                   href={`/app/${orgSlug}/documents/new`}
                   className="text-primary underline-offset-4 hover:underline"
                 >
                   {'Upload your first document'}
                 </Link>
+              ) : uploadEnabled && !uploadEntitled ? (
+                'Document uploads are not enabled for your account.'
               ) : (
                 'Document upload coming soon.'
               )}
@@ -208,25 +219,50 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
           <CardDescription>{'Complete these steps to activate your workspace.'}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col divide-y">
-          {checklist.map((item) =>
-            item.enabled ? (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="group flex items-start gap-3 py-4 first:pt-0 last:pb-0 hover:text-foreground transition-colors"
-              >
-                {item.done ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                ) : (
-                  <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground group-hover:text-foreground" />
-                )}
-                <div className="flex flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-medium">{item.label}</span>
-                  <span className="text-xs text-muted-foreground">{item.description}</span>
+          {checklist.map((item) => {
+            if (item.featureEnabled && item.entitled) {
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="group flex items-start gap-3 py-4 first:pt-0 last:pb-0 hover:text-foreground transition-colors"
+                >
+                  {item.done ? (
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  ) : (
+                    <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                  )}
+                  <div className="flex flex-1 flex-col gap-0.5">
+                    <span className="text-sm font-medium">{item.label}</span>
+                    <span className="text-xs text-muted-foreground">{item.description}</span>
+                  </div>
+                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+              );
+            }
+            if (item.featureEnabled && !item.entitled) {
+              return (
+                <div
+                  key={item.label}
+                  className="flex items-start gap-3 py-4 first:pt-0 last:pb-0 opacity-60"
+                >
+                  <Lock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="flex flex-1 flex-col gap-0.5">
+                    <span className="text-sm font-medium">{item.label}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {'Not included in your plan. '}
+                      <Link
+                        href={`/app/${orgSlug}/settings/billing`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
+                        {'Upgrade'}
+                      </Link>
+                    </span>
+                  </div>
                 </div>
-                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </Link>
-            ) : (
+              );
+            }
+            return (
               <div
                 key={item.label}
                 className="flex items-start gap-3 py-4 first:pt-0 last:pb-0 opacity-50"
@@ -238,8 +274,8 @@ export default async function OrgDashboardPage({ params }: OrgDashboardPageProps
                 </div>
                 <span className="text-xs text-muted-foreground">{'Coming soon'}</span>
               </div>
-            ),
-          )}
+            );
+          })}
         </CardContent>
       </Card>
 

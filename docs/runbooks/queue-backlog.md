@@ -4,6 +4,33 @@
 
 ---
 
+## 0. Local development setup
+
+**Required env vars** (add to `.env.local`):
+```
+WORKER_SECRET=any-secret-string        # bearer token for /api/internal/run-worker
+ADMIN_EMAILS=you@example.com           # comma-separated; grants access to /admin/jobs
+```
+
+**Start the stack:**
+```bash
+pnpx supabase start
+pnpm --filter @ai-workspace-lab/db db:migrate
+pnpm dev
+```
+
+**Test the end-to-end flow:**
+1. Upload a document at `/app/[orgSlug]/documents/new` — document status shows **Queued**
+2. Trigger the worker:
+   ```bash
+   curl -X POST http://localhost:3000/api/internal/run-worker \
+     -H "Authorization: Bearer your-secret-string"
+   ```
+3. Refresh the document detail page — status progresses to **Processing → Ready**
+4. Visit `/admin/jobs` (email must be in `ADMIN_EMAILS`) to see failed/dead-lettered jobs
+
+---
+
 ## 1. Assess the situation
 
 ```sql

@@ -127,6 +127,13 @@
       "when": 1779561079126,
       "tag": "0017_ai_message_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779661079126,
+      "tag": "0018_ai_sessions_document_id",
+      "breakpoints": true
     }
   ]
 }

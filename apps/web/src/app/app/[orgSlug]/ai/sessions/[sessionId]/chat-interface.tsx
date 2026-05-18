@@ -117,34 +117,37 @@ export function ChatInterface({
   const endRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(initialMessages.some((message) => message.role === 'user'));
   const quotaTrackedRef = useRef(false);
+  const prevInitialLengthRef = useRef(initialMessages.length);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: `/api/orgs/${orgSlug}/chat`,
-    body: { sessionId, ...(documentId ? { documentId } : {}) },
-    initialMessages,
-    onError: (chatError: unknown) => {
-      captureEvent('ai_chat_failed', {
-        org_slug: orgSlug,
-        session_id: sessionId,
-        error: chatError instanceof Error ? chatError.message : String(chatError),
-      });
-    },
-    onFinish: (message) => {
-      captureEvent('ai_chat_completed', {
-        org_slug: orgSlug,
-        session_id: sessionId,
-        assistant_message_id: message.id,
-      });
-      router.refresh();
-    },
-  }) as {
-    messages: AiChatMessage[];
-    input: string;
-    handleInputChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
-    handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
-    isLoading: boolean;
-    error: unknown;
-  };
+  const { messages, setMessages, input, handleInputChange, handleSubmit, isLoading, error } =
+    useChat({
+      api: `/api/orgs/${orgSlug}/chat`,
+      body: { sessionId, ...(documentId ? { documentId } : {}) },
+      initialMessages,
+      onError: (chatError: unknown) => {
+        captureEvent('ai_chat_failed', {
+          org_slug: orgSlug,
+          session_id: sessionId,
+          error: chatError instanceof Error ? chatError.message : String(chatError),
+        });
+      },
+      onFinish: (message) => {
+        captureEvent('ai_chat_completed', {
+          org_slug: orgSlug,
+          session_id: sessionId,
+          assistant_message_id: message.id,
+        });
+        router.refresh();
+      },
+    }) as {
+      messages: AiChatMessage[];
+      setMessages: (messages: AiChatMessage[]) => void;
+      input: string;
+      handleInputChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+      handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
+      isLoading: boolean;
+      error: unknown;
+    };
 
   useEffect(() => {
     if (!startedRef.current && messages.some((message: AiChatMessage) => message.role === 'user')) {
@@ -170,6 +173,15 @@ export function ChatInterface({
       });
     }
   }, [orgSlug, quota?.exceeded, sessionId]);
+
+  // After router.refresh(), initialMessages gets server-side IDs. Sync useChat state
+  // so that initialSources (keyed by DB UUID) matches message.id correctly.
+  useEffect(() => {
+    if (initialMessages.length > prevInitialLengthRef.current && !isLoading) {
+      prevInitialLengthRef.current = initialMessages.length;
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, isLoading, setMessages]);
 
   function submitChat(event: FormEvent<HTMLFormElement>) {
     if (quota?.exceeded) {

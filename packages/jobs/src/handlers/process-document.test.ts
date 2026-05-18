@@ -14,6 +14,16 @@ vi.mock('@ai-workspace-lab/storage', () => ({
   downloadObject: vi.fn(),
 }));
 
+vi.mock('@ai-workspace-lab/ai', () => ({
+  generateEmbeddings: vi.fn(),
+  EMBEDDING_MODEL: 'text-embedding-3-small',
+  estimateEmbeddingCost: vi.fn(),
+}));
+
+vi.mock('@ai-workspace-lab/usage', () => ({
+  recordUsageEvent: vi.fn(),
+}));
+
 // tiktoken uses WASM — replace with a deterministic char-based stub.
 // 1 char ≈ 1 token so token budgets map directly to character counts in tests.
 // decode returns 'x' bytes per token so hard-split slices are non-empty;
@@ -27,6 +37,7 @@ vi.mock('js-tiktoken', () => ({
   }),
 }));
 
+import { generateEmbeddings } from '@ai-workspace-lab/ai';
 import { downloadObject } from '@ai-workspace-lab/storage';
 import {
   CHUNKING_STRATEGY,
@@ -220,11 +231,15 @@ describe('processDocumentHandler', () => {
 
   it('happy path: processing → ready, chunks inserted with correct organizationId', async () => {
     vi.mocked(downloadObject).mockResolvedValue(Buffer.from('Hello world.'));
+    vi.mocked(generateEmbeddings).mockResolvedValue({
+      embeddings: [[0.1, 0.2, 0.3]],
+      tokens: 5,
+    });
     const mockDb = buildDb([MOCK_DOC], [MOCK_STORAGE]);
 
     await processDocumentHandler({ documentId: DOC_ID }, mockDb as never);
 
-    expect(mockDb.update).toHaveBeenCalledTimes(2);
+    expect(mockDb.update).toHaveBeenCalledTimes(3);
     expect(mockDb.delete).toHaveBeenCalledTimes(1);
     expect(mockDb.insert).toHaveBeenCalledTimes(1);
 
@@ -280,6 +295,10 @@ describe('processDocumentHandler', () => {
 
   it('deletes existing chunks before inserting (idempotency)', async () => {
     vi.mocked(downloadObject).mockResolvedValue(Buffer.from('Content.'));
+    vi.mocked(generateEmbeddings).mockResolvedValue({
+      embeddings: [[0.1, 0.2, 0.3]],
+      tokens: 5,
+    });
     const mockDb = buildDb([MOCK_DOC], [MOCK_STORAGE]);
 
     await processDocumentHandler({ documentId: DOC_ID }, mockDb as never);
@@ -298,6 +317,30 @@ describe('processDocumentHandler', () => {
     await processDocumentHandler({ documentId: DOC_ID }, mockDb as never);
 
     expect(mockDb.insert).not.toHaveBeenCalled();
-    expect(mockDb.update).toHaveBeenCalledTimes(2);
+    expect(mockDb.update).toHaveBeenCalledTimes(3);
+  });
+
+  it('sets processingErrorCode EMBEDDING_FAILED when generateEmbeddings rejects', async () => {
+    vi.mocked(downloadObject).mockResolvedValue(Buffer.from('Hello world.'));
+    vi.mocked(generateEmbeddings).mockRejectedValue(new Error('OpenAI API error'));
+    const mockDb = buildDb([MOCK_DOC], [MOCK_STORAGE]);
+
+    await expect(processDocumentHandler({ documentId: DOC_ID }, mockDb as never)).rejects.toThrow(
+      'OpenAI API error',
+    );
+
+    // update is called three times: processing → embedding → failed (in catch)
+    expect(mockDb.update).toHaveBeenCalledTimes(3);
+
+    // The last update call sets status=failed with EMBEDDING_FAILED error code
+    const lastUpdateCall = vi.mocked(mockDb.update).mock.results[
+      vi.mocked(mockDb.update).mock.results.length - 1
+    ]?.value as { set: ReturnType<typeof vi.fn> };
+    const setArgs = lastUpdateCall.set.mock.calls[0]?.[0] as {
+      status: string;
+      processingErrorCode: string;
+    };
+    expect(setArgs.status).toBe('failed');
+    expect(setArgs.processingErrorCode).toBe('EMBEDDING_FAILED');
   });
 });

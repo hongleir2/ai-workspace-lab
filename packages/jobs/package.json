@@ -13,9 +13,12 @@
     "clean": "rm -rf .turbo"
   },
   "dependencies": {
+    "@ai-workspace-lab/ai": "workspace:*",
     "@ai-workspace-lab/db": "workspace:*",
+    "@ai-workspace-lab/entitlements": "workspace:*",
     "@ai-workspace-lab/logger": "workspace:*",
     "@ai-workspace-lab/storage": "workspace:*",
+    "@ai-workspace-lab/usage": "workspace:*",
     "js-tiktoken": "^1.0.21",
     "pdf-parse": "^1.1.1"
   },

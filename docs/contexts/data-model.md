@@ -73,6 +73,9 @@ Real-time & collaboration
 | `ai_sessions` | 0014 + 0015 | `id`, `organization_id`, `created_by_user_id`, `prompt_version_id` (nullable), `title`, `visibility` enum (`private`/`organization`/`shared`), `status` enum (`active`/`archived`/`deleted`), `created_at`, `updated_at` (trigger), `deleted_at`; UNIQUE(`id`, `organization_id`) supports tenant-safe message FKs |
 | `ai_messages` | 0014 + 0015 | `id`, `organization_id`, `session_id`, `parent_message_id` (nullable), `created_by_user_id` (nullable), `role` enum (`user`/`assistant`/`system`/`tool`), `content`, `status` enum (`streaming`/`completed`/`failed`/`canceled`), `model_provider`, `model_name`, `input_tokens`, `output_tokens`, `total_tokens`, `cost_micro_usd`, `error_code`, `error_message`, `created_at`, `completed_at`; composite FKs enforce session/org match and same-session parent messages; indexes on org/session/created_at and model lookup |
 | `rate_limit_events` | 0014 optional + 0015 | `id`, `organization_id` (nullable), `user_id` (nullable), `endpoint`, `limit_key`, `action` enum (`allowed`/`blocked`), `tokens_consumed`, `metadata`, `created_at`; debugging log for rate-limit decisions |
+| `jobs` | 0011 | `id`, `organization_id`, `created_by_user_id`, `job_type`, `status` enum (`pending/processing/retrying/completed/failed/dead_lettered/canceled`), `payload` (jsonb), `idempotency_key` (UNIQUE), `attempts_count`, `max_attempts`, `run_after`, `locked_by`, `locked_at`, `last_error_code`, `last_error_message`, `completed_at`, `failed_at`, `dead_lettered_at`, `created_at`, `updated_at` (trigger) |
+| `job_attempts` | 0012 | `id`, `job_id` → jobs, `attempt_number`; UNIQUE(job_id, attempt_number); `status` enum (`started/succeeded/failed/timed_out`), `error_code`, `error_message`, `metadata` (jsonb), `started_at`, `ended_at` |
+| `document_chunks` | 0013 + 0016 | `id`, `organization_id`, `document_id` → documents; UNIQUE(document_id, chunk_index); `chunk_index`, `text`, `token_count`, `chunking_strategy` (0016), `start_char_index` (0016), `end_char_index` (0016), `page_start`, `page_end`, `section_title`, `embedding` (vector 1536), `embedding_model`, `metadata` (jsonb), `created_at` |
 
 ### Server packages using these tables
 
@@ -87,8 +90,6 @@ Real-time & collaboration
 
 | Table | Purpose |
 |-------|---------|
-| `document_chunks` | Text chunks + pgvector embeddings |
-| `jobs` | Async job status + retry state |
 | `ai_message_sources` | Citation links from AI answers to document chunks |
 | `ai_feedback` | User feedback on AI messages |
 

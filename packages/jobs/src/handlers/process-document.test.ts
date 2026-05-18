@@ -18,11 +18,12 @@ vi.mock('@ai-workspace-lab/storage', () => ({
 // 1 char ≈ 1 token so token budgets map directly to character counts in tests.
 // decode returns 'x' bytes per token so hard-split slices are non-empty;
 // overlap text is 'xxx...' but tests use overlapTokens:0 so it stays "".
-vi.mock('tiktoken', () => ({
-  encoding_for_model: () => ({
+// js-tiktoken is pure JS (no WASM). Mock with: 1 char ≈ 1 token, decode returns
+// 'x' per token so hard-split slices are non-empty strings.
+vi.mock('js-tiktoken', () => ({
+  encodingForModel: () => ({
     encode: (text: string) => new Uint32Array(text.length),
-    decode: (tokens: Uint32Array) => new Uint8Array(tokens.length).fill(120), // 120 = 'x'
-    free: () => {},
+    decode: (tokens: Uint32Array) => 'x'.repeat(tokens.length),
   }),
 }));
 

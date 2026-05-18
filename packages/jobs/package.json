@@ -16,8 +16,8 @@
     "@ai-workspace-lab/db": "workspace:*",
     "@ai-workspace-lab/logger": "workspace:*",
     "@ai-workspace-lab/storage": "workspace:*",
-    "pdf-parse": "^1.1.1",
-    "tiktoken": "^1.0.22"
+    "js-tiktoken": "^1.0.21",
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",

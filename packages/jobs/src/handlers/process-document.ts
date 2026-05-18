@@ -10,7 +10,7 @@ import {
 } from '@ai-workspace-lab/db';
 import { createLogger } from '@ai-workspace-lab/logger';
 import { downloadObject } from '@ai-workspace-lab/storage';
-import { encoding_for_model } from 'tiktoken';
+import { encodingForModel } from 'js-tiktoken';
 
 const logger = createLogger('jobs/process-document');
 
@@ -56,119 +56,111 @@ export function chunkTextByTokens(
   text: string,
   options: ChunkOptions = DEFAULT_CHUNK_OPTIONS,
 ): TokenChunk[] {
-  const encoder = encoding_for_model('text-embedding-3-small');
+  const encoder = encodingForModel('text-embedding-3-small');
 
-  try {
-    // Build a flat ordered list of sentences with their char positions in `text`.
-    type SentenceInfo = { text: string; charStart: number; charEnd: number };
-    const allSentences: SentenceInfo[] = [];
+  // Build a flat ordered list of sentences with their char positions in `text`.
+  type SentenceInfo = { text: string; charStart: number; charEnd: number };
+  const allSentences: SentenceInfo[] = [];
 
-    let searchFrom = 0;
-    for (const para of text.split(/\n\n+/)) {
-      const trimmed = para.trim();
-      if (!trimmed) continue;
+  let searchFrom = 0;
+  for (const para of text.split(/\n\n+/)) {
+    const trimmed = para.trim();
+    if (!trimmed) continue;
 
-      const paraStart = text.indexOf(trimmed, searchFrom);
-      let sentSearchFrom = paraStart >= 0 ? paraStart : searchFrom;
+    const paraStart = text.indexOf(trimmed, searchFrom);
+    let sentSearchFrom = paraStart >= 0 ? paraStart : searchFrom;
 
-      for (const sentence of splitSentences(trimmed)) {
-        const sentStart = text.indexOf(sentence, sentSearchFrom);
-        const start = sentStart >= 0 ? sentStart : sentSearchFrom;
-        allSentences.push({ text: sentence, charStart: start, charEnd: start + sentence.length });
-        sentSearchFrom = start + sentence.length;
-      }
-
-      searchFrom = paraStart >= 0 ? paraStart + trimmed.length : searchFrom + para.length;
+    for (const sentence of splitSentences(trimmed)) {
+      const sentStart = text.indexOf(sentence, sentSearchFrom);
+      const start = sentStart >= 0 ? sentStart : sentSearchFrom;
+      allSentences.push({ text: sentence, charStart: start, charEnd: start + sentence.length });
+      sentSearchFrom = start + sentence.length;
     }
 
-    const chunks: TokenChunk[] = [];
-    // Sentences accumulated into the current chunk (new content, after overlap seed).
-    let currentSentences: SentenceInfo[] = [];
-    let currentTokens = 0;
-    // Overlap text prepended to the next chunk's content.
-    let overlapText = '';
-    let overlapTokens = 0;
+    searchFrom = paraStart >= 0 ? paraStart + trimmed.length : searchFrom + para.length;
+  }
 
-    const flush = () => {
-      if (currentSentences.length === 0) return;
+  const chunks: TokenChunk[] = [];
+  // Sentences accumulated into the current chunk (new content, after overlap seed).
+  let currentSentences: SentenceInfo[] = [];
+  let currentTokens = 0;
+  // Overlap text prepended to the next chunk's content.
+  let overlapText = '';
+  let overlapTokens = 0;
 
-      const newContent = currentSentences.map((s) => s.text).join('\n');
-      const fullText = overlapText ? `${overlapText}\n${newContent}`.trim() : newContent.trim();
-      if (!fullText) return;
+  const flush = () => {
+    if (currentSentences.length === 0) return;
 
-      const fullTokenArr = encoder.encode(fullText);
-      chunks.push({
-        text: fullText,
-        tokenCount: fullTokenArr.length,
-        chunkIndex: chunks.length,
-        startCharIndex: currentSentences[0]?.charStart ?? 0,
-        endCharIndex: currentSentences[currentSentences.length - 1]?.charEnd ?? 0,
-      });
+    const newContent = currentSentences.map((s) => s.text).join('\n');
+    const fullText = overlapText ? `${overlapText}\n${newContent}`.trim() : newContent.trim();
+    if (!fullText) return;
 
-      // Seed next chunk with the tail of this chunk's tokens as overlap.
-      const tailTokens = fullTokenArr.slice(
-        Math.max(0, fullTokenArr.length - options.overlapTokens),
-      );
-      overlapText = new TextDecoder().decode(encoder.decode(tailTokens)).trim();
-      overlapTokens = tailTokens.length;
+    const fullTokenArr = encoder.encode(fullText);
+    chunks.push({
+      text: fullText,
+      tokenCount: fullTokenArr.length,
+      chunkIndex: chunks.length,
+      startCharIndex: currentSentences[0]?.charStart ?? 0,
+      endCharIndex: currentSentences[currentSentences.length - 1]?.charEnd ?? 0,
+    });
+
+    // Seed next chunk with the tail of this chunk's tokens as overlap.
+    const tailTokens = fullTokenArr.slice(Math.max(0, fullTokenArr.length - options.overlapTokens));
+    overlapText = encoder.decode(tailTokens).trim();
+    overlapTokens = tailTokens.length;
+    currentSentences = [];
+    currentTokens = 0;
+  };
+
+  for (const sentence of allSentences) {
+    const sentTokens = encoder.encode(sentence.text).length;
+
+    if (sentTokens > options.maxTokens) {
+      // Single sentence is larger than the budget — flush current and hard-split it.
+      flush();
+
+      const tokens = encoder.encode(sentence.text);
+      const step = options.maxTokens - options.overlapTokens;
+
+      for (let i = 0; i < tokens.length; i += step) {
+        const slice = tokens.slice(i, i + options.maxTokens);
+        const sliceText = encoder.decode(slice).trim();
+        if (sliceText) {
+          chunks.push({
+            text: sliceText,
+            tokenCount: slice.length,
+            chunkIndex: chunks.length,
+            startCharIndex: sentence.charStart,
+            endCharIndex: sentence.charEnd,
+          });
+        }
+      }
+
+      // Overlap from the last hard-split chunk.
+      const lastChunk = chunks[chunks.length - 1];
+      if (lastChunk) {
+        const lastTokens = encoder.encode(lastChunk.text);
+        const tailTokens = lastTokens.slice(Math.max(0, lastTokens.length - options.overlapTokens));
+        overlapText = encoder.decode(tailTokens).trim();
+        overlapTokens = tailTokens.length;
+      }
       currentSentences = [];
       currentTokens = 0;
-    };
-
-    for (const sentence of allSentences) {
-      const sentTokens = encoder.encode(sentence.text).length;
-
-      if (sentTokens > options.maxTokens) {
-        // Single sentence is larger than the budget — flush current and hard-split it.
-        flush();
-
-        const tokens = encoder.encode(sentence.text);
-        const step = options.maxTokens - options.overlapTokens;
-
-        for (let i = 0; i < tokens.length; i += step) {
-          const slice = tokens.slice(i, i + options.maxTokens);
-          const sliceText = new TextDecoder().decode(encoder.decode(slice)).trim();
-          if (sliceText) {
-            chunks.push({
-              text: sliceText,
-              tokenCount: slice.length,
-              chunkIndex: chunks.length,
-              startCharIndex: sentence.charStart,
-              endCharIndex: sentence.charEnd,
-            });
-          }
-        }
-
-        // Overlap from the last hard-split chunk.
-        const lastChunk = chunks[chunks.length - 1];
-        if (lastChunk) {
-          const lastTokens = encoder.encode(lastChunk.text);
-          const tailTokens = lastTokens.slice(
-            Math.max(0, lastTokens.length - options.overlapTokens),
-          );
-          overlapText = new TextDecoder().decode(encoder.decode(tailTokens)).trim();
-          overlapTokens = tailTokens.length;
-        }
-        currentSentences = [];
-        currentTokens = 0;
-        continue;
-      }
-
-      // Would adding this sentence exceed the budget?
-      const projectedTokens = overlapTokens + currentTokens + sentTokens;
-      if (projectedTokens > options.maxTokens && currentSentences.length > 0) {
-        flush();
-      }
-
-      currentSentences.push(sentence);
-      currentTokens += sentTokens;
+      continue;
     }
 
-    flush();
-    return chunks;
-  } finally {
-    encoder.free();
+    // Would adding this sentence exceed the budget?
+    const projectedTokens = overlapTokens + currentTokens + sentTokens;
+    if (projectedTokens > options.maxTokens && currentSentences.length > 0) {
+      flush();
+    }
+
+    currentSentences.push(sentence);
+    currentTokens += sentTokens;
   }
+
+  flush();
+  return chunks;
 }
 
 export async function extractText(buffer: Buffer, fileType: string): Promise<string> {

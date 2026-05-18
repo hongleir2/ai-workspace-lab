@@ -18,6 +18,14 @@ export interface AiChatMessage {
   content: string;
 }
 
+export interface AiChatSource {
+  id: string;
+  citationLabel: string;
+  relevanceScore: number | null;
+  chunkText: string;
+  documentTitle: string | null;
+}
+
 export interface AiChatQuota {
   limit: number | null;
   used: number | null;
@@ -30,6 +38,7 @@ interface ChatInterfaceProps {
   orgSlug: string;
   sessionId: string;
   initialMessages: AiChatMessage[];
+  initialSources: Record<string, AiChatSource[]>;
   quota: AiChatQuota | null;
   documentId?: string;
   documentName?: string;
@@ -42,7 +51,31 @@ function quotaLabel(quota: AiChatQuota | null): string {
   return `${quota.used} / ${quota.limit}`;
 }
 
-function MessageRow({ message }: { message: AiChatMessage }) {
+function SourcesSection({ sources }: { sources: AiChatSource[] }) {
+  if (sources.length === 0) return null;
+  return (
+    <div className="mt-3 space-y-2 border-t pt-3">
+      <p className="text-xs font-medium text-muted-foreground">Sources</p>
+      <div className="flex flex-col gap-2">
+        {sources.map((source) => (
+          <div key={source.id} className="flex gap-2 text-xs">
+            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono font-medium text-foreground">
+              {source.citationLabel}
+            </span>
+            <div className="min-w-0">
+              {source.documentTitle ? (
+                <span className="font-medium text-foreground">{source.documentTitle} — </span>
+              ) : null}
+              <span className="text-muted-foreground line-clamp-2">{source.chunkText}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MessageRow({ message, sources }: { message: AiChatMessage; sources: AiChatSource[] }) {
   const isUser = message.role === 'user';
 
   return (
@@ -57,9 +90,12 @@ function MessageRow({ message }: { message: AiChatMessage }) {
               {message.content}
             </p>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-            </div>
+            <>
+              <div className="prose prose-sm dark:prose-invert max-w-none text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              </div>
+              <SourcesSection sources={sources} />
+            </>
           )}
         </div>
       </div>
@@ -71,6 +107,7 @@ export function ChatInterface({
   orgSlug,
   sessionId,
   initialMessages,
+  initialSources,
   quota,
   documentId,
   documentName,
@@ -198,7 +235,11 @@ export function ChatInterface({
               </div>
             ) : (
               messages.map((message: AiChatMessage) => (
-                <MessageRow key={message.id} message={message} />
+                <MessageRow
+                  key={message.id}
+                  message={message}
+                  sources={initialSources[message.id] ?? []}
+                />
               ))
             )}
             <div ref={endRef} />

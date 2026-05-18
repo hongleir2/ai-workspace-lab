@@ -9,41 +9,46 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-async function isAuthorized(request: NextRequest): Promise<boolean> {
+async function isAuthorized(request: NextRequest): Promise<{ ok: boolean; via?: string }> {
   const qstashSignature = request.headers.get('upstash-signature');
 
   if (qstashSignature) {
     const currentKey = env.QSTASH_CURRENT_SIGNING_KEY;
     const nextKey = env.QSTASH_NEXT_SIGNING_KEY;
-    if (!currentKey || !nextKey) return false;
+    if (!currentKey || !nextKey) return { ok: false, via: 'qstash_missing_keys' };
     const receiver = new Receiver({ currentSigningKey: currentKey, nextSigningKey: nextKey });
     const body = await request.text();
-    return receiver.verify({ signature: qstashSignature, body }).catch(() => false);
+    const ok = await receiver.verify({ signature: qstashSignature, body }).catch(() => false);
+    return { ok, via: ok ? 'qstash_signature' : 'qstash_invalid_signature' };
   }
 
   // Vercel cron sends Authorization: Bearer <CRON_SECRET>
   const cronSecret = env.CRON_SECRET;
   if (cronSecret && request.headers.get('authorization') === `Bearer ${cronSecret}`) {
-    return true;
+    return { ok: true, via: 'cron_secret' };
   }
 
   const workerSecret = env.WORKER_SECRET;
   if (workerSecret) {
-    return request.headers.get('authorization') === `Bearer ${workerSecret}`;
+    const ok = request.headers.get('authorization') === `Bearer ${workerSecret}`;
+    return { ok, via: ok ? 'worker_secret' : 'worker_secret_mismatch' };
   }
 
-  return true;
+  return { ok: true, via: 'no_auth_configured' };
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const traceId = (await headers()).get('x-trace-id') ?? undefined;
 
-  if (!(await isAuthorized(request))) {
-    logger.warn('worker.unauthorized', { traceId });
+  const authResult = await isAuthorized(request);
+  logger.debug('worker.auth_check', { traceId, via: authResult.via, ok: authResult.ok });
+
+  if (!authResult.ok) {
+    logger.warn('worker.unauthorized', { traceId, via: authResult.via });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  logger.info('worker.triggered', { traceId });
+  logger.info('worker.triggered', { traceId, via: authResult.via });
 
   try {
     const startTime = Date.now();

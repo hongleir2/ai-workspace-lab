@@ -14,6 +14,7 @@ import {
   getMaxFileSizeMb,
 } from '@ai-workspace-lab/storage';
 import { recordUsageWithCounter } from '@ai-workspace-lab/usage';
+import { logger } from '../axiom/server';
 import { triggerWorker } from '../jobs/trigger';
 
 export interface CreateDocumentUploadTargetInput {
@@ -104,10 +105,22 @@ export async function createDocumentUploadTarget(
   });
 
   await createProcessDocumentJob(document.id, organizationId);
+  logger.debug('document.service.job_created', {
+    documentId: document.id,
+    organizationId,
+    idempotencyKey: `process_document:${document.id}`,
+  });
+
   // Awaited so Vercel doesn't kill the function before the QStash publish
   // completes. If QStash is unavailable, the job stays pending until the
   // Vercel cron safety net picks it up.
-  await triggerWorker().catch(() => {});
+  await triggerWorker().catch((err: unknown) => {
+    logger.error('document.service.trigger_failed', {
+      documentId: document.id,
+      organizationId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 
   return { document, uploadUrl };
 }

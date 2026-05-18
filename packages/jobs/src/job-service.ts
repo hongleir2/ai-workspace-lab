@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { type Database, db, eq, jobAttempts, jobs, sql } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
+
+const logger = createLogger('jobs/job-service');
 
 export interface CreateJobParams {
   jobType: string;
@@ -48,6 +51,21 @@ export async function claimNextJob(
   dbConn: Database = db,
 ): Promise<ClaimedJob | null> {
   const now = new Date();
+
+  // Log pending job count before claim so we can tell if the query is the problem.
+  const pendingRows = await dbConn.execute(sql`
+    SELECT COUNT(*) as count, MIN(run_after) as earliest_run_after
+    FROM jobs
+    WHERE status IN ('pending', 'retrying')
+  `);
+  const pendingInfo = (pendingRows[0] ?? {}) as { count?: string; earliest_run_after?: string };
+  logger.debug('job.claim.pre_check', {
+    workerId,
+    now: now.toISOString(),
+    pendingCount: pendingInfo.count ?? '0',
+    earliestRunAfter: pendingInfo.earliest_run_after ?? null,
+  });
+
   const rows = await dbConn.execute(sql`
     UPDATE jobs SET
       status = 'processing',
@@ -76,7 +94,21 @@ export async function claimNextJob(
       }
     | undefined;
 
-  if (!row) return null;
+  if (!row) {
+    logger.debug('job.claim.none', {
+      workerId,
+      pendingCount: pendingInfo.count ?? '0',
+      earliestRunAfter: pendingInfo.earliest_run_after ?? null,
+    });
+    return null;
+  }
+
+  logger.debug('job.claim.success', {
+    workerId,
+    jobId: row.id,
+    jobType: row.job_type,
+    organizationId: row.organization_id,
+  });
 
   return {
     id: row.id,

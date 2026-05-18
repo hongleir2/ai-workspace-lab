@@ -4,6 +4,10 @@ import { createDocumentUploadTarget } from './service';
 
 // ── Module mocks (hoisted) ────────────────────────────────────────────────────
 
+vi.mock('@/lib/axiom/server', () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+}));
+
 vi.mock('@ai-workspace-lab/entitlements', () => ({
   assertFeatureAllowed: vi.fn(),
   getOrganizationPlan: vi.fn(),

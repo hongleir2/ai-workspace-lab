@@ -1,15 +1,30 @@
+import { logger } from '@/lib/axiom/server';
 import { env } from '@/lib/env';
 import { updateSession } from '@/lib/supabase/middleware';
+import { transformMiddlewareRequest } from '@axiomhq/nextjs';
 import { createServerClient } from '@supabase/ssr';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { nanoid } from 'nanoid';
+import type { NextFetchEvent } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Auth pages that signed-in users should never see
 const AUTH_PAGES = new Set(['/sign-in', '/sign-up']);
 
-export async function middleware(request: NextRequest): Promise<NextResponse> {
-  // Refresh the Supabase session cookie on every request (required by @supabase/ssr)
-  const response = await updateSession(request);
+export async function middleware(
+  request: NextRequest,
+  event: NextFetchEvent,
+): Promise<NextResponse> {
+  const traceId = nanoid(12);
+  const reqHeaders = new Headers(request.headers);
+  reqHeaders.set('x-trace-id', traceId);
+
+  if (request.nextUrl.pathname !== '/api/axiom') {
+    logger.info(...transformMiddlewareRequest(request));
+  }
+  event.waitUntil(logger.flush());
+
+  const response = await updateSession(new NextRequest(request, { headers: reqHeaders }));
+  response.headers.set('x-trace-id', traceId);
 
   // Redirect signed-in users away from auth pages at the edge so the browser
   // never renders a blank auth page before the server-side redirect fires.

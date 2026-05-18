@@ -12,8 +12,11 @@ import {
   subscriptions,
   usageCounters,
 } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
 import { EntitlementError } from './errors';
 import { type BillingPeriod, getCurrentBillingPeriod } from './period';
+
+const logger = createLogger('entitlements/service');
 
 export async function getOrganizationPlan(
   organizationId: string,
@@ -32,7 +35,10 @@ export async function getOrganizationPlan(
     .limit(1);
 
   const row = rows[0];
-  if (!row) throw new EntitlementError('NO_ACTIVE_SUBSCRIPTION');
+  if (!row) {
+    logger.warn('subscription.not_found', { orgId: organizationId });
+    throw new EntitlementError('NO_ACTIVE_SUBSCRIPTION');
+  }
   return row;
 }
 
@@ -107,12 +113,27 @@ export async function assertFeatureAllowed(
   const limits = await getPlanLimits(subscription.planId, featureKey, dbConn);
   const limit = limits[0];
 
-  if (!limit) throw new EntitlementError('FEATURE_NOT_INCLUDED');
+  if (!limit) {
+    logger.warn('feature.not_included', {
+      orgId: organizationId,
+      featureKey,
+      planId: subscription.planId,
+    });
+    throw new EntitlementError('FEATURE_NOT_INCLUDED');
+  }
   if (limit.limitValue === null || limit.resetInterval === 'none') return;
 
   const period = getCurrentBillingPeriod(subscription, limit.resetInterval);
   if (!period) return;
 
   const used = await getUsedQuantityInPeriod(organizationId, featureKey, period, dbConn);
-  if (used >= limit.limitValue) throw new EntitlementError('QUOTA_EXCEEDED');
+  if (used >= limit.limitValue) {
+    logger.warn('quota.exceeded', {
+      orgId: organizationId,
+      featureKey,
+      used,
+      limit: limit.limitValue,
+    });
+    throw new EntitlementError('QUOTA_EXCEEDED');
+  }
 }

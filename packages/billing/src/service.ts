@@ -7,7 +7,10 @@ import {
   eq,
   plans,
 } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
 import { stripe } from './stripe';
+
+const logger = createLogger('billing/service');
 
 export async function mapStripePriceToPlan(
   stripePriceId: string,
@@ -53,9 +56,17 @@ export async function getOrCreateStripeCustomer(
     .onConflictDoNothing()
     .returning();
 
-  if (inserted) return inserted;
+  if (inserted) {
+    logger.info('billing_customer.created', {
+      orgId: organizationId,
+      stripeCustomerId: inserted.stripeCustomerId,
+    });
+    return inserted;
+  }
 
   // Lost a concurrent-insert race — the unique constraint fired. Fetch the winner.
+  logger.info('billing_customer.race_won', { orgId: organizationId });
+
   const [winner] = await dbConn
     .select()
     .from(billingCustomers)
@@ -92,6 +103,9 @@ export async function createCheckoutSession(
   });
 
   if (!session.url) throw new Error('Stripe did not return a checkout URL');
+
+  logger.info('checkout.session.created', { orgId: organizationId, priceId });
+
   return session.url;
 }
 
@@ -113,6 +127,8 @@ export async function createBillingPortalSession(
     customer: customer.stripeCustomerId,
     return_url: `${baseUrl}/app/${orgSlug}/settings/billing`,
   });
+
+  logger.info('portal.session.created', { orgId: organizationId });
 
   return session.url;
 }

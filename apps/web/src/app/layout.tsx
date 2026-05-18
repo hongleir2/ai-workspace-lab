@@ -1,5 +1,6 @@
 import { PostHogProvider } from '@/components/posthog-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { WebVitals } from '@/lib/axiom/client';
 import type { Metadata } from 'next';
 import { DM_Sans, Space_Grotesk } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         className="min-h-screen bg-background font-body text-foreground antialiased"
         suppressHydrationWarning
       >
+        <WebVitals />
         <NextTopLoader color="#6366f1" height={3} showSpinner={false} />
         <ThemeProvider>
           <PostHogProvider>{children}</PostHogProvider>

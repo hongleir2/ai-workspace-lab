@@ -1,6 +1,8 @@
+import { logger } from '@/lib/axiom/server';
 import { env } from '@/lib/env';
 import { runWorkerOnce } from '@ai-workspace-lab/jobs';
 import { Receiver } from '@upstash/qstash';
+import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -34,15 +36,34 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const traceId = (await headers()).get('x-trace-id') ?? undefined;
+
   if (!(await isAuthorized(request))) {
+    logger.warn('worker.unauthorized', { traceId });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  logger.info('worker.triggered', { traceId });
+
   try {
+    const startTime = Date.now();
     const result = await runWorkerOnce();
+
+    if (result.processed === 0) {
+      logger.info('worker.no_job', { traceId });
+    } else {
+      logger.info('worker.completed', {
+        traceId,
+        jobId: result.jobId,
+        status: result.status,
+        durationMs: Date.now() - startTime,
+      });
+    }
+
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    logger.error('worker.failed', { traceId, error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

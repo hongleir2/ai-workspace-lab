@@ -8,10 +8,13 @@ import {
   organizationMemberships,
   storageObjects,
 } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
 import { StorageError } from './errors';
 import { getStorageProvider } from './providers/index';
 import type { ObjectMetadata, StorageProvider, UploadObjectParams, UploadTarget } from './types';
 import { validateFileSize, validateFileType } from './validation';
+
+const logger = createLogger('storage/service');
 
 async function assertCanUploadToOrg(
   userId: string,
@@ -31,6 +34,7 @@ async function assertCanUploadToOrg(
     .limit(1);
 
   if (!rows[0]) {
+    logger.error('upload.unauthorized', { userId, orgId: organizationId });
     throw new StorageError(
       'NOT_AUTHORIZED',
       `User ${userId} is not an active member of organization ${organizationId}`,
@@ -52,8 +56,27 @@ export async function createUploadTarget(
   provider: StorageProvider = getStorageProvider(),
   dbConn: Database = db,
 ): Promise<UploadTarget> {
-  validateFileType(input.filename, input.contentType);
-  validateFileSize(input.byteSize, input.maxFileSizeMb);
+  try {
+    validateFileType(input.filename, input.contentType);
+  } catch (err) {
+    logger.warn('file.invalid_type', {
+      filename: input.filename,
+      contentType: input.contentType,
+    });
+    throw err;
+  }
+
+  try {
+    validateFileSize(input.byteSize, input.maxFileSizeMb);
+  } catch (err) {
+    logger.warn('file.too_large', {
+      filename: input.filename,
+      byteSize: input.byteSize,
+      maxBytes: input.maxFileSizeMb * 1024 * 1024,
+    });
+    throw err;
+  }
+
   await assertCanUploadToOrg(input.userId, input.organizationId, dbConn);
 
   const ext = input.filename.split('.').pop()?.toLowerCase() ?? '';
@@ -62,7 +85,17 @@ export async function createUploadTarget(
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const objectKey = `organizations/${input.organizationId}/uploads/${yyyy}/${mm}/${randomUUID()}.${ext}`;
 
-  return provider.createUploadTarget({ objectKey, contentType: input.contentType });
+  const target = provider.createUploadTarget({ objectKey, contentType: input.contentType });
+
+  logger.info('upload_target.created', {
+    orgId: input.organizationId,
+    userId: input.userId,
+    filename: input.filename,
+    byteSize: input.byteSize,
+    objectKey,
+  });
+
+  return target;
 }
 
 export async function uploadObject(

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@ai-workspace-lab/db": "workspace:*",
+    "@ai-workspace-lab/logger": "workspace:*",
     "stripe": "^22.1.1"
   }
 }

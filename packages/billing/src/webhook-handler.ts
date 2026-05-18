@@ -7,9 +7,12 @@ import {
   stripeEvents,
   subscriptions,
 } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
 import type Stripe from 'stripe';
 import { mapStripePriceToPlan } from './service';
 import { stripe } from './stripe';
+
+const logger = createLogger('billing/webhook-handler');
 
 type SubscriptionStatus =
   | 'free'
@@ -42,7 +45,12 @@ export async function handleStripeEvent(event: Stripe.Event, dbConn: Database = 
     .onConflictDoNothing()
     .returning();
 
-  if (!eventRow) return;
+  if (!eventRow) {
+    logger.info('webhook.deduplicated', { eventId: event.id, type: event.type });
+    return;
+  }
+
+  logger.info('webhook.received', { eventId: event.id, type: event.type });
 
   await dbConn
     .update(stripeEvents)
@@ -63,6 +71,11 @@ export async function handleStripeEvent(event: Stripe.Event, dbConn: Database = 
         errorMessage: err instanceof Error ? err.message : String(err),
       })
       .where(eq(stripeEvents.id, eventRow.id));
+    logger.error('webhook.failed', {
+      eventId: event.id,
+      type: event.type,
+      error: err instanceof Error ? err.message : String(err),
+    });
     throw err;
   }
 }
@@ -177,6 +190,13 @@ async function upsertSubscription(sub: Stripe.Subscription, dbConn: Database): P
       ...shared,
     });
   }
+
+  logger.info('subscription.upserted', {
+    stripeSubscriptionId: sub.id,
+    orgId: billingCustomer.organizationId,
+    planId,
+    status,
+  });
 }
 
 async function handleSubscriptionDeleted(
@@ -195,6 +215,8 @@ async function handleSubscriptionDeleted(
         : { endedAt: new Date() }),
     })
     .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+  logger.info('subscription.deleted', { stripeSubscriptionId: sub.id });
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice, dbConn: Database): Promise<void> {
@@ -204,6 +226,8 @@ async function handlePaymentFailed(invoice: Stripe.Invoice, dbConn: Database): P
     .update(subscriptions)
     .set({ status: 'past_due' })
     .where(eq(subscriptions.stripeSubscriptionId, subId));
+
+  logger.warn('payment.failed', { stripeSubscriptionId: subId });
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice, dbConn: Database): Promise<void> {
@@ -215,4 +239,6 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice, dbConn: Database)
     .where(
       and(eq(subscriptions.stripeSubscriptionId, subId), eq(subscriptions.status, 'past_due')),
     );
+
+  logger.info('payment.recovered', { stripeSubscriptionId: subId });
 }

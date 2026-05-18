@@ -1,11 +1,13 @@
 import { FLAGS, getServerFeatureFlag } from '@/lib/analytics/flags';
 import { getCurrentUser } from '@/lib/auth/user';
+import { logger } from '@/lib/axiom/server';
 import { createDocumentUploadTarget } from '@/lib/documents/service';
 import { env } from '@/lib/env';
 import { getOrganizationBySlug } from '@/lib/orgs/service';
 import { and, db, eq, organizationMemberships } from '@ai-workspace-lab/db';
 import { EntitlementError } from '@ai-workspace-lab/entitlements';
 import { StorageError } from '@ai-workspace-lab/storage';
+import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -32,6 +34,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ orgSlug: string }> },
 ): Promise<NextResponse> {
+  const traceId = (await headers()).get('x-trace-id') ?? undefined;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -76,9 +80,22 @@ export async function POST(
   if (env.NEXT_PUBLIC_POSTHOG_KEY) {
     const flagEnabled = await getServerFeatureFlag(FLAGS.DOCUMENT_UPLOAD, user.id);
     if (!flagEnabled) {
+      logger.warn('document.upload.feature_disabled', {
+        traceId,
+        orgId: org.id,
+        userId: user.id,
+      });
       return NextResponse.json({ error: 'Feature not available' }, { status: 403 });
     }
   }
+
+  logger.info('document.upload.requested', {
+    traceId,
+    orgId: org.id,
+    userId: user.id,
+    filename: body.filename,
+    byteSize: body.byteSize,
+  });
 
   try {
     const result = await createDocumentUploadTarget({
@@ -88,10 +105,21 @@ export async function POST(
       contentType: body.contentType,
       byteSize: body.byteSize,
     });
+    logger.info('document.upload.created', {
+      traceId,
+      orgId: org.id,
+      userId: user.id,
+      documentId: result.document.id,
+    });
     return NextResponse.json({ document: result.document, uploadUrl: result.uploadUrl });
   } catch (error: unknown) {
     if (error instanceof EntitlementError) {
       if (error.code === 'QUOTA_EXCEEDED') {
+        logger.warn('document.upload.quota_exceeded', {
+          traceId,
+          orgId: org.id,
+          userId: user.id,
+        });
         return NextResponse.json(
           { error: 'Upload quota exceeded for this period' },
           { status: 429 },
@@ -116,6 +144,12 @@ export async function POST(
         return NextResponse.json({ error: 'Upload not authorized' }, { status: 402 });
       }
     }
+    logger.error('document.upload.failed', {
+      traceId,
+      orgId: org.id,
+      userId: user.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }

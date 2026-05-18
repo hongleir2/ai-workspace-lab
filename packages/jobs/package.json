@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@ai-workspace-lab/db": "workspace:*",
+    "@ai-workspace-lab/logger": "workspace:*",
     "@ai-workspace-lab/storage": "workspace:*",
     "pdf-parse": "^1.1.1"
   },

@@ -1,5 +1,8 @@
 import type { Database, NewUsageEvent, UsageCounter, UsageEvent } from '@ai-workspace-lab/db';
 import { and, asc, db, eq, sql, usageCounters, usageEvents } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
+
+const logger = createLogger('usage/service');
 
 export type BillingPeriodInput = {
   start: Date;
@@ -123,6 +126,12 @@ export async function recordUsageWithCounter(
   return dbConn.transaction(async (tx) => {
     const result = await recordUsageEvent(args.event, tx);
     if (result.inserted) {
+      logger.info('usage.recorded', {
+        orgId: args.event.organizationId,
+        featureKey: args.event.featureKey,
+        idempotencyKey: args.event.idempotencyKey,
+        quantity: args.event.quantity,
+      });
       const delta = args.delta ?? String(args.event.quantity);
       const counterArgs: IncrementUsageCounterArgs = {
         organizationId: args.event.organizationId,
@@ -135,6 +144,12 @@ export async function recordUsageWithCounter(
         counterArgs.limitQuantity = args.limitQuantity;
       }
       await incrementUsageCounter(counterArgs, tx);
+    } else {
+      logger.info('usage.deduplicated', {
+        orgId: args.event.organizationId,
+        featureKey: args.event.featureKey,
+        idempotencyKey: args.event.idempotencyKey,
+      });
     }
     return result;
   });

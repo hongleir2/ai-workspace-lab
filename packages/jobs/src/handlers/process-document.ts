@@ -8,7 +8,10 @@ import {
   isNull,
   storageObjects,
 } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
 import { downloadObject } from '@ai-workspace-lab/storage';
+
+const logger = createLogger('jobs/process-document');
 
 export interface ProcessDocumentPayload {
   documentId: string;
@@ -88,6 +91,9 @@ export async function processDocumentHandler(
   dbConn: Database = db,
 ): Promise<void> {
   const { documentId } = payload;
+  const startMs = Date.now();
+
+  logger.debug('document.fetch.start', { documentId });
 
   const [doc] = await dbConn
     .select()
@@ -96,8 +102,22 @@ export async function processDocumentHandler(
     .limit(1);
 
   if (!doc) {
+    logger.error('document.not_found', { documentId });
     throw new Error(`Document not found or deleted: ${documentId}`);
   }
+
+  logger.debug('document.fetch.done', {
+    documentId,
+    orgId: doc.organizationId,
+    fileType: doc.fileType,
+    storageObjectId: doc.storageObjectId,
+    status: doc.status,
+  });
+
+  logger.debug('storage_object.fetch.start', {
+    documentId,
+    storageObjectId: doc.storageObjectId,
+  });
 
   const [storageObj] = await dbConn
     .select()
@@ -106,20 +126,72 @@ export async function processDocumentHandler(
     .limit(1);
 
   if (!storageObj) {
+    logger.error('storage_object.not_found', {
+      documentId,
+      storageObjectId: doc.storageObjectId,
+    });
     throw new Error(`Storage object not found: ${doc.storageObjectId}`);
   }
+
+  logger.debug('storage_object.fetch.done', {
+    documentId,
+    objectKey: storageObj.objectKey,
+    contentType: storageObj.contentType,
+    byteSize: storageObj.byteSize,
+  });
+
+  logger.info('document.processing.started', {
+    documentId,
+    orgId: doc.organizationId,
+    fileType: doc.fileType,
+  });
 
   await dbConn.update(documents).set({ status: 'processing' }).where(eq(documents.id, documentId));
 
   try {
+    logger.debug('document.download.start', {
+      documentId,
+      objectKey: storageObj.objectKey,
+    });
+
     const buffer = await downloadObject(storageObj.objectKey);
+
+    logger.debug('document.download.done', {
+      documentId,
+      bufferSize: buffer.length,
+    });
+
+    logger.debug('document.extract.start', {
+      documentId,
+      fileType: doc.fileType,
+    });
+
     const text = await extractText(buffer, doc.fileType);
+
+    logger.debug('document.extract.done', {
+      documentId,
+      textLength: text.length,
+    });
+
     const textChunks = chunkText(text);
+
+    logger.info('document.text_extracted', {
+      documentId,
+      textLength: text.length,
+      chunksCount: textChunks.length,
+    });
+
+    logger.debug('document.chunks.deleted', { documentId });
 
     // Delete existing chunks for idempotency (safe to retry)
     await dbConn.delete(documentChunks).where(eq(documentChunks.documentId, documentId));
 
     if (textChunks.length > 0) {
+      logger.debug('document.chunks.inserted', {
+        documentId,
+        chunksCount: textChunks.length,
+      });
+
       await dbConn.insert(documentChunks).values(
         textChunks.map((chunkContent, index) => ({
           organizationId: doc.organizationId,
@@ -134,13 +206,29 @@ export async function processDocumentHandler(
       .update(documents)
       .set({ status: 'ready', readyAt: new Date() })
       .where(eq(documents.id, documentId));
+
+    const durationMs = Date.now() - startMs;
+    logger.info('document.processing.completed', {
+      documentId,
+      orgId: doc.organizationId,
+      chunksCreated: textChunks.length,
+      durationMs,
+    });
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error('document.processing.failed', {
+      documentId,
+      orgId: doc.organizationId,
+      errorCode: 'EXTRACTION_FAILED',
+      error: errorMessage,
+    });
+
     await dbConn
       .update(documents)
       .set({
         status: 'failed',
         processingErrorCode: 'EXTRACTION_FAILED',
-        processingErrorMessage: err instanceof Error ? err.message : String(err),
+        processingErrorMessage: errorMessage,
       })
       .where(eq(documents.id, documentId));
     throw err;

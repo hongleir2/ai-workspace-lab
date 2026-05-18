@@ -26,6 +26,15 @@ const pdfParseReady: Promise<PdfParser> = import('pdf-parse').then(
   (m) => (m as { default: PdfParser }).default,
 );
 
+// Returns true when a space should be inserted between two adjacent sentences.
+// CJK scripts don't use spaces as word separators, so we omit the space when
+// the last character of `a` or first character of `b` is a CJK code point.
+function needsSpace(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const cjk = /\p{Script=Han}|\p{Script=Hangul}|\p{Script=Hiragana}|\p{Script=Katakana}/u;
+  return !cjk.test(a[a.length - 1] ?? '') && !cjk.test(b[0] ?? '');
+}
+
 export function chunkText(text: string): string[] {
   const paragraphs = text.split(/\n\n+/);
   const chunks: string[] = [];
@@ -40,11 +49,14 @@ export function chunkText(text: string): string[] {
     } else {
       if (current) chunks.push(current);
       if (trimmed.length > MAX_CHARS_PER_CHUNK) {
-        const sentences = trimmed.split(/(?<=[.!?])\s+/);
+        // Sentence splitter covers Latin (.!?) and CJK (。？！；…) terminators.
+        // \s* (not \s+) handles CJK prose where no space follows the terminator.
+        const sentences = trimmed.split(/(?<=[.!?。？！；…])\s*/u);
         current = '';
         for (const sentence of sentences) {
-          if (current.length + sentence.length + 1 <= MAX_CHARS_PER_CHUNK) {
-            current = current ? `${current} ${sentence}` : sentence;
+          const sep = needsSpace(current, sentence) ? ' ' : '';
+          if (current.length + sentence.length + sep.length <= MAX_CHARS_PER_CHUNK) {
+            current = current ? `${current}${sep}${sentence}` : sentence;
           } else {
             if (current) chunks.push(current);
             // Sentence itself may exceed MAX_CHARS — emit fixed-width sub-chunks

@@ -115,6 +115,31 @@ describe('chunkText', () => {
     const chunks = chunkText(`${big}\n\n${small}`);
     expect(chunks.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('splits Chinese text on ideographic sentence terminators (。？！)', () => {
+    // Each sentence is ~24 chars; 80 repetitions = ~1920 chars, exceeds 1500 limit
+    const sentence = '这是一个测试句子，用于验证中文分句是否正常工作。';
+    const text = sentence.repeat(80);
+    const chunks = chunkText(text);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const c of chunks) expect(c.length).toBeLessThanOrEqual(1500);
+  });
+
+  it('joins CJK sentences without inserting a space', () => {
+    // Two short Chinese sentences that fit in one chunk — must not gain a space
+    const text = '第一句话。第二句话。';
+    const chunks = chunkText(text);
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0]).not.toContain(' ');
+  });
+
+  it('preserves Korean Hangul characters through chunking', () => {
+    const korean = '안녕하세요. 이것은 한국어 테스트입니다. ';
+    const text = korean.repeat(5);
+    const chunks = chunkText(text);
+    expect(chunks.join('')).toContain('안녕하세요');
+    for (const c of chunks) expect(c.length).toBeLessThanOrEqual(1500);
+  });
 });
 
 // ── extractText ───────────────────────────────────────────────────────────────

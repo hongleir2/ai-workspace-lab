@@ -99,6 +99,13 @@ export const env = createEnv({
     ANTHROPIC_MODEL: z.string().optional(),
     ANTHROPIC_MAX_TOKENS: z.coerce.number().int().positive().optional(),
 
+    // ── Required-later: OpenAI LLM via Vercel AI SDK (Sprint 8) ──────────
+    // https://platform.openai.com/api-keys
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    // Pin model + token ceiling for production safety. Defaults applied at runtime.
+    OPENAI_MODEL: z.string().optional(),
+    OPENAI_MAX_TOKENS: z.coerce.number().int().positive().optional(),
+
     // ── Internal worker trigger (Sprint 10+) ─────────────────────────────
     // Bearer token required to POST /api/internal/run-worker. Omit in local dev
     // to allow unauthenticated calls. Always set in production.
@@ -175,6 +182,9 @@ export const env = createEnv({
     ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
     ANTHROPIC_MODEL: process.env['ANTHROPIC_MODEL'],
     ANTHROPIC_MAX_TOKENS: process.env['ANTHROPIC_MAX_TOKENS'],
+    OPENAI_API_KEY: process.env['OPENAI_API_KEY'],
+    OPENAI_MODEL: process.env['OPENAI_MODEL'],
+    OPENAI_MAX_TOKENS: process.env['OPENAI_MAX_TOKENS'],
     WORKER_SECRET: process.env['WORKER_SECRET'],
     CRON_SECRET: process.env['CRON_SECRET'],
     ADMIN_EMAILS: process.env['ADMIN_EMAILS'],

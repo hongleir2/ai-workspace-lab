@@ -973,7 +973,7 @@ Provider failure returns friendly error.
 Create:
 
 ```txt
-/docs/adr/0011-ai-streaming-and-cost-control.md
+/docs/adr/0012-ai-streaming-and-cost-control.md
 /docs/runbooks/ai-provider-outage.md
 ```
 

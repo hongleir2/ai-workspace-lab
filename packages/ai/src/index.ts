@@ -1,8 +1,16 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { embedMany, streamText } from 'ai';
 import type { AiCompletionOptions, AiFinishEvent, NormalizedUsage } from './types';
 
 export type { AiCompletionOptions, AiFinishEvent, NormalizedUsage };
+export {
+  type RagChunk,
+  type RetrieveOptions,
+  embedQuery,
+  validateRagScope,
+  retrieveRelevantChunks,
+  buildContextBlock,
+} from './retrieval';
 
 type StreamTextOptions = Parameters<typeof streamText>[0];
 type StreamTextFinishEvent = Parameters<NonNullable<StreamTextOptions['onFinish']>>[0];
@@ -82,4 +90,35 @@ export function streamChatCompletion(opts: AiCompletionOptions) {
   };
 
   return streamText(streamOptions);
+}
+
+export const EMBEDDING_MODEL = 'text-embedding-3-small';
+
+// $0.02 per million tokens → micro-USD per token = 0.02
+export function estimateEmbeddingCost(tokens: number): number {
+  return Math.round(0.02 * tokens);
+}
+
+export interface EmbeddingResult {
+  embeddings: number[][];
+  tokens: number;
+}
+
+export async function generateEmbeddings(
+  texts: string[],
+  apiKey: string,
+): Promise<EmbeddingResult> {
+  if (!apiKey) {
+    throw new AiError('OPENAI_API_KEY is not configured', 'CONFIGURATION_ERROR');
+  }
+  if (texts.length === 0) {
+    return { embeddings: [], tokens: 0 };
+  }
+  const openaiClient = createOpenAI({ apiKey });
+  const { embeddings, usage } = await embedMany({
+    model: openaiClient.embedding(EMBEDDING_MODEL),
+    values: texts,
+    maxRetries: 2,
+  });
+  return { embeddings, tokens: usage.tokens };
 }

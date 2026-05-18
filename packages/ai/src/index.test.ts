@@ -1,16 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: vi.fn(() => vi.fn().mockReturnValue('mock-model')),
+  createOpenAI: vi.fn(() => ({
+    embedding: vi.fn().mockReturnValue('mock-embedding-model'),
+  })),
 }));
 
 vi.mock('ai', () => ({
   streamText: vi.fn().mockReturnValue({
     toDataStreamResponse: vi.fn().mockReturnValue(new Response('ok')),
   }),
+  embedMany: vi.fn(),
+  embed: vi.fn(),
 }));
 
-import { AiError, buildPromptFromMessages, estimateCost, normalizeTokenUsage } from './index';
+import {
+  AiError,
+  buildPromptFromMessages,
+  estimateCost,
+  estimateEmbeddingCost,
+  generateEmbeddings,
+  normalizeTokenUsage,
+} from './index';
 
 describe('normalizeTokenUsage', () => {
   it('maps promptTokens to inputTokens and completionTokens to outputTokens', () => {
@@ -57,5 +68,43 @@ describe('AiError', () => {
     expect(err.name).toBe('AiError');
     expect(err.code).toBe('CONFIGURATION_ERROR');
     expect(err).toBeInstanceOf(Error);
+  });
+});
+
+describe('generateEmbeddings', () => {
+  it('returns empty result for empty input', async () => {
+    const result = await generateEmbeddings([], 'sk-test');
+    expect(result).toEqual({ embeddings: [], tokens: 0 });
+  });
+
+  it('throws CONFIGURATION_ERROR when apiKey is empty', async () => {
+    await expect(generateEmbeddings(['text'], '')).rejects.toThrow(AiError);
+  });
+
+  it('calls embedMany and returns embeddings and token count', async () => {
+    const { embedMany } = await import('ai');
+    const mockEmbeddings = [
+      [0.1, 0.2, 0.3],
+      [0.4, 0.5, 0.6],
+    ];
+    vi.mocked(embedMany).mockResolvedValueOnce({
+      embeddings: mockEmbeddings,
+      usage: { tokens: 20 },
+      values: ['a', 'b'],
+      doEmbed: vi.fn(),
+      rawResponse: undefined,
+      warnings: undefined,
+    } as never);
+    const result = await generateEmbeddings(['text a', 'text b'], 'sk-test');
+    expect(result.embeddings).toEqual(mockEmbeddings);
+    expect(result.tokens).toBe(20);
+  });
+});
+
+describe('estimateEmbeddingCost', () => {
+  it('computes micro-USD cost at $0.02/million tokens', () => {
+    expect(estimateEmbeddingCost(1_000_000)).toBe(20_000);
+    expect(estimateEmbeddingCost(0)).toBe(0);
+    expect(estimateEmbeddingCost(500)).toBe(10);
   });
 });

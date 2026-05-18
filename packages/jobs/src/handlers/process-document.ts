@@ -1,3 +1,4 @@
+import { EMBEDDING_MODEL, estimateEmbeddingCost, generateEmbeddings } from '@ai-workspace-lab/ai';
 import {
   type Database,
   and,
@@ -8,8 +9,10 @@ import {
   isNull,
   storageObjects,
 } from '@ai-workspace-lab/db';
+import { FEATURE_KEYS } from '@ai-workspace-lab/entitlements';
 import { createLogger } from '@ai-workspace-lab/logger';
 import { downloadObject } from '@ai-workspace-lab/storage';
+import { recordUsageEvent } from '@ai-workspace-lab/usage';
 import { encodingForModel } from 'js-tiktoken';
 
 const logger = createLogger('jobs/process-document');
@@ -186,6 +189,7 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
 export async function processDocumentHandler(
   payload: ProcessDocumentPayload,
   dbConn: Database = db,
+  openaiApiKey: string = process.env['OPENAI_API_KEY'] ?? '',
 ): Promise<void> {
   const { documentId } = payload;
   const startMs = Date.now();
@@ -211,11 +215,6 @@ export async function processDocumentHandler(
     status: doc.status,
   });
 
-  logger.debug('storage_object.fetch.start', {
-    documentId,
-    storageObjectId: doc.storageObjectId,
-  });
-
   const [storageObj] = await dbConn
     .select()
     .from(storageObjects)
@@ -223,19 +222,9 @@ export async function processDocumentHandler(
     .limit(1);
 
   if (!storageObj) {
-    logger.error('storage_object.not_found', {
-      documentId,
-      storageObjectId: doc.storageObjectId,
-    });
+    logger.error('storage_object.not_found', { documentId, storageObjectId: doc.storageObjectId });
     throw new Error(`Storage object not found: ${doc.storageObjectId}`);
   }
-
-  logger.debug('storage_object.fetch.done', {
-    documentId,
-    objectKey: storageObj.objectKey,
-    contentType: storageObj.contentType,
-    byteSize: storageObj.byteSize,
-  });
 
   logger.info('document.processing.started', {
     documentId,
@@ -245,33 +234,17 @@ export async function processDocumentHandler(
 
   await dbConn.update(documents).set({ status: 'processing' }).where(eq(documents.id, documentId));
 
+  // Phase tracking: determines which error code to use on failure.
+  let phase: 'extraction' | 'embedding' = 'extraction';
+
   try {
-    logger.debug('document.download.start', {
-      documentId,
-      objectKey: storageObj.objectKey,
-    });
-
     const buffer = await downloadObject(storageObj.objectKey);
-
-    logger.debug('document.download.done', {
-      documentId,
-      bufferSize: buffer.length,
-    });
-
-    logger.debug('document.extract.start', {
-      documentId,
-      fileType: doc.fileType,
-    });
+    logger.debug('document.download.done', { documentId, bufferSize: buffer.length });
 
     const text = await extractText(buffer, doc.fileType);
-
-    logger.debug('document.extract.done', {
-      documentId,
-      textLength: text.length,
-    });
+    logger.debug('document.extract.done', { documentId, textLength: text.length });
 
     const tokenChunks = chunkTextByTokens(text);
-
     logger.info('document.text_extracted', {
       documentId,
       textLength: text.length,
@@ -279,18 +252,40 @@ export async function processDocumentHandler(
       chunkingStrategy: CHUNKING_STRATEGY,
     });
 
-    // Delete existing chunks for idempotency (safe to retry)
+    // Switch to embedding phase.
+    phase = 'embedding';
+    await dbConn.update(documents).set({ status: 'embedding' }).where(eq(documents.id, documentId));
+
+    let embeddingResult: { embeddings: number[][]; tokens: number } = {
+      embeddings: [],
+      tokens: 0,
+    };
+
+    if (tokenChunks.length > 0) {
+      logger.debug('document.embedding.start', {
+        documentId,
+        chunksCount: tokenChunks.length,
+        model: EMBEDDING_MODEL,
+      });
+
+      embeddingResult = await generateEmbeddings(
+        tokenChunks.map((c) => c.text),
+        openaiApiKey,
+      );
+
+      logger.debug('document.embedding.done', {
+        documentId,
+        tokens: embeddingResult.tokens,
+      });
+    }
+
+    // Delete existing chunks for idempotency (safe to retry).
     await dbConn.delete(documentChunks).where(eq(documentChunks.documentId, documentId));
     logger.debug('document.chunks.deleted', { documentId });
 
     if (tokenChunks.length > 0) {
-      logger.debug('document.chunks.inserting', {
-        documentId,
-        chunksCount: tokenChunks.length,
-      });
-
       await dbConn.insert(documentChunks).values(
-        tokenChunks.map((chunk) => ({
+        tokenChunks.map((chunk, i) => ({
           organizationId: doc.organizationId,
           documentId,
           chunkIndex: chunk.chunkIndex,
@@ -299,8 +294,39 @@ export async function processDocumentHandler(
           chunkingStrategy: CHUNKING_STRATEGY,
           startCharIndex: chunk.startCharIndex,
           endCharIndex: chunk.endCharIndex,
+          embedding: embeddingResult.embeddings[i] ?? null,
+          embeddingModel: embeddingResult.embeddings[i] ? EMBEDDING_MODEL : null,
         })),
       );
+      logger.debug('document.chunks.inserted', { documentId, chunksCount: tokenChunks.length });
+    }
+
+    // Record embedding usage event (non-fatal: log warning on failure, don't throw).
+    if (embeddingResult.tokens > 0) {
+      const cost = estimateEmbeddingCost(embeddingResult.tokens);
+      try {
+        await recordUsageEvent({
+          organizationId: doc.organizationId,
+          featureKey: FEATURE_KEYS.DOCUMENT_EMBEDDINGS,
+          eventType: 'embedding_generated',
+          quantity: '1',
+          unit: 'count',
+          provider: 'openai',
+          modelName: EMBEDDING_MODEL,
+          inputTokens: embeddingResult.tokens,
+          outputTokens: 0,
+          totalTokens: embeddingResult.tokens,
+          costMicroUsd: cost,
+          sourceType: 'document',
+          sourceId: documentId,
+          idempotencyKey: `${documentId}:embedding`,
+        });
+      } catch (usageErr) {
+        logger.warn('document.embedding_usage.failed', {
+          documentId,
+          error: usageErr instanceof Error ? usageErr.message : String(usageErr),
+        });
+      }
     }
 
     await dbConn
@@ -313,14 +339,18 @@ export async function processDocumentHandler(
       documentId,
       orgId: doc.organizationId,
       chunksCreated: tokenChunks.length,
+      embeddingTokens: embeddingResult.tokens,
       durationMs,
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorCode = phase === 'embedding' ? 'EMBEDDING_FAILED' : 'EXTRACTION_FAILED';
+
     logger.error('document.processing.failed', {
       documentId,
       orgId: doc.organizationId,
-      errorCode: 'EXTRACTION_FAILED',
+      phase,
+      errorCode,
       error: errorMessage,
     });
 
@@ -328,7 +358,7 @@ export async function processDocumentHandler(
       .update(documents)
       .set({
         status: 'failed',
-        processingErrorCode: 'EXTRACTION_FAILED',
+        processingErrorCode: errorCode,
         processingErrorMessage: errorMessage,
       })
       .where(eq(documents.id, documentId));

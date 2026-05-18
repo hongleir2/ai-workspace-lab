@@ -10,10 +10,16 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. packages/ai/src",
     "clean": "rm -rf .turbo"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.0",
+    "ai": "^4.3.0"
   },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^3.1.0"
   }
 }

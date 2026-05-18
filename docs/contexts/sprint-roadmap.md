@@ -150,11 +150,13 @@ Remaining:
 
 Done:
 - `prompt_versions`, `ai_sessions`, `ai_messages`, optional `rate_limit_events`, `usage_events`, `usage_counters` tables; migration 0015 adds AI message constraints that enforce session/org match and same-session parent messages
+- `/api/orgs/[orgSlug]/chat`: auth → membership → feature flag → entitlement/quota → rate limit → session ownership → model call
+- Streaming via Vercel AI SDK; token usage and cost recorded in `onFinish`
+- Rate limit via Upstash Redis (free: 5/min, paid: 30/min)
+- `/app/[orgSlug]/ai` session list + `/app/[orgSlug]/ai/sessions/[sessionId]` streaming chat UI
 
 Remaining:
-- `/api/ai/chat`: auth → membership → entitlement → quota → rate limit → model call
-- Streaming via Vercel AI SDK; token usage recorded
-- Rate limit via Upstash Redis
+- Citation/source UI after RAG lands
 
 ---
 

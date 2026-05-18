@@ -47,10 +47,12 @@ export function normalizeTokenUsage(usage: {
   completionTokens: number;
   totalTokens: number;
 }): NormalizedUsage {
+  const input = Number.isFinite(usage.promptTokens) ? usage.promptTokens : 0;
+  const output = Number.isFinite(usage.completionTokens) ? usage.completionTokens : 0;
   return {
-    inputTokens: usage.promptTokens,
-    outputTokens: usage.completionTokens,
-    totalTokens: usage.totalTokens,
+    inputTokens: input,
+    outputTokens: output,
+    totalTokens: Number.isFinite(usage.totalTokens) ? usage.totalTokens : input + output,
   };
 }
 

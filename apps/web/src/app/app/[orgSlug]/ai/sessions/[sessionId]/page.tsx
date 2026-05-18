@@ -1,7 +1,19 @@
 import { PageAnalytics } from '@/components/page-analytics';
 import { logger } from '@/lib/axiom/server';
 import { requireMembership } from '@/lib/orgs/guards';
-import { aiMessages, aiSessions, and, asc, db, eq, isNull } from '@ai-workspace-lab/db';
+import {
+  aiMessageSources,
+  aiMessages,
+  aiSessions,
+  and,
+  asc,
+  db,
+  documentChunks,
+  documents,
+  eq,
+  inArray,
+  isNull,
+} from '@ai-workspace-lab/db';
 import { FEATURE_KEYS } from '@ai-workspace-lab/entitlements';
 import {
   getCurrentBillingPeriod,
@@ -12,7 +24,13 @@ import {
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { type AiChatMessage, type AiChatQuota, ChatInterface } from './chat-interface';
+import {
+  type AiChatMessage,
+  type AiChatQuota,
+  type AiChatSource,
+  ChatInterface,
+} from './chat-interface';
+import { SessionTitleEditor } from './session-title-editor';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,8 +108,12 @@ export default async function AiSessionPage({ params }: AiSessionPageProps) {
   const { user, organization } = await requireMembership(orgSlug);
 
   const sessionRows = await db
-    .select()
+    .select({
+      session: aiSessions,
+      documentTitle: documents.title,
+    })
     .from(aiSessions)
+    .leftJoin(documents, eq(aiSessions.documentId, documents.id))
     .where(
       and(
         eq(aiSessions.id, sessionId),
@@ -103,10 +125,13 @@ export default async function AiSessionPage({ params }: AiSessionPageProps) {
     )
     .limit(1);
 
-  const session = sessionRows[0];
-  if (!session) {
+  const row = sessionRows[0];
+  if (!row) {
     notFound();
   }
+  const session = row.session;
+  const documentId = session.documentId ?? undefined;
+  const documentName = row.documentTitle ?? undefined;
 
   const [messageRows, quota] = await Promise.all([
     db
@@ -127,14 +152,47 @@ export default async function AiSessionPage({ params }: AiSessionPageProps) {
       content: message.content,
     }));
 
+  const assistantMessageIds = messageRows.filter((m) => m.role === 'assistant').map((m) => m.id);
+
+  const sourceRows =
+    assistantMessageIds.length > 0
+      ? await db
+          .select({
+            aiMessageId: aiMessageSources.aiMessageId,
+            id: aiMessageSources.id,
+            citationLabel: aiMessageSources.citationLabel,
+            relevanceScore: aiMessageSources.relevanceScore,
+            chunkText: documentChunks.text,
+            documentTitle: documents.title,
+          })
+          .from(aiMessageSources)
+          .leftJoin(documentChunks, eq(aiMessageSources.documentChunkId, documentChunks.id))
+          .leftJoin(documents, eq(aiMessageSources.documentId, documents.id))
+          .where(inArray(aiMessageSources.aiMessageId, assistantMessageIds))
+          .orderBy(asc(aiMessageSources.citationLabel))
+      : [];
+
+  const initialSources: Record<string, AiChatSource[]> = {};
+  for (const row of sourceRows) {
+    const bucket = initialSources[row.aiMessageId] ?? [];
+    initialSources[row.aiMessageId] = bucket;
+    bucket.push({
+      id: row.id,
+      citationLabel: row.citationLabel ?? '',
+      relevanceScore: row.relevanceScore !== null ? Number(row.relevanceScore) : null,
+      chunkText: row.chunkText ?? '',
+      documentTitle: row.documentTitle ?? null,
+    });
+  }
+
   return (
     <>
       <PageAnalytics
         event="ai_session_viewed"
         properties={{ org_slug: orgSlug, session_id: sessionId }}
       />
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
+      <div className="flex h-full flex-col gap-4 p-6">
+        <div className="flex shrink-0 items-center justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-1">
             <Link
               href={`/app/${orgSlug}/ai`}
@@ -143,9 +201,11 @@ export default async function AiSessionPage({ params }: AiSessionPageProps) {
               <ChevronLeft className="size-4" />
               AI chats
             </Link>
-            <h1 className="truncate text-2xl font-semibold tracking-tight">
-              {session.title ?? 'New Chat'}
-            </h1>
+            <SessionTitleEditor
+              orgSlug={orgSlug}
+              sessionId={sessionId}
+              initialTitle={session.title ?? 'New Chat'}
+            />
           </div>
         </div>
 
@@ -153,7 +213,10 @@ export default async function AiSessionPage({ params }: AiSessionPageProps) {
           orgSlug={orgSlug}
           sessionId={sessionId}
           initialMessages={initialMessages}
+          initialSources={initialSources}
           quota={quota}
+          {...(documentId ? { documentId } : {})}
+          {...(documentName ? { documentName } : {})}
         />
       </div>
     </>

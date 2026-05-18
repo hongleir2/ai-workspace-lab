@@ -49,7 +49,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
       : undefined;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <AppSidebar
         orgSlug={orgSlug}
         orgName={organization.name}
@@ -60,9 +60,9 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
         disabledFeatures={disabledFeatures}
         {...(daysLeft !== undefined ? { daysLeft } : {})}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppTopbar orgSlug={orgSlug} userDisplayName={user.displayName} userEmail={user.email} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
       <AnalyticsIdentity userId={user.id} orgId={organization.id} orgSlug={organization.slug} />
     </div>

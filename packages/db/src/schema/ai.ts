@@ -65,6 +65,7 @@ export const aiSessions = pgTable(
       .notNull()
       .references(() => users.id),
     promptVersionId: uuid('prompt_version_id').references(() => promptVersions.id),
+    documentId: uuid('document_id').references(() => documents.id, { onDelete: 'set null' }),
     title: text('title'),
     visibility: aiSessionVisibilityEnum('visibility').notNull().default('private'),
     status: aiSessionStatusEnum('status').notNull().default('active'),
@@ -80,6 +81,7 @@ export const aiSessions = pgTable(
     index('ai_sessions_org_created_at_idx').on(t.organizationId, t.createdAt),
     index('ai_sessions_created_by_created_at_idx').on(t.createdByUserId, t.createdAt),
     index('ai_sessions_org_status_idx').on(t.organizationId, t.status),
+    index('ai_sessions_document_id_idx').on(t.documentId),
   ],
 );
 

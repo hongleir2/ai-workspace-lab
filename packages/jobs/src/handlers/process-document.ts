@@ -173,7 +173,7 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
       return buffer.toString('utf-8');
     case 'pdf': {
       const pdfParse = await pdfParseReady;
-      const result = await pdfParse(buffer, { max: 10 });
+      const result = await pdfParse(buffer, { max: 100 });
       // pdf-parse emits U+0000 for ligatures (fi, fl, ff) it can't decode from
       // the font encoding. Postgres text rejects null bytes — strip them.
       // split/join avoids lint rules against control chars in regex literals.

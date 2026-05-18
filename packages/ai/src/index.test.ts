@@ -32,6 +32,24 @@ describe('normalizeTokenUsage', () => {
     });
     expect(result).toEqual({ inputTokens: 10, outputTokens: 20, totalTokens: 30 });
   });
+
+  it('replaces NaN values with 0 and derives totalTokens when all are NaN', () => {
+    const result = normalizeTokenUsage({
+      promptTokens: Number.NaN,
+      completionTokens: Number.NaN,
+      totalTokens: Number.NaN,
+    });
+    expect(result).toEqual({ inputTokens: 0, outputTokens: 0, totalTokens: 0 });
+  });
+
+  it('derives totalTokens from input+output when totalTokens is NaN but others are valid', () => {
+    const result = normalizeTokenUsage({
+      promptTokens: 10,
+      completionTokens: 20,
+      totalTokens: Number.NaN,
+    });
+    expect(result).toEqual({ inputTokens: 10, outputTokens: 20, totalTokens: 30 });
+  });
 });
 
 describe('estimateCost', () => {

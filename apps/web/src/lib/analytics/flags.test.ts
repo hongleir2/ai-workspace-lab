@@ -39,7 +39,7 @@ describe('getServerFeatureFlag', () => {
 
   it('returns false (default) when PostHog throws', async () => {
     mockGetFeatureFlag.mockRejectedValue(new Error('network error'));
-    expect(await getServerFeatureFlag('rag_v1_enabled', 'user-1')).toBe(false);
+    expect(await getServerFeatureFlag('ai_chat_enabled', 'user-1')).toBe(false);
   });
 
   it('calls shutdown regardless of outcome via finally', async () => {

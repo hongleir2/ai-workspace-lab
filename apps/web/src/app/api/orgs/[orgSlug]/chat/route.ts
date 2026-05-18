@@ -174,12 +174,6 @@ export async function POST(
   if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
   if (body.documentId) {
-    if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-      const ragEnabled = await getServerFeatureFlag(FLAGS.RAG_V1, user.id);
-      if (!ragEnabled) {
-        return NextResponse.json({ error: 'RAG is not enabled for your account' }, { status: 403 });
-      }
-    }
     try {
       await validateRagScope(org.id, body.documentId);
     } catch (scopeError) {
@@ -231,8 +225,8 @@ export async function POST(
       });
       ragChunks = await retrieveRelevantChunks(org.id, queryEmbedding, {
         documentId: body.documentId,
-        topK: 5,
-        minSimilarity: 0.5,
+        topK: 10,
+        minSimilarity: 0.3,
       });
     } catch (ragError) {
       logger.warn('ai.rag.retrieval_failed', {

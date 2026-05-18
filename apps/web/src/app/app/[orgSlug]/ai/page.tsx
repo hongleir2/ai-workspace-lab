@@ -6,6 +6,7 @@ import { aiSessions, and, db, desc, eq, isNull } from '@ai-workspace-lab/db';
 import { MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { createChatSession } from './actions';
+import { DeleteSessionButton } from './delete-session-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,12 +73,14 @@ export default async function AiHomePage({ params }: AiHomePageProps) {
         ) : (
           <div className="divide-y divide-border rounded-lg border">
             {sessions.map((session) => (
-              <Link
+              <div
                 key={session.id}
-                href={`/app/${orgSlug}/ai/sessions/${session.id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/50"
+                className="flex items-center justify-between gap-2 px-4 transition-colors hover:bg-muted/50"
               >
-                <div className="flex min-w-0 items-center gap-3">
+                <Link
+                  href={`/app/${orgSlug}/ai/sessions/${session.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 py-3"
+                >
                   <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{session.title ?? 'New Chat'}</p>
@@ -85,9 +88,13 @@ export default async function AiHomePage({ params }: AiHomePageProps) {
                       Updated {formatSessionTimestamp(session.updatedAt)}
                     </p>
                   </div>
-                </div>
-                <span className="shrink-0 text-xs text-muted-foreground">Open</span>
-              </Link>
+                </Link>
+                <DeleteSessionButton
+                  orgSlug={orgSlug}
+                  sessionId={session.id}
+                  sessionTitle={session.title ?? 'New Chat'}
+                />
+              </div>
             ))}
           </div>
         )}

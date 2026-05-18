@@ -10,6 +10,7 @@ import {
 } from '@ai-workspace-lab/db';
 import { createLogger } from '@ai-workspace-lab/logger';
 import { downloadObject } from '@ai-workspace-lab/storage';
+import { encoding_for_model } from 'tiktoken';
 
 const logger = createLogger('jobs/process-document');
 
@@ -17,7 +18,25 @@ export interface ProcessDocumentPayload {
   documentId: string;
 }
 
-const MAX_CHARS_PER_CHUNK = 1500;
+export const CHUNKING_STRATEGY = 'paragraph_sentence_token_v1';
+
+export const DEFAULT_CHUNK_OPTIONS = {
+  maxTokens: 700,
+  overlapTokens: 100,
+};
+
+type ChunkOptions = {
+  maxTokens: number;
+  overlapTokens: number;
+};
+
+export type TokenChunk = {
+  text: string;
+  tokenCount: number;
+  chunkIndex: number;
+  startCharIndex: number;
+  endCharIndex: number;
+};
 
 type PdfParser = (buffer: Buffer, options?: { max?: number }) => Promise<{ text: string }>;
 // Start loading pdf-parse at module initialisation so the 60s Vercel function
@@ -26,61 +45,130 @@ const pdfParseReady: Promise<PdfParser> = import('pdf-parse').then(
   (m) => (m as { default: PdfParser }).default,
 );
 
-// Returns true when a space should be inserted between two adjacent sentences.
-// CJK scripts don't use spaces as word separators, so we omit the space when
-// the last character of `a` or first character of `b` is a CJK code point.
-function needsSpace(a: string, b: string): boolean {
-  if (!a || !b) return false;
-  const cjk = /\p{Script=Han}|\p{Script=Hangul}|\p{Script=Hiragana}|\p{Script=Katakana}/u;
-  return !cjk.test(a[a.length - 1] ?? '') && !cjk.test(b[0] ?? '');
+function splitSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?。？！；…])\s*/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
-export function chunkText(text: string): string[] {
-  const paragraphs = text.split(/\n\n+/);
-  const chunks: string[] = [];
-  let current = '';
+export function chunkTextByTokens(
+  text: string,
+  options: ChunkOptions = DEFAULT_CHUNK_OPTIONS,
+): TokenChunk[] {
+  const encoder = encoding_for_model('text-embedding-3-small');
 
-  for (const para of paragraphs) {
-    const trimmed = para.trim();
-    if (!trimmed) continue;
+  try {
+    // Build a flat ordered list of sentences with their char positions in `text`.
+    type SentenceInfo = { text: string; charStart: number; charEnd: number };
+    const allSentences: SentenceInfo[] = [];
 
-    if (current.length + trimmed.length + 2 <= MAX_CHARS_PER_CHUNK) {
-      current = current ? `${current}\n\n${trimmed}` : trimmed;
-    } else {
-      if (current) chunks.push(current);
-      if (trimmed.length > MAX_CHARS_PER_CHUNK) {
-        // Sentence splitter covers Latin (.!?) and CJK (。？！；…) terminators.
-        // \s* (not \s+) handles CJK prose where no space follows the terminator.
-        const sentences = trimmed.split(/(?<=[.!?。？！；…])\s*/u);
-        current = '';
-        for (const sentence of sentences) {
-          const sep = needsSpace(current, sentence) ? ' ' : '';
-          if (current.length + sentence.length + sep.length <= MAX_CHARS_PER_CHUNK) {
-            current = current ? `${current}${sep}${sentence}` : sentence;
-          } else {
-            if (current) chunks.push(current);
-            // Sentence itself may exceed MAX_CHARS — emit fixed-width sub-chunks
-            // so no content is silently dropped.
-            let pos = 0;
-            while (pos < sentence.length) {
-              const sub = sentence.slice(pos, pos + MAX_CHARS_PER_CHUNK);
-              current = sub;
-              pos += sub.length;
-              if (pos < sentence.length) {
-                chunks.push(current);
-                current = '';
-              }
-            }
+    let searchFrom = 0;
+    for (const para of text.split(/\n\n+/)) {
+      const trimmed = para.trim();
+      if (!trimmed) continue;
+
+      const paraStart = text.indexOf(trimmed, searchFrom);
+      let sentSearchFrom = paraStart >= 0 ? paraStart : searchFrom;
+
+      for (const sentence of splitSentences(trimmed)) {
+        const sentStart = text.indexOf(sentence, sentSearchFrom);
+        const start = sentStart >= 0 ? sentStart : sentSearchFrom;
+        allSentences.push({ text: sentence, charStart: start, charEnd: start + sentence.length });
+        sentSearchFrom = start + sentence.length;
+      }
+
+      searchFrom = paraStart >= 0 ? paraStart + trimmed.length : searchFrom + para.length;
+    }
+
+    const chunks: TokenChunk[] = [];
+    // Sentences accumulated into the current chunk (new content, after overlap seed).
+    let currentSentences: SentenceInfo[] = [];
+    let currentTokens = 0;
+    // Overlap text prepended to the next chunk's content.
+    let overlapText = '';
+    let overlapTokens = 0;
+
+    const flush = () => {
+      if (currentSentences.length === 0) return;
+
+      const newContent = currentSentences.map((s) => s.text).join('\n');
+      const fullText = overlapText ? `${overlapText}\n${newContent}`.trim() : newContent.trim();
+      if (!fullText) return;
+
+      const fullTokenArr = encoder.encode(fullText);
+      chunks.push({
+        text: fullText,
+        tokenCount: fullTokenArr.length,
+        chunkIndex: chunks.length,
+        startCharIndex: currentSentences[0]?.charStart ?? 0,
+        endCharIndex: currentSentences[currentSentences.length - 1]?.charEnd ?? 0,
+      });
+
+      // Seed next chunk with the tail of this chunk's tokens as overlap.
+      const tailTokens = fullTokenArr.slice(
+        Math.max(0, fullTokenArr.length - options.overlapTokens),
+      );
+      overlapText = new TextDecoder().decode(encoder.decode(tailTokens)).trim();
+      overlapTokens = tailTokens.length;
+      currentSentences = [];
+      currentTokens = 0;
+    };
+
+    for (const sentence of allSentences) {
+      const sentTokens = encoder.encode(sentence.text).length;
+
+      if (sentTokens > options.maxTokens) {
+        // Single sentence is larger than the budget — flush current and hard-split it.
+        flush();
+
+        const tokens = encoder.encode(sentence.text);
+        const step = options.maxTokens - options.overlapTokens;
+
+        for (let i = 0; i < tokens.length; i += step) {
+          const slice = tokens.slice(i, i + options.maxTokens);
+          const sliceText = new TextDecoder().decode(encoder.decode(slice)).trim();
+          if (sliceText) {
+            chunks.push({
+              text: sliceText,
+              tokenCount: slice.length,
+              chunkIndex: chunks.length,
+              startCharIndex: sentence.charStart,
+              endCharIndex: sentence.charEnd,
+            });
           }
         }
-      } else {
-        current = trimmed;
-      }
-    }
-  }
 
-  if (current) chunks.push(current);
-  return chunks.filter((c) => c.trim().length > 0);
+        // Overlap from the last hard-split chunk.
+        const lastChunk = chunks[chunks.length - 1];
+        if (lastChunk) {
+          const lastTokens = encoder.encode(lastChunk.text);
+          const tailTokens = lastTokens.slice(
+            Math.max(0, lastTokens.length - options.overlapTokens),
+          );
+          overlapText = new TextDecoder().decode(encoder.decode(tailTokens)).trim();
+          overlapTokens = tailTokens.length;
+        }
+        currentSentences = [];
+        currentTokens = 0;
+        continue;
+      }
+
+      // Would adding this sentence exceed the budget?
+      const projectedTokens = overlapTokens + currentTokens + sentTokens;
+      if (projectedTokens > options.maxTokens && currentSentences.length > 0) {
+        flush();
+      }
+
+      currentSentences.push(sentence);
+      currentTokens += sentTokens;
+    }
+
+    flush();
+    return chunks;
+  } finally {
+    encoder.free();
+  }
 }
 
 export async function extractText(buffer: Buffer, fileType: string): Promise<string> {
@@ -190,31 +278,35 @@ export async function processDocumentHandler(
       textLength: text.length,
     });
 
-    const textChunks = chunkText(text);
+    const tokenChunks = chunkTextByTokens(text);
 
     logger.info('document.text_extracted', {
       documentId,
       textLength: text.length,
-      chunksCount: textChunks.length,
+      chunksCount: tokenChunks.length,
+      chunkingStrategy: CHUNKING_STRATEGY,
     });
-
-    logger.debug('document.chunks.deleted', { documentId });
 
     // Delete existing chunks for idempotency (safe to retry)
     await dbConn.delete(documentChunks).where(eq(documentChunks.documentId, documentId));
+    logger.debug('document.chunks.deleted', { documentId });
 
-    if (textChunks.length > 0) {
-      logger.debug('document.chunks.inserted', {
+    if (tokenChunks.length > 0) {
+      logger.debug('document.chunks.inserting', {
         documentId,
-        chunksCount: textChunks.length,
+        chunksCount: tokenChunks.length,
       });
 
       await dbConn.insert(documentChunks).values(
-        textChunks.map((chunkContent, index) => ({
+        tokenChunks.map((chunk) => ({
           organizationId: doc.organizationId,
           documentId,
-          chunkIndex: index,
-          text: chunkContent,
+          chunkIndex: chunk.chunkIndex,
+          text: chunk.text,
+          tokenCount: chunk.tokenCount,
+          chunkingStrategy: CHUNKING_STRATEGY,
+          startCharIndex: chunk.startCharIndex,
+          endCharIndex: chunk.endCharIndex,
         })),
       );
     }
@@ -228,7 +320,7 @@ export async function processDocumentHandler(
     logger.info('document.processing.completed', {
       documentId,
       orgId: doc.organizationId,
-      chunksCreated: textChunks.length,
+      chunksCreated: tokenChunks.length,
       durationMs,
     });
   } catch (err) {

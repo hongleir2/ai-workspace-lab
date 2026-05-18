@@ -30,9 +30,7 @@ const serviceRoleKey = isRemote
   : LOCAL_SERVICE_ROLE_KEY;
 
 if (!url || !serviceRoleKey) {
-  // biome-ignore lint/suspicious/noConsole: intentional CLI output
   console.error('Missing Supabase URL or service role key.');
-  // biome-ignore lint/suspicious/noConsole: intentional CLI output
   console.error(
     'For --remote: set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local',
   );
@@ -69,7 +67,6 @@ async function main() {
       // biome-ignore lint/suspicious/noConsole: intentional CLI output
       console.log(`  ${table}: deleted ${deleted} row(s)`);
     } catch (err) {
-      // biome-ignore lint/suspicious/noConsole: intentional CLI output
       console.error(`  ${table}: ERROR — ${(err as Error).message}`);
       process.exit(1);
     }

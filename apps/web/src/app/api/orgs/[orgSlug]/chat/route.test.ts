@@ -43,6 +43,7 @@ vi.mock('@/lib/ai/rate-limit', () => ({
 }));
 
 vi.mock('@ai-workspace-lab/ai', () => ({
+  EMBEDDING_MODEL: 'text-embedding-3-small',
   streamChatCompletion: vi.fn(),
   buildPromptFromMessages: vi.fn((messages: unknown[]) => messages),
   normalizeTokenUsage: vi.fn(
@@ -55,6 +56,12 @@ vi.mock('@ai-workspace-lab/ai', () => ({
     }),
   ),
   estimateCost: vi.fn(() => 123),
+  embedQuery: vi.fn(),
+  retrieveRelevantChunks: vi.fn().mockResolvedValue([]),
+  buildContextBlock: vi.fn((chunks: unknown[]) =>
+    chunks.map((_, i) => `[${i + 1}] chunk text`).join('\n'),
+  ),
+  validateRagScope: vi.fn(),
   AiError: class AiError extends Error {
     code: string;
     constructor(message: string, code: string) {
@@ -93,6 +100,7 @@ vi.mock('@ai-workspace-lab/db', () => {
     organizationMemberships: { id: {}, userId: {}, organizationId: {}, status: {} },
     aiSessions: { id: {}, organizationId: {}, createdByUserId: {}, status: {}, deletedAt: {} },
     aiMessages: {},
+    aiMessageSources: {},
     and: vi.fn((...args: unknown[]) => args),
     eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
     isNull: vi.fn((value: unknown) => ({ isNull: value })),
@@ -108,10 +116,14 @@ import { env } from '@/lib/env';
 import { getOrganizationBySlug } from '@/lib/orgs/service';
 import {
   AiError,
+  buildContextBlock,
   buildPromptFromMessages,
+  embedQuery,
   estimateCost,
   normalizeTokenUsage,
+  retrieveRelevantChunks,
   streamChatCompletion,
+  validateRagScope,
 } from '@ai-workspace-lab/ai';
 import { db } from '@ai-workspace-lab/db';
 import {
@@ -173,6 +185,7 @@ const MOCK_SESSION = { id: SESSION_ID };
 let selectQueue: unknown[][] = [];
 let userInsertState: { values: ReturnType<typeof vi.fn> } | null = null;
 let assistantInsertState: { values: ReturnType<typeof vi.fn> } | null = null;
+let sourcesInsertState: { values: ReturnType<typeof vi.fn> } | null = null;
 let capturedOnFinish:
   | ((result: {
       text: string;
@@ -180,6 +193,8 @@ let capturedOnFinish:
       finishReason: string;
     }) => Promise<void> | void)
   | undefined;
+
+const DOC_ID = '00000000-0000-0000-0000-000000000006';
 
 function makeRequest(
   body: unknown = {
@@ -193,6 +208,17 @@ function makeRequest(
     body: JSON.stringify(body),
   }) as unknown as NextRequest;
 }
+
+const MOCK_RAG_CHUNK = {
+  id: 'chunk-1',
+  documentId: DOC_ID,
+  chunkIndex: 0,
+  text: 'Relevant chunk text.',
+  sectionTitle: null,
+  pageStart: null,
+  pageEnd: null,
+  similarity: 0.85,
+};
 
 function makeInsertState(row: { id: string }) {
   const returning = vi.fn().mockResolvedValue([row]);
@@ -256,6 +282,7 @@ function setupHappyPath() {
   setupSelectQueue([MOCK_MEMBERSHIP], [MOCK_SESSION]);
   userInsertState = makeInsertState({ id: USER_MESSAGE_ID });
   assistantInsertState = makeInsertState({ id: ASSISTANT_MESSAGE_ID });
+  sourcesInsertState = { values: vi.fn().mockResolvedValue([]) };
 
   vi.mocked(db.select).mockImplementation(() => {
     const rows = selectQueue.shift() ?? [];
@@ -267,7 +294,12 @@ function setupHappyPath() {
 
   vi.mocked(db.insert)
     .mockImplementationOnce(() => userInsertState as never)
-    .mockImplementationOnce(() => assistantInsertState as never);
+    .mockImplementationOnce(() => assistantInsertState as never)
+    .mockImplementation(() => sourcesInsertState as never);
+
+  vi.mocked(validateRagScope).mockResolvedValue(undefined);
+  vi.mocked(embedQuery).mockResolvedValue({ embedding: [0.1, 0.2, 0.3], tokens: 3 } as never);
+  vi.mocked(retrieveRelevantChunks).mockResolvedValue([]);
 
   capturedOnFinish = undefined;
 
@@ -457,6 +489,81 @@ describe('POST /api/orgs/[orgSlug]/chat', () => {
       { params: Promise.resolve({ orgSlug: ORG_SLUG }) },
     );
     expect(res.status).toBe(400);
+  });
+
+  it('returns 404 when documentId is provided but validateRagScope throws', async () => {
+    vi.mocked(validateRagScope).mockRejectedValue(new Error('not found'));
+    const res = await POST(
+      makeRequest({
+        messages: [{ role: 'user', content: 'Hello' }],
+        sessionId: SESSION_ID,
+        documentId: DOC_ID,
+      }),
+      { params: Promise.resolve({ orgSlug: ORG_SLUG }) },
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it('skips system prompt when no chunks are retrieved', async () => {
+    vi.mocked(retrieveRelevantChunks).mockResolvedValue([]);
+    await POST(
+      makeRequest({
+        messages: [{ role: 'user', content: 'Hello' }],
+        sessionId: SESSION_ID,
+        documentId: DOC_ID,
+      }),
+      { params: Promise.resolve({ orgSlug: ORG_SLUG }) },
+    );
+    const callArgs = vi.mocked(streamChatCompletion).mock.calls[0]?.[0];
+    expect(callArgs).toBeDefined();
+    expect((callArgs as unknown as Record<string, unknown>)['system']).toBeUndefined();
+  });
+
+  it('injects system prompt when chunks are retrieved', async () => {
+    vi.mocked(retrieveRelevantChunks).mockResolvedValue([MOCK_RAG_CHUNK]);
+    vi.mocked(buildContextBlock).mockReturnValue('[1]\nRelevant chunk text.');
+    await POST(
+      makeRequest({
+        messages: [{ role: 'user', content: 'Hello' }],
+        sessionId: SESSION_ID,
+        documentId: DOC_ID,
+      }),
+      { params: Promise.resolve({ orgSlug: ORG_SLUG }) },
+    );
+    const callArgs = vi.mocked(streamChatCompletion).mock.calls[0]?.[0];
+    expect(typeof (callArgs as unknown as Record<string, unknown>)['system']).toBe('string');
+    expect((callArgs as unknown as Record<string, unknown>)['system'] as string).toContain('[1]');
+  });
+
+  it('inserts ai_message_sources rows in onFinish when chunks are present', async () => {
+    vi.mocked(retrieveRelevantChunks).mockResolvedValue([MOCK_RAG_CHUNK]);
+    await POST(
+      makeRequest({
+        messages: [{ role: 'user', content: 'Hello' }],
+        sessionId: SESSION_ID,
+        documentId: DOC_ID,
+      }),
+      { params: Promise.resolve({ orgSlug: ORG_SLUG }) },
+    );
+    expect(capturedOnFinish).toBeDefined();
+    await capturedOnFinish?.({
+      text: 'Answer',
+      usage: { promptTokens: 5, completionTokens: 5, totalTokens: 10 },
+      finishReason: 'stop',
+    });
+    // insert called: user message, assistant message, sources
+    expect(db.insert).toHaveBeenCalledTimes(3);
+    expect(sourcesInsertState?.values).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          organizationId: ORG_ID,
+          aiMessageId: ASSISTANT_MESSAGE_ID,
+          documentId: DOC_ID,
+          documentChunkId: 'chunk-1',
+          citationLabel: '[1]',
+        }),
+      ]),
+    );
   });
 
   it('throws when user message insert returns no row', async () => {

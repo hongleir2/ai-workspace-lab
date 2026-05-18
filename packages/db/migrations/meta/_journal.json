@@ -120,6 +120,13 @@
       "when": 1779461079126,
       "tag": "0016_document_chunks_token_chunking",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779561079126,
+      "tag": "0017_ai_message_sources",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   text,
@@ -13,6 +14,8 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { documentChunks } from './document_chunks';
+import { documents } from './documents';
 import { organizations } from './organizations';
 import { users } from './users';
 
@@ -146,11 +149,42 @@ export const rateLimitEvents = pgTable(
   ],
 );
 
+export const aiMessageSources = pgTable(
+  'ai_message_sources',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    aiMessageId: uuid('ai_message_id')
+      .notNull()
+      .references(() => aiMessages.id),
+    documentId: uuid('document_id')
+      .notNull()
+      .references(() => documents.id),
+    documentChunkId: uuid('document_chunk_id')
+      .notNull()
+      .references(() => documentChunks.id),
+    relevanceScore: numeric('relevance_score', { precision: 5, scale: 4 }),
+    citationLabel: text('citation_label'),
+    quoteStartChar: integer('quote_start_char'),
+    quoteEndChar: integer('quote_end_char'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('ai_message_sources_message_chunk_unique').on(t.aiMessageId, t.documentChunkId),
+    index('ai_message_sources_message_id_idx').on(t.aiMessageId),
+    index('ai_message_sources_org_id_idx').on(t.organizationId),
+  ],
+);
+
 export type PromptVersion = typeof promptVersions.$inferSelect;
 export type NewPromptVersion = typeof promptVersions.$inferInsert;
 export type AiSession = typeof aiSessions.$inferSelect;
 export type NewAiSession = typeof aiSessions.$inferInsert;
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type NewAiMessage = typeof aiMessages.$inferInsert;
+export type AiMessageSource = typeof aiMessageSources.$inferSelect;
+export type NewAiMessageSource = typeof aiMessageSources.$inferInsert;
 export type RateLimitEvent = typeof rateLimitEvents.$inferSelect;
 export type NewRateLimitEvent = typeof rateLimitEvents.$inferInsert;

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { captureEvent } from '@ai-workspace-lab/analytics';
 import { useChat } from 'ai/react';
-import { Bot, Loader2, Send, User } from 'lucide-react';
+import { Bot, FileText, Loader2, Send, User } from 'lucide-react';
 import Link from 'next/link';
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, useEffect, useRef } from 'react';
 
@@ -28,6 +28,8 @@ interface ChatInterfaceProps {
   sessionId: string;
   initialMessages: AiChatMessage[];
   quota: AiChatQuota | null;
+  documentId?: string;
+  documentName?: string;
 }
 
 function quotaLabel(quota: AiChatQuota | null): string {
@@ -54,7 +56,14 @@ function MessageRow({ message }: { message: AiChatMessage }) {
   );
 }
 
-export function ChatInterface({ orgSlug, sessionId, initialMessages, quota }: ChatInterfaceProps) {
+export function ChatInterface({
+  orgSlug,
+  sessionId,
+  initialMessages,
+  quota,
+  documentId,
+  documentName,
+}: ChatInterfaceProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(initialMessages.some((message) => message.role === 'user'));
@@ -62,7 +71,7 @@ export function ChatInterface({ orgSlug, sessionId, initialMessages, quota }: Ch
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: `/api/orgs/${orgSlug}/chat`,
-    body: { sessionId },
+    body: { sessionId, ...(documentId ? { documentId } : {}) },
     initialMessages,
     onError: (chatError: unknown) => {
       captureEvent('ai_chat_failed', {
@@ -150,6 +159,12 @@ export function ChatInterface({ orgSlug, sessionId, initialMessages, quota }: Ch
           <Badge variant={quota?.exceeded ? 'destructive' : 'secondary'}>{quotaText}</Badge>
           {quota?.resetSummary ? (
             <span className="text-xs text-muted-foreground">{quota.resetSummary}</span>
+          ) : null}
+          {documentId ? (
+            <Badge variant="outline" className="gap-1.5">
+              <FileText className="size-3" />
+              {documentName ?? 'Document context'}
+            </Badge>
           ) : null}
         </div>
         {quota?.exceeded ? (

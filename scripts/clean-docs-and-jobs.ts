@@ -41,7 +41,18 @@ const supabase = createClient(url, serviceRoleKey, {
   auth: { persistSession: false },
 });
 
-const TABLES = ['document_chunks', 'job_attempts', 'jobs', 'documents', 'storage_objects'] as const;
+// Order matters: child tables with FKs must be deleted before parent tables.
+// ai_message_sources → document_chunks, documents, ai_messages (no cascade)
+const TABLES = [
+  'ai_message_sources',
+  'ai_messages',
+  'ai_sessions',
+  'document_chunks',
+  'job_attempts',
+  'jobs',
+  'documents',
+  'storage_objects',
+] as const;
 
 async function deleteAll(table: string): Promise<number> {
   // neq with a value that can never match uuid primary key deletes all rows
@@ -56,6 +67,10 @@ async function deleteAll(table: string): Promise<number> {
   return count ?? 0;
 }
 
+// Tables that may not exist yet (e.g. migration not yet applied to cloud).
+// Deletion errors on these are logged as warnings and don't abort the script.
+const OPTIONAL_TABLES = new Set<string>(['ai_message_sources', 'ai_messages', 'ai_sessions']);
+
 async function main() {
   const target = isRemote ? 'remote (cloud)' : 'local (localhost:54321)';
   // biome-ignore lint/suspicious/noConsole: intentional CLI output
@@ -67,8 +82,12 @@ async function main() {
       // biome-ignore lint/suspicious/noConsole: intentional CLI output
       console.log(`  ${table}: deleted ${deleted} row(s)`);
     } catch (err) {
-      console.error(`  ${table}: ERROR — ${(err as Error).message}`);
-      process.exit(1);
+      if (OPTIONAL_TABLES.has(table)) {
+        console.warn(`  ${table}: SKIPPED (table may not exist yet) — ${(err as Error).message}`);
+      } else {
+        console.error(`  ${table}: ERROR — ${(err as Error).message}`);
+        process.exit(1);
+      }
     }
   }
 

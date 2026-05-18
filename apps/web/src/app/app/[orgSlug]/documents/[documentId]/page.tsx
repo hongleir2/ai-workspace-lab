@@ -2,10 +2,11 @@ import { DeleteDocumentButton } from '@/app/app/[orgSlug]/documents/delete-docum
 import { AutoRefresh } from '@/components/auto-refresh';
 import { PageAnalytics } from '@/components/page-analytics';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { requireMembership } from '@/lib/orgs/guards';
 import { and, db, documents, eq, isNull, storageObjects } from '@ai-workspace-lab/db';
 import type { Document } from '@ai-workspace-lab/db';
-import { FileText } from 'lucide-react';
+import { FileText, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -134,6 +135,15 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
               </div>
             </div>
           </>
+        ) : null}
+
+        {document.status === 'ready' ? (
+          <Button asChild>
+            <Link href={`/app/${orgSlug}/documents/${document.id}/ask`}>
+              <MessageSquare className="size-4" />
+              Ask AI
+            </Link>
+          </Button>
         ) : null}
 
         {document.status === 'failed' ? (

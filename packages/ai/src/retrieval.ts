@@ -66,7 +66,7 @@ export async function retrieveRelevantChunks(
   opts: RetrieveOptions = {},
   dbConn: Database = db,
 ): Promise<RagChunk[]> {
-  const { topK = 5, documentId, minSimilarity = 0.5 } = opts;
+  const { topK = 10, documentId, minSimilarity = 0.3 } = opts;
 
   if (queryEmbedding.some((v) => !Number.isFinite(v))) {
     throw new AiError('Query embedding contains non-finite values', 'PROVIDER_ERROR');

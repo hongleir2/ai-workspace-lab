@@ -1,4 +1,6 @@
 import { env } from '@/lib/env';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -6,37 +8,6 @@ export interface RateLimitResult {
   reset: number;
 }
 
-type UpstashRedisClient = Record<string, never>;
-
-type UpstashRedisModule = {
-  Redis: new (config: { url: string; token: string }) => UpstashRedisClient;
-};
-
-type UpstashRatelimitResponse = {
-  success: boolean;
-  remaining: number;
-  reset: number;
-};
-
-type UpstashRatelimitInstance = {
-  limit(identifier: string): Promise<UpstashRatelimitResponse>;
-};
-
-type UpstashRatelimitConstructor = {
-  new (config: {
-    redis: UpstashRedisClient;
-    limiter: unknown;
-    prefix: string;
-  }): UpstashRatelimitInstance;
-  slidingWindow(requests: number, duration: string): unknown;
-};
-
-type UpstashRatelimitModule = {
-  Ratelimit: UpstashRatelimitConstructor;
-};
-
-const UPSTASH_REDIS_MODULE: string = '@upstash/redis';
-const UPSTASH_RATELIMIT_MODULE: string = '@upstash/ratelimit';
 const AI_CHAT_PREFIX = '@ai-workspace-lab/ai_chat';
 const FREE_PLAN_REQUESTS_PER_MINUTE = 5;
 const NON_FREE_PLAN_REQUESTS_PER_MINUTE = 30;
@@ -54,13 +25,6 @@ export async function checkAiRateLimit(
     return allowAll();
   }
 
-  const [redisModule, ratelimitModule] = await Promise.all([
-    import(UPSTASH_REDIS_MODULE),
-    import(UPSTASH_RATELIMIT_MODULE),
-  ]);
-
-  const { Redis } = redisModule as unknown as UpstashRedisModule;
-  const { Ratelimit } = ratelimitModule as unknown as UpstashRatelimitModule;
   const requestsPerMinute =
     planId === 'free' ? FREE_PLAN_REQUESTS_PER_MINUTE : NON_FREE_PLAN_REQUESTS_PER_MINUTE;
 

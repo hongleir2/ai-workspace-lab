@@ -7,7 +7,10 @@ import { captureEvent } from '@ai-workspace-lab/analytics';
 import { useChat } from 'ai/react';
 import { Bot, FileText, Loader2, Send, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export interface AiChatMessage {
   id: string;
@@ -49,7 +52,15 @@ function MessageRow({ message }: { message: AiChatMessage }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="rounded-lg border bg-card px-4 py-3">
-          <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{message.content}</p>
+          {isUser ? (
+            <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
+              {message.content}
+            </p>
+          ) : (
+            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -64,6 +75,7 @@ export function ChatInterface({
   documentId,
   documentName,
 }: ChatInterfaceProps) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(initialMessages.some((message) => message.role === 'user'));
@@ -86,6 +98,7 @@ export function ChatInterface({
         session_id: sessionId,
         assistant_message_id: message.id,
       });
+      router.refresh();
     },
   }) as {
     messages: AiChatMessage[];
@@ -153,8 +166,8 @@ export function ChatInterface({
   const quotaText = quotaLabel(quota);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Badge variant={quota?.exceeded ? 'destructive' : 'secondary'}>{quotaText}</Badge>
           {quota?.resetSummary ? (
@@ -174,23 +187,25 @@ export function ChatInterface({
         ) : null}
       </div>
 
-      <div className="flex min-h-[30rem] flex-col gap-4 rounded-lg border bg-card p-4">
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
-          {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center rounded-md border border-dashed bg-muted/20 px-6 py-10 text-center">
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Start a conversation to ask this workspace a question.
-              </p>
-            </div>
-          ) : (
-            messages.map((message: AiChatMessage) => (
-              <MessageRow key={message.id} message={message} />
-            ))
-          )}
-          <div ref={endRef} />
+      <div className="flex min-h-0 flex-1 flex-col gap-4 rounded-lg border bg-card p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-4 pb-2">
+            {messages.length === 0 ? (
+              <div className="flex h-48 items-center justify-center rounded-md border border-dashed bg-muted/20 px-6 py-10 text-center">
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Start a conversation to ask this workspace a question.
+                </p>
+              </div>
+            ) : (
+              messages.map((message: AiChatMessage) => (
+                <MessageRow key={message.id} message={message} />
+              ))
+            )}
+            <div ref={endRef} />
+          </div>
         </div>
 
-        <form ref={formRef} onSubmit={submitChat} className="flex flex-col gap-3">
+        <form ref={formRef} onSubmit={submitChat} className="flex shrink-0 flex-col gap-3">
           <Textarea
             value={input}
             onChange={handleInputChange}

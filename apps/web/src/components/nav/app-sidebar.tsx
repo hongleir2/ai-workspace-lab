@@ -92,7 +92,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        'hidden md:flex w-60 shrink-0 min-h-screen flex-col gap-4 border-r border-border bg-background p-3',
+        'hidden md:flex w-60 shrink-0 h-full flex-col gap-4 border-r border-border bg-background p-3',
         className,
       )}
     >

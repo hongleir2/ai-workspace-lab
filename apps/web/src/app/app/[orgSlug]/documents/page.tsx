@@ -1,15 +1,13 @@
-import { DeleteDocumentButton } from '@/app/app/[orgSlug]/documents/delete-document-button';
+import { DocumentActionsMenu } from '@/app/app/[orgSlug]/documents/document-actions-menu';
 import { PageAnalytics } from '@/components/page-analytics';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip';
 import { FLAGS, getServerFeatureFlag } from '@/lib/analytics/flags';
 import { requireMembership } from '@/lib/orgs/guards';
 import { and, db, desc, documents, eq, isNull } from '@ai-workspace-lab/db';
-import type { Document } from '@ai-workspace-lab/db';
 import { FEATURE_KEYS, checkEntitlement } from '@ai-workspace-lab/entitlements';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -17,22 +15,6 @@ export const dynamic = 'force-dynamic';
 
 interface DocumentsPageProps {
   params: Promise<{ orgSlug: string }>;
-}
-
-function statusBadge(status: Document['status']) {
-  const processingStatuses: Document['status'][] = [
-    'uploaded',
-    'queued',
-    'processing',
-    'chunking',
-    'embedding',
-    'indexed',
-  ];
-  if (status === 'ready')
-    return <Badge className="bg-green-100 text-green-800 border-green-200">Ready</Badge>;
-  if (status === 'failed') return <Badge variant="destructive">Failed</Badge>;
-  if (processingStatuses.includes(status)) return <Badge>{status}</Badge>;
-  return <Badge variant="secondary">{status}</Badge>;
 }
 
 export default async function DocumentsPage({ params }: DocumentsPageProps) {
@@ -122,15 +104,19 @@ export default async function DocumentsPage({ params }: DocumentsPageProps) {
                   </div>
                 </Link>
                 <div className="ml-4 flex shrink-0 items-center gap-2">
-                  {statusBadge(doc.status)}
-                  {doc.status === 'failed' ? (
-                    <DeleteDocumentButton
-                      orgSlug={orgSlug}
-                      documentId={doc.id}
-                      documentTitle={doc.title}
-                      variant="icon"
-                    />
+                  {doc.status === 'ready' ? (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/app/${orgSlug}/documents/${doc.id}/ask`}>
+                        <MessageSquare className="size-3.5" />
+                        Ask AI
+                      </Link>
+                    </Button>
                   ) : null}
+                  <DocumentActionsMenu
+                    orgSlug={orgSlug}
+                    documentId={doc.id}
+                    documentTitle={doc.title}
+                  />
                 </div>
               </div>
             ))}

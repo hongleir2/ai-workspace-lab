@@ -23,7 +23,6 @@ vi.mock('@/lib/analytics/flags', () => ({
   FLAGS: {
     DOCUMENT_UPLOAD: 'document_upload_enabled',
     AI_CHAT: 'ai_chat_enabled',
-    RAG_V1: 'rag_v1_enabled',
     DESKTOP_UPLOAD: 'desktop_upload_enabled',
     REALTIME_STATUS: 'realtime_status_enabled',
   },

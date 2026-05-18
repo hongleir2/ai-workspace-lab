@@ -4,6 +4,8 @@ import { withSentryConfig } from '@sentry/nextjs';
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // tiktoken ships a WASM binary that webpack cannot bundle — let Node resolve it at runtime
+  serverExternalPackages: ['tiktoken'],
 };
 
 export default withSentryConfig(nextConfig, {

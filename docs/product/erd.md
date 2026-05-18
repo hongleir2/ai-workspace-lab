@@ -1275,35 +1275,37 @@ INDEX(organization_id, document_id)
 
 Searchable RAG chunks.
 
-| Column                | Type                           | Notes                            |
-| --------------------- | ------------------------------ | -------------------------------- |
-| `id`                  | UUID PK                        | Chunk ID                         |
-| `organization_id`     | UUID FK → organizations.id     | Tenant                           |
-| `document_id`         | UUID FK → documents.id         | Parent document                  |
-| `document_version_id` | UUID FK → document_versions.id | Nullable if no versioning        |
-| `chunk_index`         | INTEGER                        | Position within document/version |
-| `text`                | TEXT                           | Chunk text                       |
-| `token_count`         | INTEGER                        | Estimated tokens                 |
-| `page_start`          | INTEGER                        | Nullable                         |
-| `page_end`            | INTEGER                        | Nullable                         |
-| `section_title`       | TEXT                           | Nullable                         |
-| `embedding`           | VECTOR                         | pgvector column                  |
-| `embedding_model`     | TEXT                           | Model used                       |
-| `metadata`            | JSONB                          | Extra source data                |
-| `created_at`          | TIMESTAMPTZ                    | Required                         |
+| Column                | Type                       | Notes                                                        |
+| --------------------- | -------------------------- | ------------------------------------------------------------ |
+| `id`                  | UUID PK                    | Chunk ID                                                     |
+| `organization_id`     | UUID FK → organizations.id | Tenant                                                       |
+| `document_id`         | UUID FK → documents.id     | Parent document                                              |
+| `chunk_index`         | INTEGER                    | Position within document                                     |
+| `text`                | TEXT                       | Chunk text                                                   |
+| `token_count`         | INTEGER                    | Estimated tokens                                             |
+| `page_start`          | INTEGER                    | Nullable                                                     |
+| `page_end`            | INTEGER                    | Nullable                                                     |
+| `section_title`       | TEXT                       | Nullable                                                     |
+| `embedding`           | VECTOR(1536)               | pgvector column; OpenAI text-embedding-3-small dimension     |
+| `embedding_model`     | TEXT                       | Model identifier (e.g. `text-embedding-3-small`)             |
+| `chunking_strategy`   | TEXT                       | Algorithm that produced this chunk; nullable                 |
+| `start_char_index`    | INTEGER                    | New-content span start in original text (excl. overlap); nullable |
+| `end_char_index`      | INTEGER                    | New-content span end in original text; nullable              |
+| `metadata`            | JSONB                      | Extra source data; default `{}`                              |
+| `created_at`          | TIMESTAMPTZ                | Required                                                     |
 
-Recommended constraints:
+Constraints:
 
 ```txt
-UNIQUE(document_version_id, chunk_index)
+UNIQUE(document_id, chunk_index)
 ```
 
-Recommended indexes:
+Indexes:
 
 ```txt
-INDEX(organization_id, document_id)
-INDEX(organization_id, created_at)
-VECTOR INDEX ON embedding
+INDEX USING btree (organization_id, document_id)
+INDEX USING btree (organization_id, created_at)
+INDEX USING hnsw (embedding vector_cosine_ops) WITH (m=16, ef_construction=64)
 ```
 
 Important security rule:

@@ -48,10 +48,10 @@ Full spec: `docs/product/prd.md` | ERD: `docs/product/erd.md` | Routes: `docs/pr
 - [2026-05-17] **Day 52-53 — Embeddings + retrieval service**: `generateEmbeddings(texts, apiKey)` and `EMBEDDING_MODEL = 'text-embedding-3-small'` and `estimateEmbeddingCost(tokens)` added to `packages/ai`; `processDocumentHandler` extended to call `generateEmbeddings` after chunking (phase tracking `extraction|embedding` → `EXTRACTION_FAILED|EMBEDDING_FAILED` error codes), set `embedding`/`embeddingModel` on each inserted chunk, record usage event (`document_embeddings` feature key, idempotency key `${documentId}:embedding`, non-fatal catch); document status flow now `queued → processing → embedding → ready`; retrieval service (`packages/ai/src/retrieval.ts`): `embedQuery` (single vector via `embed`), `validateRagScope` (asserts document belongs to org), `retrieveRelevantChunks` (raw pgvector `<=>` cosine query with org_id filter, minSimilarity=0.3, topK=5, finite-value guard before `sql.raw()`), `buildContextBlock` (numbered `[N]` blocks with section/page metadata); all 4 functions re-exported from `packages/ai` index; 13 new unit tests (retrieval) + 2 new unit tests (process-document EMBEDDING_FAILED + empty-text path); `packages/ai` now depends on `@ai-workspace-lab/db`; `packages/jobs` now depends on `@ai-workspace-lab/ai`, `@ai-workspace-lab/usage`, `@ai-workspace-lab/entitlements`; 251 unit tests passing
 
 ### In progress
-- Sprint 8: citations/RAG wiring next
+- Sprint 9: embeddings and RAG v1 with cited answers
 
 ### Up next
-- Sprint 9: embeddings and RAG v1 with cited answers
+- Day 52+: embedding pipeline (call text-embedding-3-small, store vectors, similarity search for RAG)
 
 ---
 

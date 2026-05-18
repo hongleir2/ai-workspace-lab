@@ -79,7 +79,12 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
     case 'pdf': {
       const pdfParse = await pdfParseReady;
       const result = await pdfParse(buffer, { max: 10 });
-      return result.text;
+      // pdf-parse emits U+0000 for ligatures (fi, fl, ff) it can't decode from
+      // the font encoding. Postgres text rejects null bytes — strip them.
+      // split/join avoids lint rules against control chars in regex literals.
+      // All valid Unicode (CJK, accented characters) is preserved.
+      const cleaned = result.text.split(String.fromCharCode(0)).join('');
+      return cleaned.normalize('NFC');
     }
     default:
       throw new Error(`Unsupported file type: ${fileType}`);

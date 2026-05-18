@@ -19,7 +19,8 @@ export async function middleware(
   reqHeaders.set('x-trace-id', traceId);
 
   if (request.nextUrl.pathname !== '/api/axiom') {
-    logger.info(...transformMiddlewareRequest(request));
+    const [msg, fields] = transformMiddlewareRequest(request);
+    logger.info(msg, { ...(fields as Record<string, unknown>), traceId });
   }
   event.waitUntil(logger.flush());
 

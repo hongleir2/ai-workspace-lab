@@ -136,7 +136,7 @@ The builder should finish the project able to confidently explain and implement:
 |Async jobs|Document processing pipeline with retries and job status|
 |AI systems|Streaming chat, RAG, citations, token tracking|
 |Cost control|Usage events, quotas, LLM cost dashboard|
-|Observability|Sentry errors/traces, PostHog funnels/events|
+|Observability|Sentry errors/traces, PostHog funnels/events, Axiom structured logs + distributed tracing|
 |Electron|Secure IPC, context isolation, server-verified license checks|
 |Real-time|Processing status, presence, shared AI session updates|
 |Reliability|Runbooks, idempotency, retries, load tests|
@@ -1620,12 +1620,13 @@ MVP should meet basic accessibility expectations:
 |Email|Resend|
 |Analytics|PostHog|
 |Errors/tracing|Sentry|
+|Structured logs|Axiom (`@axiomhq/logging`) — centralized JSON log platform|
 |Rate limiting/cache|Upstash Redis|
 |Object storage|Cloudflare R2 or Supabase Storage|
 |AI integration|Vercel AI SDK or direct provider SDK|
 |Vector search|pgvector first, Pinecone later if needed|
 |Desktop|Electron, React, TypeScript|
-|Jobs|Trigger.dev, Inngest, Cloudflare Queues, or custom worker|
+|Jobs|QStash (HTTP push queue) or Trigger.dev, Inngest, Cloudflare Queues|
 
 ---
 

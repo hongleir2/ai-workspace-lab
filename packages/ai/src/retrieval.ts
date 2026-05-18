@@ -20,17 +20,22 @@ export interface RetrieveOptions {
   minSimilarity?: number;
 }
 
-export async function embedQuery(queryText: string, apiKey: string): Promise<number[]> {
+export interface EmbedResult {
+  embedding: number[];
+  tokens: number;
+}
+
+export async function embedQuery(queryText: string, apiKey: string): Promise<EmbedResult> {
   if (!apiKey) {
     throw new AiError('OPENAI_API_KEY is not configured', 'CONFIGURATION_ERROR');
   }
   const openaiClient = createOpenAI({ apiKey });
-  const { embedding } = await embed({
+  const { embedding, usage } = await embed({
     model: openaiClient.embedding(EMBEDDING_MODEL),
     value: queryText,
     maxRetries: 2,
   });
-  return embedding;
+  return { embedding, tokens: usage.tokens };
 }
 
 export async function validateRagScope(
@@ -61,7 +66,7 @@ export async function retrieveRelevantChunks(
   opts: RetrieveOptions = {},
   dbConn: Database = db,
 ): Promise<RagChunk[]> {
-  const { topK = 5, documentId, minSimilarity = 0.3 } = opts;
+  const { topK = 5, documentId, minSimilarity = 0.5 } = opts;
 
   if (queryEmbedding.some((v) => !Number.isFinite(v))) {
     throw new AiError('Query embedding contains non-finite values', 'PROVIDER_ERROR');

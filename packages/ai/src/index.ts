@@ -4,6 +4,7 @@ import type { AiCompletionOptions, AiFinishEvent, NormalizedUsage } from './type
 
 export type { AiCompletionOptions, AiFinishEvent, NormalizedUsage };
 export {
+  type EmbedResult,
   type RagChunk,
   type RetrieveOptions,
   embedQuery,

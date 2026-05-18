@@ -6,13 +6,19 @@ import { env } from '@/lib/env';
 import { getOrganizationBySlug } from '@/lib/orgs/service';
 import {
   AiError,
+  EMBEDDING_MODEL,
+  buildContextBlock,
   buildPromptFromMessages,
+  embedQuery,
   estimateCost,
   normalizeTokenUsage,
+  retrieveRelevantChunks,
   streamChatCompletion,
+  validateRagScope,
 } from '@ai-workspace-lab/ai';
-import type { AiCompletionOptions } from '@ai-workspace-lab/ai';
+import type { AiCompletionOptions, RagChunk } from '@ai-workspace-lab/ai';
 import {
+  aiMessageSources,
   aiMessages,
   aiSessions,
   and,
@@ -44,6 +50,7 @@ interface ChatMessage {
 interface RequestBody {
   messages: ChatMessage[];
   sessionId: string;
+  documentId?: string;
 }
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -56,17 +63,20 @@ function isChatMessage(value: unknown): value is ChatMessage {
 }
 
 const MAX_MESSAGES_PER_REQUEST = 100;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidBody(body: unknown): body is RequestBody {
   if (typeof body !== 'object' || body === null) return false;
   const record = body as Record<string, unknown>;
+  const documentId = record['documentId'];
   return (
     Array.isArray(record['messages']) &&
     record['messages'].length > 0 &&
     record['messages'].length <= MAX_MESSAGES_PER_REQUEST &&
     record['messages'].every(isChatMessage) &&
     typeof record['sessionId'] === 'string' &&
-    record['sessionId'].length > 0
+    record['sessionId'].length > 0 &&
+    (documentId === undefined || (typeof documentId === 'string' && UUID_RE.test(documentId)))
   );
 }
 
@@ -163,6 +173,29 @@ export async function POST(
 
   if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
+  if (body.documentId) {
+    if (env.NEXT_PUBLIC_POSTHOG_KEY) {
+      const ragEnabled = await getServerFeatureFlag(FLAGS.RAG_V1, user.id);
+      if (!ragEnabled) {
+        return NextResponse.json({ error: 'RAG is not enabled for your account' }, { status: 403 });
+      }
+    }
+    try {
+      await validateRagScope(org.id, body.documentId);
+    } catch (scopeError) {
+      if (scopeError instanceof AiError) {
+        logger.error('ai.rag.scope_error', {
+          traceId,
+          orgId: org.id,
+          documentId: body.documentId,
+          error: scopeError.message,
+        });
+        throw scopeError;
+      }
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+  }
+
   const lastMessage = body.messages[body.messages.length - 1];
   if (!lastMessage || lastMessage.role !== 'user') {
     return NextResponse.json({ error: 'Last message must be from the user' }, { status: 400 });
@@ -182,6 +215,35 @@ export async function POST(
 
   if (!userMessageRow) throw new Error('Failed to create chat user message');
 
+  let ragChunks: RagChunk[] = [];
+  if (body.documentId) {
+    try {
+      const { embedding: queryEmbedding, tokens: embeddingTokens } = await embedQuery(
+        lastMessage.content,
+        env.OPENAI_API_KEY ?? '',
+      );
+      logger.info('ai.rag.embedded', {
+        traceId,
+        orgId: org.id,
+        documentId: body.documentId,
+        embeddingTokens,
+        model: EMBEDDING_MODEL,
+      });
+      ragChunks = await retrieveRelevantChunks(org.id, queryEmbedding, {
+        documentId: body.documentId,
+        topK: 5,
+        minSimilarity: 0.5,
+      });
+    } catch (ragError) {
+      logger.warn('ai.rag.retrieval_failed', {
+        traceId,
+        orgId: org.id,
+        documentId: body.documentId,
+        error: ragError instanceof Error ? ragError.message : String(ragError),
+      });
+    }
+  }
+
   const planLimits = await getPlanLimits(plan.id, FEATURE_KEYS.AI_MESSAGES);
   const planLimit = planLimits[0];
   const period =
@@ -200,17 +262,24 @@ export async function POST(
     messageCount: body.messages.length,
   });
 
+  const contextBlock = ragChunks.length > 0 ? buildContextBlock(ragChunks) : undefined;
+
   try {
     const streamInput: AiCompletionOptions = {
       apiKey: env.OPENAI_API_KEY ?? '',
       model: modelName,
       messages: buildPromptFromMessages(body.messages),
+      ...(contextBlock
+        ? {
+            system: `You are a helpful assistant. Answer based on the document context below.\n\nContext:\n\n${contextBlock}`,
+          }
+        : {}),
       onFinish: async ({ text, usage }) => {
         try {
           const normalized = normalizeTokenUsage(usage);
           const cost = estimateCost(modelName, normalized.inputTokens, normalized.outputTokens);
 
-          await db
+          const [assistantMessageRow] = await db
             .insert(aiMessages)
             .values({
               organizationId: org.id,
@@ -227,6 +296,28 @@ export async function POST(
               completedAt: new Date(),
             })
             .returning();
+
+          if (assistantMessageRow && ragChunks.length > 0) {
+            try {
+              await db.insert(aiMessageSources).values(
+                ragChunks.map((chunk, i) => ({
+                  organizationId: org.id,
+                  aiMessageId: assistantMessageRow.id,
+                  documentId: chunk.documentId,
+                  documentChunkId: chunk.id,
+                  relevanceScore: chunk.similarity.toFixed(4),
+                  citationLabel: `[${i + 1}]`,
+                })),
+              );
+            } catch (sourcesError) {
+              logger.warn('ai.rag.sources_insert_failed', {
+                traceId,
+                orgId: org.id,
+                aiMessageId: assistantMessageRow.id,
+                error: sourcesError instanceof Error ? sourcesError.message : String(sourcesError),
+              });
+            }
+          }
 
           if (period) {
             const usageArgs = {

@@ -101,14 +101,14 @@ describe('embedQuery', () => {
     await expect(embedQuery('test', '')).rejects.toThrow(AiError);
   });
 
-  it('calls embed and returns embedding vector', async () => {
+  it('calls embed and returns embedding vector and token count', async () => {
     const { embed } = await import('ai');
     vi.mocked(embed).mockResolvedValueOnce({
       embedding: [0.1, 0.2, 0.3],
       usage: { tokens: 4 },
     } as never);
     const result = await embedQuery('test query', 'sk-test');
-    expect(result).toEqual([0.1, 0.2, 0.3]);
+    expect(result).toEqual({ embedding: [0.1, 0.2, 0.3], tokens: 4 });
   });
 });
 

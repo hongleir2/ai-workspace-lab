@@ -1,10 +1,5 @@
 export { runWorkerOnce } from './worker';
 export type { WorkerResult } from './worker';
-export {
-  processDocumentHandler,
-  chunkTextByTokens,
-  extractText,
-} from './handlers/process-document';
 export type { ProcessDocumentPayload } from './handlers/process-document';
 export {
   createJob,

@@ -321,6 +321,29 @@ With storage configured:
 
 ## Observability (local dev)
 
+### Axiom structured logs
+
+Axiom is the centralized log platform. All server-side packages emit structured JSON events; the browser ships Core Web Vitals. Logs are searchable by `orgId`, `documentId`, `traceId`, and more.
+
+**Set up Axiom:**
+1. Create a free account at [axiom.co](https://axiom.co) — 500 GB/month, 30-day retention
+2. Create a dataset (e.g. `ai-workspace-lab`)
+3. Create an API token with Ingest permission
+4. Add to `apps/web/.env.local`:
+   ```
+   AXIOM_TOKEN=xaat-...
+   AXIOM_DATASET=ai-workspace-lab
+   ```
+
+Without these vars, logs fall back to `console.log` — safe for local dev and CI.
+
+**Verify logs are flowing:**
+1. `pnpm dev` — middleware emits one log per request
+2. Open [app.axiom.co](https://app.axiom.co) → your dataset → **Stream** tab
+3. Navigate to any page — you should see `module: "middleware"` events appear within seconds
+
+See [`docs/runbooks/logging.md`](./docs/runbooks/logging.md) for log search patterns and tracing guide.
+
 ### Sentry
 
 Sentry is disabled by default locally (no DSN set). To test error capture:
@@ -389,6 +412,7 @@ ai-workspace-lab/
 │   ├── config/                # shared tsconfig presets
 │   ├── types/                 # shared TS types (no runtime code)
 │   ├── ui/                    # shared UI primitives
+│   ├── logger/                # shared structured logger (Axiom or console fallback)
 │   ├── db/                    # Drizzle ORM client + migrations
 │   ├── auth/                  # auth helpers (scaffold)
 │   ├── billing/               # Stripe billing: checkout, portal, webhook handler
@@ -424,6 +448,7 @@ ai-workspace-lab/
 | Email | Resend |
 | Errors | Sentry |
 | Analytics + flags | PostHog |
+| Structured logs | Axiom (`@axiomhq/logging`) |
 | Cache + rate limit + jobs | Upstash Redis + QStash |
 | Object storage | Cloudflare R2 |
 | AI | Vercel AI SDK + Anthropic Claude |

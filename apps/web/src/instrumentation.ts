@@ -1,3 +1,4 @@
+import { onAxiomRequestError } from '@/lib/axiom/server';
 import * as Sentry from '@sentry/nextjs';
 import type { Instrumentation } from 'next';
 
@@ -11,4 +12,7 @@ export async function register() {
   }
 }
 
-export const onRequestError: Instrumentation.onRequestError = Sentry.captureRequestError;
+export const onRequestError: Instrumentation.onRequestError = async (...args) => {
+  Sentry.captureRequestError(...args);
+  await onAxiomRequestError(...args);
+};

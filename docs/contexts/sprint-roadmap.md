@@ -10,8 +10,8 @@
 Sprint 0         — Project setup                    ✅ Done
 Sprint 1–2       — Auth + tenant boundary           🔄 In progress
 Sprint 3–4       — Plans, entitlements, billing     ✅ Done
-Sprint 5–6       — Observability + file storage     🔄 In progress
-Sprint 7–8       — Async jobs + AI chat MVP         Upcoming
+Sprint 5–6       — Observability + file storage     ✅ Done
+Sprint 7–8       — Async jobs + AI chat MVP         🔄 In progress
 Sprint 9–10      — Embeddings + RAG                 Future
 Sprint 11–14     — Admin, emails, hardening         Future
 Sprint 15–18     — Electron desktop                 Future

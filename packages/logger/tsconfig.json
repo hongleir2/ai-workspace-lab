@@ -1,0 +1,5 @@
+{
+  "extends": "@ai-workspace-lab/config/tsconfig.base.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src/**/*"]
+}

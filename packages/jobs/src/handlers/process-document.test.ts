@@ -14,10 +14,29 @@ vi.mock('@ai-workspace-lab/storage', () => ({
   downloadObject: vi.fn(),
 }));
 
-import { downloadObject } from '@ai-workspace-lab/storage';
-import { chunkText, extractText, processDocumentHandler } from './process-document';
+// tiktoken uses WASM — replace with a deterministic char-based stub.
+// 1 char ≈ 1 token so token budgets map directly to character counts in tests.
+// decode returns 'x' bytes per token so hard-split slices are non-empty;
+// overlap text is 'xxx...' but tests use overlapTokens:0 so it stays "".
+// js-tiktoken is pure JS (no WASM). Mock with: 1 char ≈ 1 token, decode returns
+// 'x' per token so hard-split slices are non-empty strings.
+vi.mock('js-tiktoken', () => ({
+  encodingForModel: () => ({
+    encode: (text: string) => new Uint32Array(text.length),
+    decode: (tokens: Uint32Array) => 'x'.repeat(tokens.length),
+  }),
+}));
 
-// ── Helper: create a mock Drizzle-compatible Database ────────────────────────
+import { downloadObject } from '@ai-workspace-lab/storage';
+import {
+  CHUNKING_STRATEGY,
+  DEFAULT_CHUNK_OPTIONS,
+  chunkTextByTokens,
+  extractText,
+  processDocumentHandler,
+} from './process-document';
+
+// ── Helper: create a mock Drizzle-compatible Database ─────────────────────────
 
 function makeSelectChain(rows: unknown[]) {
   const chain = {
@@ -67,53 +86,96 @@ const MOCK_DOC = {
 
 const MOCK_STORAGE = { id: STORAGE_ID, objectKey: OBJECT_KEY, deletedAt: null };
 
-// ── chunkText ────────────────────────────────────────────────────────────────
+// ── chunkTextByTokens ─────────────────────────────────────────────────────────
+// Token mock: 1 char = 1 token, no overlap (decode → empty string).
 
-describe('chunkText', () => {
-  it('combines short paragraphs into one chunk', () => {
-    const chunks = chunkText('Para one.\n\nPara two.');
+describe('chunkTextByTokens', () => {
+  const opts = { maxTokens: 20, overlapTokens: 0 };
+
+  it('returns a single chunk for text within budget', () => {
+    const chunks = chunkTextByTokens('Short text.', opts);
     expect(chunks).toHaveLength(1);
-    expect(chunks[0]).toContain('Para one');
-    expect(chunks[0]).toContain('Para two');
-  });
-
-  it('splits long single paragraph by sentences', () => {
-    // Each sentence is ~100 chars; 20 sentences = ~2000 chars, exceeds 1500 limit
-    const many = Array.from(
-      { length: 20 },
-      (_, i) =>
-        `Sentence ${i + 1} is deliberately padded with extra words to push it well past one hundred characters in total length.`,
-    ).join(' ');
-    const chunks = chunkText(many);
-    expect(chunks.length).toBeGreaterThan(1);
-    for (const c of chunks) expect(c.length).toBeLessThanOrEqual(1500);
-  });
-
-  it('truncates a sentence that exceeds max chars', () => {
-    const chunks = chunkText('A'.repeat(2000));
-    expect(chunks.length).toBeGreaterThan(0);
-    for (const c of chunks) expect(c.length).toBeLessThanOrEqual(1500);
+    expect(chunks[0]?.text).toContain('Short text');
   });
 
   it('returns empty array for empty string', () => {
-    expect(chunkText('')).toEqual([]);
+    expect(chunkTextByTokens('', opts)).toEqual([]);
   });
 
   it('returns empty array for whitespace-only string', () => {
-    expect(chunkText('   \n\n   ')).toEqual([]);
+    expect(chunkTextByTokens('   \n\n   ', opts)).toEqual([]);
   });
 
-  it('filters out empty chunks', () => {
-    const chunks = chunkText('\n\n\n\nActual content.\n\n\n\n');
-    expect(chunks).toHaveLength(1);
-    expect(chunks[0]).toBe('Actual content.');
+  it('assigns sequential chunkIndex values', () => {
+    // 3 sentences × 10 chars each = 30 chars, budget 20 → at least 2 chunks
+    const text = 'Sentence one.\nSentence two.\nSentence three.';
+    const chunks = chunkTextByTokens(text, opts);
+    chunks.forEach((c, i) => expect(c.chunkIndex).toBe(i));
   });
 
-  it('starts a new chunk when adding paragraph would exceed 1500 chars', () => {
-    const big = 'A'.repeat(1400);
-    const small = 'B'.repeat(100);
-    const chunks = chunkText(`${big}\n\n${small}`);
-    expect(chunks.length).toBeGreaterThanOrEqual(2);
+  it('every chunk respects maxTokens budget', () => {
+    const sentence = 'A'.repeat(15); // 15 chars = 15 tokens under mock
+    const text = `${sentence}.\n\n${sentence}.\n\n${sentence}.`;
+    const chunks = chunkTextByTokens(text, opts);
+    expect(chunks.length).toBeGreaterThan(0);
+    for (const c of chunks) expect(c.tokenCount).toBeLessThanOrEqual(opts.maxTokens);
+  });
+
+  it('splits a long paragraph across multiple chunks', () => {
+    const long = 'Word '.repeat(30); // 150 chars, well over budget of 20
+    const chunks = chunkTextByTokens(long, opts);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const c of chunks) expect(c.tokenCount).toBeLessThanOrEqual(opts.maxTokens);
+  });
+
+  it('stores tokenCount on every chunk', () => {
+    const chunks = chunkTextByTokens('Hello world.', opts);
+    for (const c of chunks) {
+      expect(typeof c.tokenCount).toBe('number');
+      expect(c.tokenCount).toBeGreaterThan(0);
+    }
+  });
+
+  it('stores startCharIndex and endCharIndex on every chunk', () => {
+    const chunks = chunkTextByTokens('Hello world.', opts);
+    for (const c of chunks) {
+      expect(typeof c.startCharIndex).toBe('number');
+      expect(typeof c.endCharIndex).toBe('number');
+      expect(c.endCharIndex).toBeGreaterThanOrEqual(c.startCharIndex);
+    }
+  });
+
+  it('hard-splits a single oversized sentence at token boundaries', () => {
+    // One sentence of 50 chars, budget 20
+    const bigSentence = 'A'.repeat(50);
+    const chunks = chunkTextByTokens(bigSentence, opts);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const c of chunks) expect(c.tokenCount).toBeLessThanOrEqual(opts.maxTokens);
+  });
+
+  it('splits Chinese text on ideographic terminators', () => {
+    const sentence = '这是一个测试句子用于验证分句工作。'; // ~17 chars
+    const text = sentence.repeat(5); // ~85 chars, budget 20 → multiple chunks
+    const chunks = chunkTextByTokens(text, opts);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const c of chunks) expect(c.tokenCount).toBeLessThanOrEqual(opts.maxTokens);
+  });
+
+  it('preserves Korean characters through chunking', () => {
+    // 。terminator so each sentence goes through normal path (not hard-split),
+    // preserving original text in chunk.text via currentSentences
+    const korean = '안녕하세요 이것은 테스트입니다。';
+    const chunks = chunkTextByTokens(korean.repeat(3), opts);
+    expect(chunks.map((c) => c.text).join('')).toContain('안녕하세요');
+  });
+
+  it('default options are exported with expected values', () => {
+    expect(DEFAULT_CHUNK_OPTIONS.maxTokens).toBe(700);
+    expect(DEFAULT_CHUNK_OPTIONS.overlapTokens).toBe(100);
+  });
+
+  it('CHUNKING_STRATEGY constant is exported', () => {
+    expect(CHUNKING_STRATEGY).toBe('paragraph_sentence_token_v1');
   });
 });
 
@@ -166,12 +228,17 @@ describe('processDocumentHandler', () => {
     expect(mockDb.delete).toHaveBeenCalledTimes(1);
     expect(mockDb.insert).toHaveBeenCalledTimes(1);
 
-    // Verify org-scoped chunk rows include the correct organizationId
     const insertChain = vi.mocked(mockDb.insert).mock.results[0]?.value as {
       values: ReturnType<typeof vi.fn>;
     };
-    const chunkRows = insertChain.values.mock.calls[0]?.[0] as Array<{ organizationId: string }>;
-    expect(chunkRows.every((row) => row.organizationId === ORG_ID)).toBe(true);
+    const chunkRows = insertChain.values.mock.calls[0]?.[0] as Array<{
+      organizationId: string;
+      tokenCount: number;
+      chunkingStrategy: string;
+    }>;
+    expect(chunkRows.every((r) => r.organizationId === ORG_ID)).toBe(true);
+    expect(chunkRows.every((r) => typeof r.tokenCount === 'number')).toBe(true);
+    expect(chunkRows.every((r) => r.chunkingStrategy === CHUNKING_STRATEGY)).toBe(true);
   });
 
   it('throws when document is not found', async () => {
@@ -196,7 +263,6 @@ describe('processDocumentHandler', () => {
       'Network error',
     );
 
-    // update called once to set processing, once to set failed
     expect(mockDb.update).toHaveBeenCalledTimes(2);
   });
 
@@ -220,7 +286,6 @@ describe('processDocumentHandler', () => {
 
     expect(mockDb.delete).toHaveBeenCalledTimes(1);
     expect(mockDb.insert).toHaveBeenCalledTimes(1);
-    // delete must happen before insert
     const deleteCalls = vi.mocked(mockDb.delete).mock.invocationCallOrder[0] ?? 0;
     const insertCalls = vi.mocked(mockDb.insert).mock.invocationCallOrder[0] ?? 1;
     expect(deleteCalls).toBeLessThan(insertCalls);

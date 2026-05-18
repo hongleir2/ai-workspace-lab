@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { type Database, db, documents, eq } from '@ai-workspace-lab/db';
+import { createLogger } from '@ai-workspace-lab/logger';
 import { processDocumentHandler } from './handlers/process-document';
 import type { ProcessDocumentPayload } from './handlers/process-document';
 import {
@@ -10,6 +11,8 @@ import {
   retryJobWithBackoff,
   startJobAttempt,
 } from './job-service';
+
+const logger = createLogger('jobs/worker');
 
 export interface WorkerResult {
   processed: number;
@@ -27,6 +30,11 @@ export async function runWorkerOnce(dbConn: Database = db): Promise<WorkerResult
   for (const zombie of zombies) {
     if (zombie.jobType === 'process_document') {
       const { documentId } = zombie.payload as unknown as ProcessDocumentPayload;
+      logger.warn('zombie.reaped', {
+        jobId: zombie.id,
+        jobType: zombie.jobType,
+        orgId: zombie.organizationId,
+      });
       await dbConn
         .update(documents)
         .set({
@@ -44,7 +52,16 @@ export async function runWorkerOnce(dbConn: Database = db): Promise<WorkerResult
 
   const { id: jobId, attemptsCount, maxAttempts } = claimed;
   const attemptNumber = attemptsCount + 1;
+  const startMs = Date.now();
   let attempt: { id: string } | undefined;
+
+  logger.info('job.claimed', {
+    jobId,
+    jobType: claimed.jobType,
+    orgId: claimed.organizationId,
+    attemptNumber,
+    maxAttempts,
+  });
 
   try {
     attempt = await startJobAttempt(jobId, attemptNumber, dbConn);
@@ -52,10 +69,21 @@ export async function runWorkerOnce(dbConn: Database = db): Promise<WorkerResult
     if (claimed.jobType === 'process_document') {
       await processDocumentHandler(claimed.payload as unknown as ProcessDocumentPayload, dbConn);
     } else {
+      logger.error('job.unknown_type', {
+        jobId,
+        jobType: claimed.jobType,
+      });
       throw new Error(`Unknown job type: ${claimed.jobType}`);
     }
 
     await completeJob(jobId, attempt?.id, attemptNumber, dbConn);
+    const durationMs = Date.now() - startMs;
+    logger.info('job.completed', {
+      jobId,
+      jobType: claimed.jobType,
+      orgId: claimed.organizationId,
+      durationMs,
+    });
     return { processed: 1, jobId, status: 'completed' };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -68,6 +96,14 @@ export async function runWorkerOnce(dbConn: Database = db): Promise<WorkerResult
         { attemptNumber, errorCode, errorMessage, ...(attempt ? { attemptId: attempt.id } : {}) },
         dbConn,
       );
+      logger.error('job.dead_lettered', {
+        jobId,
+        jobType: claimed.jobType,
+        orgId: claimed.organizationId,
+        attemptNumber,
+        errorCode,
+        errorMessage,
+      });
       return { processed: 1, jobId, status: 'dead_lettered', error: errorMessage };
     }
 
@@ -76,6 +112,14 @@ export async function runWorkerOnce(dbConn: Database = db): Promise<WorkerResult
       { attemptNumber, errorCode, errorMessage, ...(attempt ? { attemptId: attempt.id } : {}) },
       dbConn,
     );
+    logger.warn('job.retrying', {
+      jobId,
+      jobType: claimed.jobType,
+      orgId: claimed.organizationId,
+      attemptNumber,
+      errorCode,
+      backoffSeconds: 0,
+    });
     return { processed: 1, jobId, status: 'retrying', error: errorMessage };
   }
 }

@@ -57,10 +57,14 @@ describe('runWorkerOnce', () => {
     vi.mocked(eq).mockReturnValue({} as never);
   });
 
+  // Helper: pre-check row returned by the SELECT COUNT(*) inside claimNextJob
+  const PRE_CHECK = [{ count: '0', earliest_run_after: null }];
+
   it('returns processed=0 when no pending jobs', async () => {
-    // First execute = zombie reap (no zombies), second = claim (no jobs)
+    // execute order: zombie reap → pre-check count → claim (no rows)
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([] as never);
 
     const result = await runWorkerOnce(db as never);
@@ -70,6 +74,7 @@ describe('runWorkerOnce', () => {
   it('dispatches process_document handler and marks job completed', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([makeClaimedRow()] as never);
     vi.mocked(db.insert).mockReturnValue(makeInsertChain() as never);
     vi.mocked(db.update).mockReturnValue(makeUpdateChain() as never);
@@ -86,6 +91,7 @@ describe('runWorkerOnce', () => {
   it('records job_attempt row on start', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([makeClaimedRow()] as never);
     vi.mocked(db.insert).mockReturnValue(makeInsertChain() as never);
     vi.mocked(db.update).mockReturnValue(makeUpdateChain() as never);
@@ -99,6 +105,7 @@ describe('runWorkerOnce', () => {
   it('sets job to retrying on failure with attempts remaining', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([makeClaimedRow({ attempts_count: 0, max_attempts: 3 })] as never);
     vi.mocked(db.insert).mockReturnValue(makeInsertChain() as never);
     vi.mocked(db.update).mockReturnValue(makeUpdateChain() as never);
@@ -114,6 +121,7 @@ describe('runWorkerOnce', () => {
   it('dead-letters job when max attempts are exhausted', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([makeClaimedRow({ attempts_count: 2, max_attempts: 3 })] as never);
     vi.mocked(db.insert).mockReturnValue(makeInsertChain() as never);
     vi.mocked(db.update).mockReturnValue(makeUpdateChain() as never);
@@ -128,6 +136,7 @@ describe('runWorkerOnce', () => {
   it('marks attempt and job on success', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([makeClaimedRow()] as never);
     vi.mocked(db.insert).mockReturnValue(makeInsertChain([{ id: ATTEMPT_ID }]) as never);
     vi.mocked(db.update).mockReturnValue(makeUpdateChain() as never);
@@ -142,6 +151,7 @@ describe('runWorkerOnce', () => {
   it('handles unknown job type by dead-lettering when max attempts hit', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([
         makeClaimedRow({ job_type: 'unknown_type', attempts_count: 2, max_attempts: 3 }),
       ] as never);
@@ -157,6 +167,7 @@ describe('runWorkerOnce', () => {
   it('retries unknown job type when attempts remain', async () => {
     vi.mocked(db.execute)
       .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce(PRE_CHECK as never)
       .mockResolvedValueOnce([
         makeClaimedRow({ job_type: 'unknown_type', attempts_count: 0, max_attempts: 3 }),
       ] as never);

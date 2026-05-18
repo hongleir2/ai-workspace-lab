@@ -1,3 +1,4 @@
+import { logger } from '@/lib/axiom/server';
 import { appUrl, env } from '@/lib/env';
 import { Client } from '@upstash/qstash';
 
@@ -11,7 +12,21 @@ import { Client } from '@upstash/qstash';
  */
 export async function triggerWorker(): Promise<void> {
   const token = env.QSTASH_TOKEN;
-  if (!token) return;
+  const workerUrl = `${appUrl()}/api/internal/run-worker`;
+
+  if (!token) {
+    logger.debug('worker.trigger.skipped', {
+      reason: 'no_qstash_token',
+      workerUrl,
+      hasWorkerSecret: !!env.WORKER_SECRET,
+    });
+    return;
+  }
+
+  logger.debug('worker.trigger.sending', {
+    workerUrl,
+    hasWorkerSecret: !!env.WORKER_SECRET,
+  });
 
   const client = new Client({ token });
   const headers: Record<string, string> = {};
@@ -19,9 +34,18 @@ export async function triggerWorker(): Promise<void> {
     headers['Authorization'] = `Bearer ${env.WORKER_SECRET}`;
   }
 
-  await client.publishJSON({
-    url: `${appUrl()}/api/internal/run-worker`,
-    headers,
-    body: {},
-  });
+  try {
+    await client.publishJSON({
+      url: workerUrl,
+      headers,
+      body: {},
+    });
+    logger.debug('worker.trigger.sent', { workerUrl });
+  } catch (err) {
+    logger.error('worker.trigger.failed', {
+      workerUrl,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 }

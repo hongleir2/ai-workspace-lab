@@ -2253,3 +2253,39 @@ desktop entitlement verified server-side
 ```
 
 This ERD gives you a production-shaped modular monolith schema: strong enough for a real AI SaaS MVP, but still simple enough to build incrementally.
+
+---
+
+# 21. External services
+
+The following services are external to Postgres but are critical to observability and job orchestration:
+
+## Axiom
+
+**Purpose**: Centralized structured logging and distributed tracing.
+
+**Package**: `@axiomhq/logging`
+
+**Data model**: JSON documents (time-series logs), no Postgres tables. Axiom manages its own time-series storage.
+
+**Integration points**:
+- Injected at request ingress via middleware (`x-trace-id` header)
+- Used in packages/logger for structured event logging across services
+- Tracks: request traces, service logs, error context, performance metrics, AI token usage
+
+**Retention**: Query-based, typically 30 days by default
+
+## QStash
+
+**Purpose**: HTTP push queue for async job triggering and durable job orchestration.
+
+**Service**: Upstash (serverless Redis/job queue)
+
+**Data model**: No Postgres tables. Job state is tracked in `jobs` table; QStash triggers work via webhook.
+
+**Integration points**:
+- Triggers `POST /api/internal/run-worker` every 30 seconds (cron) or on-demand
+- Request includes pending jobs from the `jobs` table
+- Provides durability and retry semantics for background work (document processing, AI indexing, usage aggregation)
+
+**Idempotency**: Every job must be idempotent; the same job ID may be retried multiple times.

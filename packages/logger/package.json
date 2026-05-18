@@ -1,20 +1,18 @@
 {
-  "name": "@ai-workspace-lab/usage",
+  "name": "@ai-workspace-lab/logger",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
-  },
+  "exports": { ".": "./src/index.ts" },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .turbo"
   },
   "dependencies": {
-    "@ai-workspace-lab/db": "workspace:*",
-    "@ai-workspace-lab/logger": "workspace:*"
+    "@axiomhq/js": "^1.6.1",
+    "@axiomhq/logging": "^0.2.2"
   },
   "devDependencies": {
     "@ai-workspace-lab/config": "workspace:*",

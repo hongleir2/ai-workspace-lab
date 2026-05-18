@@ -51,10 +51,18 @@ export const env = createEnv({
       )
       .optional(),
 
-    // ── Vercel system variable — injected automatically on all Vercel deployments ──
+    // ── Vercel system variables — injected automatically on all Vercel deployments ──
     // Contains the deployment hostname without protocol (e.g. "my-app-abc123.vercel.app").
     // Used as a fallback when NEXT_PUBLIC_APP_URL is not explicitly configured.
     VERCEL_URL: z.string().optional(),
+    // Environment type: "production" for prod, "preview" for preview deployments, unset locally.
+    // Used to control debug log emission — debug logs only in dev and preview, never in production.
+    VERCEL_ENV: z.enum(['production', 'preview']).optional(),
+
+    // ── Required-later: Axiom structured logging (Sprint 5+) ──────────────
+    // https://axiom.co → Settings → API Tokens (ingest-only scope is sufficient)
+    AXIOM_TOKEN: z.string().min(1).optional(),
+    AXIOM_DATASET: z.string().min(1).optional(),
 
     // ── Required-later: Sentry error tracking (Sprint 1+) ─────────────────
     // https://sentry.io/settings/<org>/projects/<project>/keys/
@@ -150,6 +158,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env['RESEND_API_KEY'],
     EMAIL_FROM: process.env['EMAIL_FROM'],
     VERCEL_URL: process.env['VERCEL_URL'],
+    VERCEL_ENV: process.env['VERCEL_ENV'],
     SENTRY_DSN: process.env['SENTRY_DSN'],
     SENTRY_ENVIRONMENT: process.env['SENTRY_ENVIRONMENT'],
     SENTRY_AUTH_TOKEN: process.env['SENTRY_AUTH_TOKEN'],
@@ -169,6 +178,8 @@ export const env = createEnv({
     WORKER_SECRET: process.env['WORKER_SECRET'],
     CRON_SECRET: process.env['CRON_SECRET'],
     ADMIN_EMAILS: process.env['ADMIN_EMAILS'],
+    AXIOM_TOKEN: process.env['AXIOM_TOKEN'],
+    AXIOM_DATASET: process.env['AXIOM_DATASET'],
     // client
     NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL'],
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'],
